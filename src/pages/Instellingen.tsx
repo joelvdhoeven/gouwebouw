@@ -480,116 +480,249 @@ const Instellingen: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-800">Voorraadbeheer</p>
-                  <p className="text-sm text-gray-500">Beheer voorraad en boek materiaal af</p>
+              <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="font-medium text-gray-800">Voorraadbeheer</p>
+                    <p className="text-sm text-gray-500">Beheer voorraad en boek materiaal af</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_inventory}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_inventory: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  </label>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={moduleSettings.module_inventory}
-                    onChange={(e) => setModuleSettings({ ...moduleSettings, module_inventory: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                </label>
+                {moduleSettings.module_inventory && (
+                  <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
+                      <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={moduleSettings.module_inventory_demo}
+                        onChange={(e) => setModuleSettings({ ...moduleSettings, module_inventory_demo: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                    </label>
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-800">Schademeldingen</p>
-                  <p className="text-sm text-gray-500">Registreer en beheer schademeldingen</p>
+              <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="font-medium text-gray-800">Schademeldingen</p>
+                    <p className="text-sm text-gray-500">Registreer en beheer schademeldingen</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_damage_reports}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_damage_reports: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  </label>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={moduleSettings.module_damage_reports}
-                    onChange={(e) => setModuleSettings({ ...moduleSettings, module_damage_reports: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                </label>
+                {moduleSettings.module_damage_reports && (
+                  <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
+                      <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={moduleSettings.module_damage_reports_demo}
+                        onChange={(e) => setModuleSettings({ ...moduleSettings, module_damage_reports_demo: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                    </label>
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-800">Speciaal Gereedschap</p>
-                  <p className="text-sm text-gray-500">Beheer speciaal gereedschap en onderhoud</p>
+              <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="font-medium text-gray-800">Speciaal Gereedschap</p>
+                    <p className="text-sm text-gray-500">Beheer speciaal gereedschap en onderhoud</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_special_tools}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_special_tools: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  </label>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={moduleSettings.module_special_tools}
-                    onChange={(e) => setModuleSettings({ ...moduleSettings, module_special_tools: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                </label>
+                {moduleSettings.module_special_tools && (
+                  <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
+                      <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={moduleSettings.module_special_tools_demo}
+                        onChange={(e) => setModuleSettings({ ...moduleSettings, module_special_tools_demo: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                    </label>
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-800">Factuur Generatie</p>
-                  <p className="text-sm text-gray-500">Genereer facturen vanuit projecten</p>
+              <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="font-medium text-gray-800">Factuur Generatie</p>
+                    <p className="text-sm text-gray-500">Genereer facturen vanuit projecten</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_invoicing}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_invoicing: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  </label>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={moduleSettings.module_invoicing}
-                    onChange={(e) => setModuleSettings({ ...moduleSettings, module_invoicing: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                </label>
+                {moduleSettings.module_invoicing && (
+                  <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
+                      <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={moduleSettings.module_invoicing_demo}
+                        onChange={(e) => setModuleSettings({ ...moduleSettings, module_invoicing_demo: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                    </label>
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-800">Uurtarieven Instellingen</p>
-                  <p className="text-sm text-gray-500">Beheer uurtarieven voor medewerkers</p>
+              <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="font-medium text-gray-800">Uurtarieven Instellingen</p>
+                    <p className="text-sm text-gray-500">Beheer uurtarieven voor medewerkers</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_hourly_rates}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_hourly_rates: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  </label>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={moduleSettings.module_hourly_rates}
-                    onChange={(e) => setModuleSettings({ ...moduleSettings, module_hourly_rates: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                </label>
+                {moduleSettings.module_hourly_rates && (
+                  <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
+                      <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={moduleSettings.module_hourly_rates_demo}
+                        onChange={(e) => setModuleSettings({ ...moduleSettings, module_hourly_rates_demo: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                    </label>
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-800">Meldingen</p>
-                  <p className="text-sm text-gray-500">Systeem meldingen en beheer</p>
+              <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="font-medium text-gray-800">Meldingen</p>
+                    <p className="text-sm text-gray-500">Systeem meldingen en beheer</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_notifications}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_notifications: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  </label>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={moduleSettings.module_notifications}
-                    onChange={(e) => setModuleSettings({ ...moduleSettings, module_notifications: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                </label>
+                {moduleSettings.module_notifications && (
+                  <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
+                      <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={moduleSettings.module_notifications_demo}
+                        onChange={(e) => setModuleSettings({ ...moduleSettings, module_notifications_demo: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                    </label>
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-800">E-mail Notificaties</p>
-                  <p className="text-sm text-gray-500">Automatische e-mail notificaties</p>
+              <div className="p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="font-medium text-gray-800">E-mail Notificaties</p>
+                    <p className="text-sm text-gray-500">Automatische e-mail notificaties</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_email_notifications}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_email_notifications: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                  </label>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={moduleSettings.module_email_notifications}
-                    onChange={(e) => setModuleSettings({ ...moduleSettings, module_email_notifications: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                </label>
+                {moduleSettings.module_email_notifications && (
+                  <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
+                      <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={moduleSettings.module_email_notifications_demo}
+                        onChange={(e) => setModuleSettings({ ...moduleSettings, module_email_notifications_demo: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                    </label>
+                  </div>
+                )}
               </div>
             </div>
           </div>

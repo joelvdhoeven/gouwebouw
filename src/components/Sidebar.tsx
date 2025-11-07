@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useSystemSettings } from '../contexts/SystemSettingsContext';
 import { supabase } from '../lib/supabase';
 import ProtectedRoute from './ProtectedRoute';
 
@@ -29,76 +30,36 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection, isOpen, onClose }) => {
   const { t } = useLanguage();
-  const { hasPermission } = useAuth();
-  const [moduleSettings, setModuleSettings] = useState<any>(null);
-
-  useEffect(() => {
-    loadModuleSettings();
-
-    // Subscribe to changes
-    const subscription = supabase
-      .channel('system_settings_sidebar')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'system_settings'
-      }, () => {
-        loadModuleSettings();
-      })
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const loadModuleSettings = async () => {
-    try {
-      const { data } = await supabase
-        .from('system_settings')
-        .select('*')
-        .maybeSingle();
-
-      setModuleSettings(data || {
-        module_invoicing: true,
-        module_hourly_rates: true,
-        module_damage_reports: true,
-        module_inventory: true,
-        module_notifications: true,
-        module_email_notifications: true,
-        module_time_registration: true,
-        module_special_tools: true,
-        module_financial_dashboard: true,
-      });
-    } catch (error) {
-      console.error('Error loading module settings:', error);
-    }
-  };
+  const { hasPermission, user } = useAuth();
+  const { isModuleVisible } = useSystemSettings();
 
   const allMenuItems = [
     { id: 'dashboard', label: t('dashboard'), icon: Home, permission: 'view_dashboard', module: null },
-    { id: 'financieel-dashboard', label: 'Financieel Dashboard', icon: TrendingUp, permission: 'manage_settings', module: 'module_financial_dashboard' },
-    { id: 'urenregistratie', label: t('urenregistratie'), icon: Clock, permission: 'register_hours', module: 'module_time_registration' },
-    { id: 'mijn-notificaties', label: 'Notificaties', icon: Bell, permission: 'register_hours', module: 'module_notifications' },
-    { id: 'voorraad-afboeken', label: 'Voorraad Afboeken', icon: Package, permission: 'view_dashboard', module: 'module_inventory' },
-    { id: 'voorraadbeheer', label: 'Voorraadbeheer', icon: Package, permission: 'manage_settings', module: 'module_inventory' },
-    { id: 'speciaal-gereedschap', label: t('specialGereedschap'), icon: Wrench, permission: 'view_tools', module: 'module_special_tools' },
+    { id: 'financieel-dashboard', label: 'Financieel Dashboard', icon: TrendingUp, permission: 'manage_settings', module: 'financial_dashboard' },
+    { id: 'urenregistratie', label: t('urenregistratie'), icon: Clock, permission: 'register_hours', module: 'time_registration' },
+    { id: 'mijn-notificaties', label: 'Notificaties', icon: Bell, permission: 'register_hours', module: 'notifications' },
+    { id: 'voorraad-afboeken', label: 'Voorraad Afboeken', icon: Package, permission: 'view_dashboard', module: 'inventory' },
+    { id: 'voorraadbeheer', label: 'Voorraadbeheer', icon: Package, permission: 'manage_settings', module: 'inventory' },
+    { id: 'speciaal-gereedschap', label: t('specialGereedschap'), icon: Wrench, permission: 'view_tools', module: 'special_tools' },
     { id: 'projecten', label: t('projecten'), icon: FolderOpen, permission: 'view_projects', module: null },
-    { id: 'schademeldingen', label: t('schademeldingen'), icon: AlertTriangle, permission: 'view_damage_reports', module: 'module_damage_reports' },
+    { id: 'schademeldingen', label: t('schademeldingen'), icon: AlertTriangle, permission: 'view_damage_reports', module: 'damage_reports' },
     { id: 'ticket-omgeving', label: 'Ticket Omgeving', icon: Ticket, permission: 'create_tickets', module: null },
     { id: 'tickets-overzicht', label: 'Tickets Overzicht', icon: Ticket, permission: 'view_all_tickets', module: null },
     { id: 'gebruikers', label: t('gebruikers'), icon: Users, permission: 'manage_users', module: null },
-    { id: 'meldingen', label: t('meldingen'), icon: Bell, permission: 'manage_notifications', module: 'module_notifications' },
-    { id: 'email-notificaties', label: 'E-mail Notificaties', icon: Mail, permission: 'manage_settings', module: 'module_email_notifications' },
-    { id: 'factuur-instellingen', label: 'Factuur Instellingen', icon: FileText, permission: 'manage_settings', module: 'module_invoicing' },
+    { id: 'meldingen', label: t('meldingen'), icon: Bell, permission: 'manage_notifications', module: 'notifications' },
+    { id: 'email-notificaties', label: 'E-mail Notificaties', icon: Mail, permission: 'manage_settings', module: 'email_notifications' },
+    { id: 'factuur-instellingen', label: 'Factuur Instellingen', icon: FileText, permission: 'manage_settings', module: 'invoicing' },
     { id: 'instellingen', label: t('instellingen'), icon: Settings, permission: 'view_dashboard', module: null },
   ];
 
-  // Filter menu items based on user permissions AND module settings
+  // Filter menu items based on user permissions AND module visibility (including demo mode)
   const menuItems = allMenuItems.filter(item => {
     const hasPerms = hasPermission(item.permission);
-    const moduleEnabled = !item.module || !moduleSettings || moduleSettings[item.module] !== false;
-    return hasPerms && moduleEnabled;
+    // If no module specified, just check permissions
+    if (!item.module) return hasPerms;
+    // Check if module is visible (considers both enabled state and demo mode)
+    const moduleVisible = isModuleVisible(item.module, user?.rol);
+    return hasPerms && moduleVisible;
   });
 
   return (
