@@ -10,13 +10,25 @@ interface SystemSettings {
   module_email_notifications: boolean;
   module_time_registration: boolean;
   module_special_tools: boolean;
+  module_financial_dashboard: boolean;
   csv_separator: ',' | ';';
+  // Demo mode fields - when true, module only visible to admins
+  module_invoicing_demo: boolean;
+  module_hourly_rates_demo: boolean;
+  module_damage_reports_demo: boolean;
+  module_inventory_demo: boolean;
+  module_notifications_demo: boolean;
+  module_email_notifications_demo: boolean;
+  module_time_registration_demo: boolean;
+  module_special_tools_demo: boolean;
+  module_financial_dashboard_demo: boolean;
 }
 
 interface SystemSettingsContextType {
   settings: SystemSettings | null;
   loading: boolean;
   isModuleEnabled: (module: keyof SystemSettings) => boolean;
+  isModuleVisible: (module: string, userRole?: string) => boolean;
   refreshSettings: () => Promise<void>;
   getCsvSeparator: () => string;
 }
@@ -46,10 +58,20 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
           module_email_notifications: data.module_email_notifications,
           module_time_registration: data.module_time_registration,
           module_special_tools: data.module_special_tools,
+          module_financial_dashboard: data.module_financial_dashboard,
           csv_separator: data.csv_separator || ';',
+          module_invoicing_demo: data.module_invoicing_demo || false,
+          module_hourly_rates_demo: data.module_hourly_rates_demo || false,
+          module_damage_reports_demo: data.module_damage_reports_demo || false,
+          module_inventory_demo: data.module_inventory_demo || false,
+          module_notifications_demo: data.module_notifications_demo || false,
+          module_email_notifications_demo: data.module_email_notifications_demo || false,
+          module_time_registration_demo: data.module_time_registration_demo || false,
+          module_special_tools_demo: data.module_special_tools_demo || false,
+          module_financial_dashboard_demo: data.module_financial_dashboard_demo || false,
         });
       } else {
-        // Default: alle modules aan
+        // Default: alle modules aan, demo mode uit
         setSettings({
           module_invoicing: true,
           module_hourly_rates: true,
@@ -59,12 +81,22 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
           module_email_notifications: true,
           module_time_registration: true,
           module_special_tools: true,
+          module_financial_dashboard: true,
           csv_separator: ';',
+          module_invoicing_demo: false,
+          module_hourly_rates_demo: false,
+          module_damage_reports_demo: false,
+          module_inventory_demo: false,
+          module_notifications_demo: false,
+          module_email_notifications_demo: false,
+          module_time_registration_demo: false,
+          module_special_tools_demo: false,
+          module_financial_dashboard_demo: false,
         });
       }
     } catch (error) {
       console.error('Error loading system settings:', error);
-      // Default: alle modules aan bij error
+      // Default: alle modules aan bij error, demo mode uit
       setSettings({
         module_invoicing: true,
         module_hourly_rates: true,
@@ -74,7 +106,17 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
         module_email_notifications: true,
         module_time_registration: true,
         module_special_tools: true,
+        module_financial_dashboard: true,
         csv_separator: ';',
+        module_invoicing_demo: false,
+        module_hourly_rates_demo: false,
+        module_damage_reports_demo: false,
+        module_inventory_demo: false,
+        module_notifications_demo: false,
+        module_email_notifications_demo: false,
+        module_time_registration_demo: false,
+        module_special_tools_demo: false,
+        module_financial_dashboard_demo: false,
       });
     } finally {
       setLoading(false);
@@ -106,6 +148,32 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
     return settings[module];
   };
 
+  /**
+   * Check if a module is visible to the current user
+   * @param module - Module name (e.g., 'time_registration', 'inventory')
+   * @param userRole - User role ('admin', 'superuser', 'medewerker', etc.)
+   * @returns true if module should be visible, false otherwise
+   */
+  const isModuleVisible = (module: string, userRole?: string): boolean => {
+    if (!settings) return true; // Default: visible if settings not loaded
+
+    // Check if module is enabled
+    const moduleKey = `module_${module}` as keyof SystemSettings;
+    const demoKey = `module_${module}_demo` as keyof SystemSettings;
+
+    const isEnabled = settings[moduleKey];
+    const isDemoMode = settings[demoKey];
+
+    // If module is disabled, it's not visible to anyone
+    if (!isEnabled) return false;
+
+    // If not in demo mode, visible to everyone
+    if (!isDemoMode) return true;
+
+    // In demo mode, only visible to admin and superuser
+    return userRole === 'admin' || userRole === 'superuser';
+  };
+
   const refreshSettings = async () => {
     await loadSettings();
   };
@@ -115,7 +183,7 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
   };
 
   return (
-    <SystemSettingsContext.Provider value={{ settings, loading, isModuleEnabled, refreshSettings, getCsvSeparator }}>
+    <SystemSettingsContext.Provider value={{ settings, loading, isModuleEnabled, isModuleVisible, refreshSettings, getCsvSeparator }}>
       {children}
     </SystemSettingsContext.Provider>
   );
