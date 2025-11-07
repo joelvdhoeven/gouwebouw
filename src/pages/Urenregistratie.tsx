@@ -263,7 +263,8 @@ const Urenregistratie: React.FC = () => {
         const kilometers = formData.kilometers ? parseFloat(formData.kilometers) : 0;
 
         // Insert each work line as a separate time registration
-        const registrations = workLines.map(line => ({
+        // Only add kilometers to the first work line to avoid duplication
+        const registrations = workLines.map((line, index) => ({
           user_id: user.id,
           project_id: selectedProjectId || null,
           project_naam: projectName,
@@ -271,7 +272,7 @@ const Urenregistratie: React.FC = () => {
           werktype: line.werktype,
           aantal_uren: line.aantal_uren,
           werkomschrijving: line.werkomschrijving,
-          driven_kilometers: kilometers,
+          driven_kilometers: index === 0 ? kilometers : 0,
           status: 'submitted',
           progress_percentage: formData.voortgang ? parseInt(formData.voortgang) : null,
           materials: line.materials && line.materials.length > 0 ? line.materials : []
