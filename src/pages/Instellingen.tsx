@@ -426,23 +426,21 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                {moduleSettings.module_financial_dashboard && (
-                  <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
-                      <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={moduleSettings.module_financial_dashboard_demo}
-                        onChange={(e) => setModuleSettings({ ...moduleSettings, module_financial_dashboard_demo: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
-                    </label>
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
                   </div>
-                )}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_financial_dashboard_demo}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_financial_dashboard_demo: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                  </label>
+                </div>
               </div>
 
               <div className="p-4 border border-gray-200 rounded-lg">
@@ -461,23 +459,21 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                {moduleSettings.module_time_registration && (
-                  <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
-                      <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={moduleSettings.module_time_registration_demo}
-                        onChange={(e) => setModuleSettings({ ...moduleSettings, module_time_registration_demo: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
-                    </label>
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
                   </div>
-                )}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_time_registration_demo}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_time_registration_demo: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                  </label>
+                </div>
               </div>
 
               <div className="p-4 border border-gray-200 rounded-lg">
@@ -496,23 +492,21 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                {moduleSettings.module_inventory && (
-                  <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
-                      <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={moduleSettings.module_inventory_demo}
-                        onChange={(e) => setModuleSettings({ ...moduleSettings, module_inventory_demo: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
-                    </label>
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
                   </div>
-                )}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_inventory_demo}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_inventory_demo: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                  </label>
+                </div>
               </div>
 
               <div className="p-4 border border-gray-200 rounded-lg">
@@ -531,23 +525,21 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                {moduleSettings.module_damage_reports && (
-                  <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
-                      <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={moduleSettings.module_damage_reports_demo}
-                        onChange={(e) => setModuleSettings({ ...moduleSettings, module_damage_reports_demo: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
-                    </label>
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
                   </div>
-                )}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_damage_reports_demo}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_damage_reports_demo: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                  </label>
+                </div>
               </div>
 
               <div className="p-4 border border-gray-200 rounded-lg">
@@ -566,23 +558,21 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                {moduleSettings.module_special_tools && (
-                  <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
-                      <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={moduleSettings.module_special_tools_demo}
-                        onChange={(e) => setModuleSettings({ ...moduleSettings, module_special_tools_demo: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
-                    </label>
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
                   </div>
-                )}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_special_tools_demo}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_special_tools_demo: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                  </label>
+                </div>
               </div>
 
               <div className="p-4 border border-gray-200 rounded-lg">
@@ -601,23 +591,21 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                {moduleSettings.module_invoicing && (
-                  <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
-                      <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={moduleSettings.module_invoicing_demo}
-                        onChange={(e) => setModuleSettings({ ...moduleSettings, module_invoicing_demo: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
-                    </label>
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
                   </div>
-                )}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_invoicing_demo}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_invoicing_demo: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                  </label>
+                </div>
               </div>
 
               <div className="p-4 border border-gray-200 rounded-lg">
@@ -636,23 +624,21 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                {moduleSettings.module_hourly_rates && (
-                  <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
-                      <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={moduleSettings.module_hourly_rates_demo}
-                        onChange={(e) => setModuleSettings({ ...moduleSettings, module_hourly_rates_demo: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
-                    </label>
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
                   </div>
-                )}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_hourly_rates_demo}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_hourly_rates_demo: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                  </label>
+                </div>
               </div>
 
               <div className="p-4 border border-gray-200 rounded-lg">
@@ -671,23 +657,21 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                {moduleSettings.module_notifications && (
-                  <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
-                      <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={moduleSettings.module_notifications_demo}
-                        onChange={(e) => setModuleSettings({ ...moduleSettings, module_notifications_demo: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
-                    </label>
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
                   </div>
-                )}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_notifications_demo}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_notifications_demo: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                  </label>
+                </div>
               </div>
 
               <div className="p-4 border border-gray-200 rounded-lg">
@@ -706,23 +690,21 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                {moduleSettings.module_email_notifications && (
-                  <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
-                      <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={moduleSettings.module_email_notifications_demo}
-                        onChange={(e) => setModuleSettings({ ...moduleSettings, module_email_notifications_demo: e.target.checked })}
-                        className="sr-only peer"
-                      />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
-                    </label>
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
                   </div>
-                )}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_email_notifications_demo}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_email_notifications_demo: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
