@@ -6,7 +6,11 @@ import App from './App.tsx';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { SystemSettingsProvider } from './contexts/SystemSettingsContext';
+import { checkAndUpdateVersion } from './utils/versionCheck';
 import './index.css';
+
+// Check version and force reload if updated (prevents cache issues)
+checkAndUpdateVersion();
 
 // Register Dutch locale for DatePicker
 registerLocale('nl', nl);
