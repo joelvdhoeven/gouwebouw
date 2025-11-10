@@ -164,14 +164,25 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
     const isEnabled = settings[moduleKey];
     const isDemoMode = settings[demoKey];
 
+    console.log(`[isModuleVisible] Module: ${module}, UserRole: ${userRole}`);
+    console.log(`[isModuleVisible] IsEnabled: ${isEnabled}, IsDemoMode: ${isDemoMode}`);
+
     // If module is disabled, it's not visible to anyone
-    if (!isEnabled) return false;
+    if (!isEnabled) {
+      console.log(`[isModuleVisible] Module ${module} is DISABLED - returning false`);
+      return false;
+    }
 
     // If not in demo mode, visible to everyone
-    if (!isDemoMode) return true;
+    if (!isDemoMode) {
+      console.log(`[isModuleVisible] Module ${module} is NOT in demo mode - returning true`);
+      return true;
+    }
 
     // In demo mode, only visible to admin and superuser
-    return userRole === 'admin' || userRole === 'superuser';
+    const isVisible = userRole === 'admin' || userRole === 'superuser';
+    console.log(`[isModuleVisible] Module ${module} IS in demo mode - visible only to admin/superuser: ${isVisible}`);
+    return isVisible;
   };
 
   const refreshSettings = async () => {

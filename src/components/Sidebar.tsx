@@ -57,9 +57,19 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection, isOp
     const hasPerms = hasPermission(item.permission);
     // If no module specified, just check permissions
     if (!item.module) return hasPerms;
+
+    console.log(`[Sidebar] Checking menu item: ${item.label}`);
+    console.log(`[Sidebar] Module: ${item.module}, User role: ${user?.rol}`);
+    console.log(`[Sidebar] Has permissions: ${hasPerms}`);
+
     // Check if module is visible (considers both enabled state and demo mode)
     const moduleVisible = isModuleVisible(item.module, user?.rol);
-    return hasPerms && moduleVisible;
+    console.log(`[Sidebar] Module visible: ${moduleVisible}`);
+
+    const result = hasPerms && moduleVisible;
+    console.log(`[Sidebar] Final result for ${item.label}: ${result}`);
+
+    return result;
   });
 
   return (
