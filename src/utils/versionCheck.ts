@@ -3,7 +3,7 @@
  * This prevents cached files from causing issues with new features
  */
 
-const APP_VERSION = '1.2.1'; // Should match package.json version
+const APP_VERSION = '1.2.2'; // Should match package.json version
 const VERSION_KEY = 'app_version';
 
 export const checkAndUpdateVersion = (): void => {
