@@ -153,11 +153,14 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
    * @param module - Module name (e.g., 'time_registration', 'inventory')
    * @param userRole - User role ('admin', 'superuser', 'medewerker', etc.)
    * @returns true if module should be visible, false otherwise
+   *
+   * Logic:
+   * - If DEMO MODE is ON: only admin/superuser can see it (regardless of enabled state)
+   * - If DEMO MODE is OFF: everyone can see it (but only if module is enabled)
    */
   const isModuleVisible = (module: string, userRole?: string): boolean => {
     if (!settings) return true; // Default: visible if settings not loaded
 
-    // Check if module is enabled
     const moduleKey = `module_${module}` as keyof SystemSettings;
     const demoKey = `module_${module}_demo` as keyof SystemSettings;
 
@@ -167,22 +170,21 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
     console.log(`[isModuleVisible] Module: ${module}, UserRole: ${userRole}`);
     console.log(`[isModuleVisible] IsEnabled: ${isEnabled}, IsDemoMode: ${isDemoMode}`);
 
-    // If module is disabled, it's not visible to anyone
+    // DEMO MODE LOGIC: If demo mode is ON, only admin/superuser can see it
+    if (isDemoMode) {
+      const isAdminOrSuperuser = userRole === 'admin' || userRole === 'superuser';
+      console.log(`[isModuleVisible] DEMO MODE ON - Only visible to admin/superuser: ${isAdminOrSuperuser}`);
+      return isAdminOrSuperuser;
+    }
+
+    // NORMAL MODE LOGIC: If demo mode is OFF, check if module is enabled
     if (!isEnabled) {
-      console.log(`[isModuleVisible] Module ${module} is DISABLED - returning false`);
+      console.log(`[isModuleVisible] DEMO MODE OFF but module DISABLED - returning false`);
       return false;
     }
 
-    // If not in demo mode, visible to everyone
-    if (!isDemoMode) {
-      console.log(`[isModuleVisible] Module ${module} is NOT in demo mode - returning true`);
-      return true;
-    }
-
-    // In demo mode, only visible to admin and superuser
-    const isVisible = userRole === 'admin' || userRole === 'superuser';
-    console.log(`[isModuleVisible] Module ${module} IS in demo mode - visible only to admin/superuser: ${isVisible}`);
-    return isVisible;
+    console.log(`[isModuleVisible] DEMO MODE OFF and module ENABLED - returning true`);
+    return true;
   };
 
   const refreshSettings = async () => {
