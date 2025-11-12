@@ -93,6 +93,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
   const [showScanner, setShowScanner] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanningForLineIndex, setScanningForLineIndex] = useState<number | null>(null);
+  const [scannedValue, setScannedValue] = useState<string>('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   // Messages
@@ -239,6 +240,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
       setShowScanner(true);
       setScanning(true);
       setScanningForLineIndex(lineIndex);
+      setScannedValue('');
       setErrorMessage('');
 
       const cameras = await Html5Qrcode.getCameras();
@@ -292,13 +294,33 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
     setShowScanner(false);
     setScanning(false);
     setScanningForLineIndex(null);
+    setScannedValue('');
   };
 
   const handleScanSuccess = async (decodedText: string) => {
-    if (scanningForLineIndex !== null) {
+    // Stop scanning but keep modal open to show scanned value
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current.clear();
+        scannerRef.current = null;
+      } catch (error) {
+        console.error('Error stopping scanner:', error);
+      }
+    }
+    setScanning(false);
+    setScannedValue(decodedText);
+  };
+
+  const handleConfirmScan = () => {
+    if (scanningForLineIndex !== null && scannedValue) {
       const lineIndex = scanningForLineIndex;
-      await stopScanning();
-      updateLineSearch(lineIndex, decodedText);
+      updateLineSearch(lineIndex, scannedValue);
+
+      // Close scanner modal
+      setShowScanner(false);
+      setScanningForLineIndex(null);
+      setScannedValue('');
 
       setTimeout(() => {
         const inputElement = document.querySelector(`input[placeholder*="Zoek"]`) as HTMLInputElement;
@@ -434,22 +456,22 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
       {/* Progress Steps */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-8">
-          <div className={`flex items-center ${currentStep === 'action' ? 'text-red-600' : currentStep !== 'action' ? 'text-green-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === 'action' ? 'border-red-600 bg-red-50' : currentStep !== 'action' ? 'border-green-600 bg-green-50' : 'border-gray-300'}`}>
+          <div className={`flex items-center ${currentStep === 'action' ? 'text-red-600' : currentStep !== 'action' ? 'text-red-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === 'action' ? 'border-red-600 bg-red-50' : currentStep !== 'action' ? 'border-red-600 bg-red-50' : 'border-gray-300'}`}>
               1
             </div>
             <span className="ml-2 font-medium">Actie</span>
           </div>
           <div className="flex-1 h-0.5 bg-gray-300 mx-4"></div>
-          <div className={`flex items-center ${currentStep === 'customer' ? 'text-red-600' : ['products', 'overview'].includes(currentStep) ? 'text-green-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === 'customer' ? 'border-red-600 bg-red-50' : ['products', 'overview'].includes(currentStep) ? 'border-green-600 bg-green-50' : 'border-gray-300'}`}>
+          <div className={`flex items-center ${currentStep === 'customer' ? 'text-red-600' : ['products', 'overview'].includes(currentStep) ? 'text-red-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === 'customer' ? 'border-red-600 bg-red-50' : ['products', 'overview'].includes(currentStep) ? 'border-red-600 bg-red-50' : 'border-gray-300'}`}>
               2
             </div>
             <span className="ml-2 font-medium">Klant</span>
           </div>
           <div className="flex-1 h-0.5 bg-gray-300 mx-4"></div>
-          <div className={`flex items-center ${currentStep === 'products' ? 'text-red-600' : currentStep === 'overview' ? 'text-green-600' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === 'products' ? 'border-red-600 bg-red-50' : currentStep === 'overview' ? 'border-green-600 bg-green-50' : 'border-gray-300'}`}>
+          <div className={`flex items-center ${currentStep === 'products' ? 'text-red-600' : currentStep === 'overview' ? 'text-red-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === 'products' ? 'border-red-600 bg-red-50' : currentStep === 'overview' ? 'border-red-600 bg-red-50' : 'border-gray-300'}`}>
               3
             </div>
             <span className="ml-2 font-medium">Producten</span>
@@ -458,9 +480,9 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
 
         {/* Success/Error Messages */}
         {successMessage && (
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-            <CheckCircle className="text-green-600" size={20} />
-            <span className="text-green-800">{successMessage}</span>
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+            <CheckCircle className="text-red-600" size={20} />
+            <span className="text-red-800">{successMessage}</span>
           </div>
         )}
 
@@ -620,7 +642,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
 
                     <button
                       onClick={() => startScanning(index)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
+                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
                     >
                       <Scan size={18} />
                       Scan
@@ -709,7 +731,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
               <button
                 onClick={handleSubmitBooking}
                 disabled={loadingStock}
-                className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <CheckCircle size={18} />
                 {loadingStock ? 'Bezig met afboeken...' : 'Afboeken Bevestigen'}
@@ -732,7 +754,31 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
                 <X size={24} />
               </button>
             </div>
-            <div id="qr-reader" className="w-full"></div>
+
+            {/* Camera Scanner */}
+            {scanning && <div id="qr-reader" className="w-full mb-4"></div>}
+
+            {/* Scanned Value Display */}
+            {scannedValue && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Gescande waarde:
+                  </label>
+                  <div className="px-4 py-3 bg-red-50 border-2 border-red-500 rounded-md">
+                    <p className="text-lg font-mono text-red-900 break-all">{scannedValue}</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleConfirmScan}
+                  className="w-full px-6 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2 transition-colors font-medium"
+                >
+                  <CheckCircle size={20} />
+                  Doorgaan
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

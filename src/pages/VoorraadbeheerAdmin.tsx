@@ -803,21 +803,26 @@ const VoorraadbeheerAdmin: React.FC = () => {
     try {
       let photoPath: string | null = null;
 
-      // Upload photo if provided
+      // Upload photo if provided (skip if bucket doesn't exist)
       if (newProductPhoto) {
-        const fileExt = newProductPhoto.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `product-photos/${fileName}`;
+        try {
+          const fileExt = newProductPhoto.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const filePath = `product-photos/${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from('product-images')
-          .upload(filePath, newProductPhoto);
+          const { error: uploadError } = await supabase.storage
+            .from('product-images')
+            .upload(filePath, newProductPhoto);
 
-        if (uploadError) {
-          console.error('Error uploading photo:', uploadError);
-          alert('Fout bij uploaden foto. Product wordt toegevoegd zonder foto.');
-        } else {
-          photoPath = filePath;
+          if (uploadError) {
+            console.error('Error uploading photo:', uploadError);
+            // Continue without photo - don't block product creation
+          } else {
+            photoPath = filePath;
+          }
+        } catch (photoError) {
+          console.error('Photo upload failed:', photoError);
+          // Continue without photo - don't block product creation
         }
       }
 
@@ -1102,7 +1107,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Voorraadbeheer</h1>
           <p className="text-gray-600">Beheer voorraad en boek materiaal af op projecten</p>
@@ -1156,11 +1161,11 @@ const VoorraadbeheerAdmin: React.FC = () => {
             <div className="space-y-4">
               {selectedStockIds.size > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <span className="text-blue-900 font-medium">
                       {selectedStockIds.size} item(s) geselecteerd
                     </span>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
                         onClick={selectAllStock}
                         className="px-3 py-1.5 text-sm bg-white border border-blue-300 text-blue-700 rounded hover:bg-blue-50"
@@ -1195,15 +1200,15 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   </div>
                 </div>
               )}
-              <div className="flex justify-between items-center gap-2 pb-4 border-b border-gray-200">
+              <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pb-4 border-b border-gray-200">
                 <button
                   onClick={() => setShowBookingModal(true)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2"
                 >
                   <ScanLine size={18} />
                   Materiaal Boeken
                 </button>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {canManage && (
                     <>
                       <button
@@ -1251,7 +1256,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   )}
                 </div>
               </div>
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
                   <input
@@ -1265,7 +1270,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="">Alle Categorieën</option>
                   {categories.map(cat => (
@@ -1275,7 +1280,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 <select
                   value={materialGroupFilter}
                   onChange={(e) => setMaterialGroupFilter(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="">Alle Materiaalgroepen</option>
                   {materialGroups.map(group => (
@@ -1287,7 +1292,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 <select
                   value={locationFilter}
                   onChange={(e) => setLocationFilter(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="">Alle Locaties</option>
                   {locations.map(loc => (
@@ -1594,7 +1599,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
             </div>
 
             <div className="p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Minimale Voorraad</label>
                   <input
@@ -1719,7 +1724,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
             </div>
 
             <div className="p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Project</label>
                   <select
@@ -1901,7 +1906,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Inkoopprijs (€)</label>
                   <input
@@ -2056,7 +2061,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
             </div>
 
             <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4 pb-4 border-b border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-gray-200">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Type</label>
                   <p className="text-gray-900">{selectedLocationForDetails.type === 'bus' ? 'Bus' : 'Magazijn'}</p>
@@ -2331,7 +2336,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Materiaalomschrijving *</label>
                   <input
