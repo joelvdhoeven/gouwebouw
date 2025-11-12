@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Package, Search, Plus, AlertCircle, Truck, Warehouse, Download, Upload, ScanLine, Filter, X, Edit, Trash2, Eye, ArrowRightLeft, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Package, Search, Plus, AlertCircle, Truck, Warehouse, Download, Upload, ScanLine, Filter, X, Edit, Trash2, Eye, ArrowRightLeft, Image as ImageIcon, Camera } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystemSettings } from '../contexts/SystemSettingsContext';
@@ -149,6 +149,9 @@ const VoorraadbeheerAdmin: React.FC = () => {
   });
   const [newProductPhoto, setNewProductPhoto] = useState<File | null>(null);
   const [newProductPhotoPreview, setNewProductPhotoPreview] = useState<string | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const [showMoveStockModal, setShowMoveStockModal] = useState(false);
   const [moveStockData, setMoveStockData] = useState<{
@@ -850,7 +853,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
       if (error) throw error;
 
       alert('Product succesvol toegevoegd!');
-      setShowAddProductModal(false);
+      closeAddProductModal();
       setNewProductData({
         name: '',
         sku: '',
@@ -875,6 +878,74 @@ const VoorraadbeheerAdmin: React.FC = () => {
       console.error('Error adding product:', error);
       alert('Fout bij het toevoegen van product');
     }
+  };
+
+  // Camera functions for product photo
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: 1280, height: 720 }
+      });
+      setCameraStream(stream);
+      setShowCamera(true);
+
+      // Wait for video element to be ready
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      }, 100);
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      alert('Kon camera niet starten. Controleer de camera permissies.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], `product-photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+            setNewProductPhoto(file);
+
+            // Create preview
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              setNewProductPhotoPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+
+            // Stop camera
+            stopCamera();
+          }
+        }, 'image/jpeg', 0.9);
+      }
+    }
+  };
+
+  const closeAddProductModal = () => {
+    // Stop camera if running
+    stopCamera();
+    // Reset form
+    setNewProductPhoto(null);
+    setNewProductPhotoPreview(null);
+    setShowAddProductModal(false);
   };
 
   const handleEditFullProduct = (product: Product) => {
@@ -2289,14 +2360,14 @@ const VoorraadbeheerAdmin: React.FC = () => {
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
               <h2 className="text-xl font-bold text-gray-900">Product Toevoegen</h2>
-              <button onClick={() => setShowAddProductModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={closeAddProductModal} className="text-gray-400 hover:text-gray-600">
                 <X size={24} />
               </button>
             </div>
 
             <div className="p-6 space-y-4">
               {/* Photo Upload Section */}
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
                 <input
                   type="file"
                   id="product-photo"
@@ -2314,25 +2385,73 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   }}
                   className="hidden"
                 />
-                {newProductPhotoPreview ? (
-                  <div className="relative">
-                    <img src={newProductPhotoPreview} alt="Preview" className="mx-auto max-h-40 rounded" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNewProductPhoto(null);
-                        setNewProductPhotoPreview(null);
-                      }}
-                      className="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
-                    >
-                      <X size={16} />
-                    </button>
+
+                {showCamera ? (
+                  /* Camera Preview */
+                  <div className="space-y-3">
+                    <div className="relative bg-black rounded-lg overflow-hidden">
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        className="w-full max-h-80 object-contain"
+                      />
+                    </div>
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        type="button"
+                        onClick={capturePhoto}
+                        className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
+                      >
+                        <Camera size={18} />
+                        Foto Maken
+                      </button>
+                      <button
+                        type="button"
+                        onClick={stopCamera}
+                        className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                      >
+                        Annuleren
+                      </button>
+                    </div>
+                  </div>
+                ) : newProductPhotoPreview ? (
+                  /* Photo Preview */
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <img src={newProductPhotoPreview} alt="Preview" className="mx-auto max-h-60 rounded" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewProductPhoto(null);
+                          setNewProductPhotoPreview(null);
+                        }}
+                        className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 hover:bg-red-700 shadow-lg"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  <label htmlFor="product-photo" className="cursor-pointer">
+                  /* Upload Options */
+                  <div className="text-center space-y-4">
                     <ImageIcon size={48} className="mx-auto text-gray-400 mb-2" />
-                    <span className="text-sm text-gray-600">Klik om productfoto te uploaden</span>
-                  </label>
+                    <p className="text-sm text-gray-600 mb-4">Product Foto Toevoegen</p>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                      <label htmlFor="product-photo" className="cursor-pointer px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2">
+                        <Upload size={18} />
+                        Bestand Kiezen
+                      </label>
+                      <button
+                        type="button"
+                        onClick={startCamera}
+                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2"
+                      >
+                        <Camera size={18} />
+                        Camera Gebruiken
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -2508,7 +2627,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                 <button
-                  onClick={() => setShowAddProductModal(false)}
+                  onClick={closeAddProductModal}
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
                 >
                   Annuleren
