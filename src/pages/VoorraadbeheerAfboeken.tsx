@@ -178,7 +178,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
           profiles(naam),
           projects(naam, project_nummer)
         `)
-        .eq('transaction_type', 'out')
+        .eq('transaction_type', 'outbound')
         .order('created_at', { ascending: false });
 
       // If not admin, only show own transactions
