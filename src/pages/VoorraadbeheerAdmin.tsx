@@ -1519,7 +1519,8 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
           {activeTab === 'producten' && (
             <div className="space-y-4">
-              <div className="flex gap-4 items-center">
+              {/* Search and Actions - Mobile Responsive */}
+              <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
                   <input
@@ -1531,10 +1532,11 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   />
                 </div>
                 {canManage && (
-                  <>
-                    <label className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2 cursor-pointer">
+                  <div className="flex flex-wrap gap-2">
+                    <label className="flex-1 sm:flex-none px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap">
                       <Upload size={18} />
-                      Import CSV
+                      <span className="hidden sm:inline">Import CSV</span>
+                      <span className="sm:hidden">Import</span>
                       <input
                         type="file"
                         accept=".csv"
@@ -1544,19 +1546,21 @@ const VoorraadbeheerAdmin: React.FC = () => {
                     </label>
                     <button
                       onClick={exportProductsToCSV}
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
+                      className="flex-1 sm:flex-none px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2 whitespace-nowrap"
                     >
                       <Download size={18} />
-                      Export CSV
+                      <span className="hidden sm:inline">Export CSV</span>
+                      <span className="sm:hidden">Export</span>
                     </button>
                     <button
                       onClick={() => setShowAddProductModal(true)}
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
+                      className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2 whitespace-nowrap"
                     >
                       <Plus size={18} />
-                      Product Toevoegen
+                      <span className="hidden sm:inline">Product Toevoegen</span>
+                      <span className="sm:hidden">Toevoegen</span>
                     </button>
-                  </>
+                  </div>
                 )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1567,10 +1571,10 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   p.category.toLowerCase().includes(productSearchTerm.toLowerCase())
                 ).map((product) => (
                   <div key={product.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">{product.sku}</span>
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-2 mb-2">
+                      <h3 className="font-semibold text-gray-900 flex-1 break-words">{product.name}</h3>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs bg-gray-100 px-2 py-1 rounded whitespace-nowrap">{product.sku}</span>
                         {canManage && (
                           <>
                             <button
@@ -1593,14 +1597,14 @@ const VoorraadbeheerAdmin: React.FC = () => {
                     </div>
                     <p className="text-sm text-gray-600 mb-2">{product.category}</p>
                     {product.description && (
-                      <p className="text-sm text-gray-500 mb-2">{product.description}</p>
+                      <p className="text-sm text-gray-500 mb-2 line-clamp-2">{product.description}</p>
                     )}
-                    <div className="flex justify-between text-sm">
+                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
                       <span className="text-gray-600">Min. voorraad: {product.minimum_stock}</span>
                       <span className="text-gray-600">Eenheid: {product.unit}</span>
                     </div>
                     {product.ean && (
-                      <div className="mt-2 text-xs text-gray-500">EAN: {product.ean}</div>
+                      <div className="mt-2 text-xs text-gray-500 truncate" title={product.ean}>EAN: {product.ean}</div>
                     )}
                   </div>
                 ))}
