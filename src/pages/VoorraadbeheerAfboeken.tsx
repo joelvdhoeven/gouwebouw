@@ -96,6 +96,13 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
   const [scannedValue, setScannedValue] = useState<string>('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
+  // Search modal
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchingForLineIndex, setSearchingForLineIndex] = useState<number | null>(null);
+  const [searchLocation, setSearchLocation] = useState('');
+  const [searchCategory, setSearchCategory] = useState('');
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+
   // Messages
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -366,6 +373,98 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
       setScannedValue('');
 
       console.log('Scan confirmed, input should be filled now');
+    }
+  };
+
+  // Search modal functions
+  const openSearchModal = (lineIndex: number) => {
+    setSearchingForLineIndex(lineIndex);
+    setShowSearchModal(true);
+    setSearchLocation('');
+    setSearchCategory('');
+    setSearchResults([]);
+  };
+
+  const closeSearchModal = () => {
+    setShowSearchModal(false);
+    setSearchingForLineIndex(null);
+    setSearchLocation('');
+    setSearchCategory('');
+    setSearchResults([]);
+  };
+
+  const handleSearchLocation = async (locationId: string) => {
+    setSearchLocation(locationId);
+    setSearchCategory('');
+
+    if (!locationId) {
+      setSearchResults([]);
+      return;
+    }
+
+    // Get products available in this location from stock
+    const { data: stockData } = await supabase
+      .from('inventory_stock')
+      .select('product_id, inventory_products(*)')
+      .eq('location_id', locationId)
+      .gt('quantity', 0);
+
+    if (stockData) {
+      const productsInLocation = stockData
+        .map(s => s.inventory_products)
+        .filter(Boolean) as Product[];
+      setSearchResults(productsInLocation);
+    }
+  };
+
+  const handleSearchCategory = async (category: string) => {
+    setSearchCategory(category);
+
+    if (!searchLocation) {
+      return;
+    }
+
+    // Get products from stock filtered by location
+    const { data: stockData } = await supabase
+      .from('inventory_stock')
+      .select('product_id, inventory_products(*)')
+      .eq('location_id', searchLocation)
+      .gt('quantity', 0);
+
+    if (stockData) {
+      let productsInLocation = stockData
+        .map(s => s.inventory_products)
+        .filter(Boolean) as Product[];
+
+      // Filter by category if selected
+      if (category) {
+        productsInLocation = productsInLocation.filter(p => p.category === category);
+      }
+
+      setSearchResults(productsInLocation);
+    }
+  };
+
+  const getAvailableCategories = () => {
+    const categories = new Set(searchResults.map(p => p.category).filter(Boolean));
+    return Array.from(categories).sort();
+  };
+
+  const selectProductFromSearch = (product: Product) => {
+    if (searchingForLineIndex !== null) {
+      const lineIndex = searchingForLineIndex;
+
+      // Update the product line
+      const newLines = [...productLines];
+      newLines[lineIndex].product = product;
+      newLines[lineIndex].searchValue = product.name;
+      newLines[lineIndex].unit = product.unit;
+      newLines[lineIndex].location = searchLocation;
+      newLines[lineIndex].showDropdown = false;
+      setProductLines(newLines);
+
+      // Close modal
+      closeSearchModal();
     }
   };
 
@@ -678,13 +777,22 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
                       )}
                     </div>
 
-                    <button
-                      onClick={() => startScanning(index)}
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
-                    >
-                      <Scan size={18} />
-                      Scan
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => openSearchModal(index)}
+                        className="p-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                        title="Zoeken"
+                      >
+                        <Search size={20} />
+                      </button>
+                      <button
+                        onClick={() => startScanning(index)}
+                        className="p-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                        title="Scannen"
+                      >
+                        <Scan size={20} />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Selected Product Display */}
@@ -817,6 +925,116 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Search Modal */}
+      {showSearchModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
+              <h3 className="text-lg font-semibold">Product Zoeken</h3>
+              <button
+                onClick={closeSearchModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Step 1: Select Location */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  1. Selecteer Locatie *
+                </label>
+                <select
+                  value={searchLocation}
+                  onChange={(e) => handleSearchLocation(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                >
+                  <option value="">Kies een locatie</option>
+                  {locations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name} ({location.type})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Step 2: Select Category (only if location selected) */}
+              {searchLocation && searchResults.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    2. Filter op Categorie (optioneel)
+                  </label>
+                  <select
+                    value={searchCategory}
+                    onChange={(e) => handleSearchCategory(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="">Alle categorieën</option>
+                    {getAvailableCategories().map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Step 3: Product Results */}
+              {searchLocation && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    3. Selecteer Product
+                  </label>
+                  {searchResults.length > 0 ? (
+                    <div className="border border-gray-300 rounded-md max-h-96 overflow-y-auto">
+                      {searchResults.map((product) => (
+                        <button
+                          key={product.id}
+                          onClick={() => selectProductFromSearch(product)}
+                          className="w-full px-4 py-3 text-left hover:bg-red-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="font-medium text-gray-900">{product.name}</div>
+                              <div className="text-sm text-gray-600 mt-1 space-y-0.5">
+                                <div>SKU: {product.sku} {product.gb_article_number && `| GB: ${product.gb_article_number}`}</div>
+                                {product.ean && <div>EAN: {product.ean}</div>}
+                                <div className="text-red-600 font-medium">{product.category}</div>
+                                <div>Eenheid: {product.unit}</div>
+                              </div>
+                            </div>
+                            {product.photo_path && (
+                              <img
+                                src={getProductPhotoUrl(product.photo_path) || ''}
+                                alt={product.name}
+                                className="w-16 h-16 object-cover rounded"
+                              />
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Package size={48} className="mx-auto mb-2 text-gray-400" />
+                      <p>Geen producten beschikbaar op deze locatie</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!searchLocation && (
+                <div className="text-center py-8 text-gray-500">
+                  <Search size={48} className="mx-auto mb-2 text-gray-400" />
+                  <p>Selecteer eerst een locatie om producten te zoeken</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
