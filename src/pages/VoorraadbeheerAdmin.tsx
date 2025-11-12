@@ -153,6 +153,10 @@ const VoorraadbeheerAdmin: React.FC = () => {
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Initial stock for new product
+  const [initialStockLocation, setInitialStockLocation] = useState('');
+  const [initialStockQuantity, setInitialStockQuantity] = useState(0);
+
   const [showMoveStockModal, setShowMoveStockModal] = useState(false);
   const [moveStockData, setMoveStockData] = useState<{
     productId: string;
@@ -830,7 +834,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
         }
       }
 
-      const { error } = await supabase
+      const { data: newProduct, error } = await supabase
         .from('inventory_products')
         .insert({
           name: newProductData.name,
@@ -849,7 +853,9 @@ const VoorraadbeheerAdmin: React.FC = () => {
           sale_price: newProductData.sale_price || null,
           price_per_unit: newProductData.price_per_unit || null,
           photo_path: photoPath
-        });
+        })
+        .select()
+        .single();
 
       if (error) {
         console.error('Database error:', error);
@@ -862,6 +868,22 @@ const VoorraadbeheerAdmin: React.FC = () => {
         }
 
         throw error;
+      }
+
+      // Add initial stock if location and quantity are provided
+      if (newProduct && initialStockLocation && initialStockQuantity > 0) {
+        const { error: stockError } = await supabase
+          .from('inventory_stock')
+          .insert({
+            product_id: newProduct.id,
+            location_id: initialStockLocation,
+            quantity: initialStockQuantity
+          });
+
+        if (stockError) {
+          console.error('Error adding initial stock:', stockError);
+          alert('Product toegevoegd, maar er ging iets mis bij het toevoegen van voorraad. Voeg handmatig voorraad toe in het overzicht.');
+        }
       }
 
       alert('Product succesvol toegevoegd!');
@@ -957,6 +979,8 @@ const VoorraadbeheerAdmin: React.FC = () => {
     // Reset form
     setNewProductPhoto(null);
     setNewProductPhotoPreview(null);
+    setInitialStockLocation('');
+    setInitialStockQuantity(0);
     setShowAddProductModal(false);
   };
 
@@ -2635,6 +2659,50 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   placeholder="Extra informatie over dit product"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
+              </div>
+
+              {/* Initial Stock Section */}
+              <div className="border-t border-gray-200 pt-4">
+                <h3 className="text-md font-semibold text-gray-900 mb-3">Initiële Voorraad (optioneel)</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Voeg direct voorraad toe zodat het product in het overzicht verschijnt. Je kunt dit ook later doen.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Locatie</label>
+                    <select
+                      value={initialStockLocation}
+                      onChange={(e) => setInitialStockLocation(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    >
+                      <option value="">Geen (later toevoegen)</option>
+                      {locations.map((location) => (
+                        <option key={location.id} value={location.id}>
+                          {location.name} ({location.type})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Aantal</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={initialStockQuantity}
+                      onChange={(e) => setInitialStockQuantity(parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                      disabled={!initialStockLocation}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+                {initialStockLocation && initialStockQuantity > 0 && (
+                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-md">
+                    <p className="text-sm text-green-800">
+                      ✓ Product wordt toegevoegd met {initialStockQuantity} stuks op {locations.find(l => l.id === initialStockLocation)?.name}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
