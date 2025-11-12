@@ -798,8 +798,9 @@ const VoorraadbeheerAdmin: React.FC = () => {
   };
 
   const handleAddProduct = async () => {
-    if (!newProductData.name || !newProductData.sku || !newProductData.category || !newProductData.unit) {
-      alert('Vul minimaal naam, SKU, categorie en eenheid in');
+    // Only name and SKU are required
+    if (!newProductData.name || !newProductData.sku) {
+      alert('Vul minimaal naam en SKU in');
       return;
     }
 
@@ -834,20 +835,32 @@ const VoorraadbeheerAdmin: React.FC = () => {
         .insert({
           name: newProductData.name,
           sku: newProductData.sku,
+          gb_article_number: newProductData.gb_article_number || null,
           ean: newProductData.ean || null,
-          category: newProductData.category,
-          unit: newProductData.unit,
+          category: newProductData.category || null,
+          material_group: newProductData.material_group || null,
+          unit: newProductData.unit || 'stuks',
           minimum_stock: newProductData.minimum_stock || 0,
           description: newProductData.description || null,
           supplier: newProductData.supplier || null,
+          supplier_article_number: newProductData.supplier_article_number || null,
           price: newProductData.price || null,
           purchase_price: newProductData.purchase_price || null,
-          sale_price: newProductData.sale_price || null
+          sale_price: newProductData.sale_price || null,
+          price_per_unit: newProductData.price_per_unit || null,
+          photo_path: photoPath
         });
 
       if (error) {
         console.error('Database error:', error);
-        alert('Fout bij het toevoegen van product. Zie console voor details.');
+
+        // User-friendly error messages
+        if (error.message && error.message.includes('gb_article_number')) {
+          alert('⚠️ Database migratie vereist!\n\nVoer eerst de SQL migratie uit in Supabase:\n1. Kopieer de SQL code\n2. Ga naar Supabase > SQL Editor\n3. Plak en voer uit');
+        } else {
+          alert('Fout bij het toevoegen van product. Zie console voor details.');
+        }
+
         throw error;
       }
 
@@ -2516,7 +2529,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Categorie *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Categorie</label>
                   <select
                     value={newProductData.category}
                     onChange={(e) => setNewProductData({ ...newProductData, category: e.target.value })}
@@ -2532,7 +2545,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Eenheid *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Eenheid</label>
                   <input
                     type="text"
                     value={newProductData.unit}
