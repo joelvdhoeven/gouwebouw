@@ -1092,8 +1092,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
     return matchesSearch && matchesCategory && matchesMaterialGroup && matchesLocation;
   });
 
-  const categories = [...new Set(products.map(p => p.category))];
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -1271,7 +1269,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 >
                   <option value="">Alle Categorieën</option>
                   {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                    <option key={cat.id} value={cat.name}>{cat.name}</option>
                   ))}
                 </select>
                 <select
