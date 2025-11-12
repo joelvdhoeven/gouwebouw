@@ -176,13 +176,21 @@ const VoorraadbeheerAfboeken: React.FC = () => {
         aspectRatio: 1.0
       };
 
+      let isProcessing = false; // Flag to prevent multiple scans
+
       await scanner.start(
         { facingMode: 'environment' },
         config,
-        (decodedText) => {
-          handleScanSuccess(decodedText);
+        async (decodedText) => {
+          // Prevent processing multiple scans
+          if (isProcessing) return;
+          isProcessing = true;
+
+          // Call handleScanSuccess and wait for it to complete
+          await handleScanSuccess(decodedText);
         },
         (errorMessage) => {
+          // Ignore scan errors (this fires constantly while scanning)
         }
       );
     } catch (error: any) {
@@ -210,10 +218,23 @@ const VoorraadbeheerAfboeken: React.FC = () => {
     setScanningForLineIndex(null);
   };
 
-  const handleScanSuccess = (decodedText: string) => {
+  const handleScanSuccess = async (decodedText: string) => {
     if (scanningForLineIndex !== null) {
-      updateLineSearch(scanningForLineIndex, decodedText);
-      stopScanning();
+      const lineIndex = scanningForLineIndex;
+
+      // First stop the scanner
+      await stopScanning();
+
+      // Then update the search with the scanned value
+      updateLineSearch(lineIndex, decodedText);
+
+      // Focus on the input field after scan
+      setTimeout(() => {
+        const inputElement = document.querySelector(`input[placeholder*="Zoek artikel"]`) as HTMLInputElement;
+        if (inputElement) {
+          inputElement.focus();
+        }
+      }, 100);
     }
   };
 
@@ -222,12 +243,22 @@ const VoorraadbeheerAfboeken: React.FC = () => {
     newLines[index].searchValue = value;
     newLines[index].showDropdown = value.length > 0;
 
+    // Search by EAN, SKU, or GB article number (exact match or partial)
+    const searchLower = value.toLowerCase().trim();
     const foundProduct = products.find(p =>
       p.ean === value ||
-      p.sku.toLowerCase() === value.toLowerCase()
+      p.sku.toLowerCase() === searchLower ||
+      p.gb_article_number?.toLowerCase() === searchLower ||
+      p.name.toLowerCase().includes(searchLower)
     );
 
     newLines[index].product = foundProduct || null;
+
+    // If product found, close dropdown and show the product details
+    if (foundProduct) {
+      newLines[index].showDropdown = false;
+    }
+
     setBookingLines(newLines);
   };
 
@@ -245,8 +276,10 @@ const VoorraadbeheerAfboeken: React.FC = () => {
     return products.filter(p =>
       p.name.toLowerCase().includes(search) ||
       p.sku.toLowerCase().includes(search) ||
-      (p.ean && p.ean.toLowerCase().includes(search))
-    ).slice(0, 5);
+      (p.ean && p.ean.toLowerCase().includes(search)) ||
+      (p.gb_article_number && p.gb_article_number.toLowerCase().includes(search)) ||
+      (p.supplier_article_number && p.supplier_article_number.toLowerCase().includes(search))
+    ).slice(0, 8); // Increased from 5 to 8 results
   };
 
   const updateLineQuantity = (index: number, delta: number) => {
@@ -861,7 +894,11 @@ const VoorraadbeheerAfboeken: React.FC = () => {
                         className="w-full px-3 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
                       >
                         <div className="font-medium text-gray-900">{product.name}</div>
-                        <div className="text-sm text-gray-600">{product.sku} - {product.category}</div>
+                        <div className="text-sm text-gray-600 space-y-0.5">
+                          <div>SKU: {product.sku} {product.gb_article_number && `| GB: ${product.gb_article_number}`}</div>
+                          {product.ean && <div>EAN: {product.ean}</div>}
+                          <div>{product.category}</div>
+                        </div>
                       </button>
                     ))}
                   </div>
