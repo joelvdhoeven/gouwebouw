@@ -108,6 +108,13 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [loadingStock, setLoadingStock] = useState(false);
 
+  // Overview state
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [overviewSearch, setOverviewSearch] = useState('');
+  const [userFilter, setUserFilter] = useState('');
+
   useEffect(() => {
     loadData();
   }, []);
@@ -157,12 +164,123 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
     return data?.publicUrl || null;
   };
 
+  const loadTransactions = async () => {
+    try {
+      // Check if user is admin/superuser to see all transactions
+      const isAdmin = user?.role === 'admin' || user?.role === 'superuser' || user?.role === 'kantoorpersoneel';
+
+      let query = supabase
+        .from('inventory_transactions')
+        .select(`
+          *,
+          inventory_products(name, sku),
+          inventory_locations(name),
+          profiles(naam),
+          projects(naam, project_nummer)
+        `)
+        .eq('transaction_type', 'out')
+        .order('created_at', { ascending: false });
+
+      // If not admin, only show own transactions
+      if (!isAdmin && user?.id) {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      setTransactions(data || []);
+      setFilteredTransactions(data || []);
+
+      // Load users for filter dropdown (only if admin)
+      if (isAdmin) {
+        const { data: usersData } = await supabase
+          .from('profiles')
+          .select('id, naam')
+          .order('naam');
+        setUsers(usersData || []);
+      }
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+      setErrorMessage('Fout bij het laden van transacties');
+    }
+  };
+
+  // Filter transactions based on search and user filter
+  useEffect(() => {
+    let filtered = [...transactions];
+
+    // Filter by search term
+    if (overviewSearch) {
+      filtered = filtered.filter(t =>
+        t.inventory_products?.name?.toLowerCase().includes(overviewSearch.toLowerCase()) ||
+        t.inventory_products?.sku?.toLowerCase().includes(overviewSearch.toLowerCase()) ||
+        t.profiles?.naam?.toLowerCase().includes(overviewSearch.toLowerCase()) ||
+        t.customer_name?.toLowerCase().includes(overviewSearch.toLowerCase()) ||
+        t.projects?.naam?.toLowerCase().includes(overviewSearch.toLowerCase())
+      );
+    }
+
+    // Filter by user
+    if (userFilter) {
+      filtered = filtered.filter(t => t.user_id === userFilter);
+    }
+
+    setFilteredTransactions(filtered);
+  }, [overviewSearch, userFilter, transactions]);
+
+  const exportOverviewToCSV = () => {
+    try {
+      // Get Excel export settings from localStorage
+      const settings = JSON.parse(localStorage.getItem('excelExportSettings') || '{}');
+      const delimiter = settings.delimiter || ';';
+
+      const headers = [
+        'Datum',
+        'Product',
+        'SKU',
+        'Aantal',
+        'Locatie',
+        'Gebruiker',
+        'Klant/Project',
+        'Notities'
+      ];
+
+      const rows = filteredTransactions.map(t => [
+        new Date(t.created_at).toLocaleString('nl-NL'),
+        t.inventory_products?.name || '',
+        t.inventory_products?.sku || '',
+        Math.abs(t.quantity),
+        t.inventory_locations?.name || '',
+        t.profiles?.naam || '',
+        t.customer_name || t.projects?.naam || '',
+        t.notes || ''
+      ]);
+
+      const csv = [
+        headers.join(delimiter),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(delimiter))
+      ].join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `voorraad-afboekingen-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+    } catch (error) {
+      console.error('Error exporting:', error);
+      alert('Fout bij exporteren');
+    }
+  };
+
   // Step 1: Action Selection
-  const handleActionSelect = (action: 'booking' | 'overview') => {
+  const handleActionSelect = async (action: 'booking' | 'overview') => {
     setSelectedAction(action);
     if (action === 'overview') {
-      // Go directly to overview page (we'll handle this separately)
-      window.location.href = '/voorraad-overzicht'; // Or handle with routing
+      // Load transactions and show overview
+      await loadTransactions();
+      setCurrentStep('overview');
     } else {
       setCurrentStep('customer');
     }
@@ -882,6 +1000,124 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
                 <CheckCircle size={18} />
                 {loadingStock ? 'Bezig met afboeken...' : 'Afboeken Bevestigen'}
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step: Overview */}
+        {currentStep === 'overview' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Voorraad Afboeken Overzicht</h2>
+              <button
+                onClick={() => {
+                  setCurrentStep('action');
+                  setSelectedAction(null);
+                }}
+                className="text-gray-600 hover:text-gray-900 flex items-center gap-1"
+              >
+                <ArrowLeft size={16} />
+                Terug
+              </button>
+            </div>
+
+            {/* Search and Filter Controls */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+                <input
+                  type="text"
+                  placeholder="Zoek op product, gebruiker, klant..."
+                  value={overviewSearch}
+                  onChange={(e) => setOverviewSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                />
+              </div>
+
+              {users.length > 0 && (
+                <select
+                  value={userFilter}
+                  onChange={(e) => setUserFilter(e.target.value)}
+                  className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                >
+                  <option value="">Alle Gebruikers</option>
+                  {users.map(u => (
+                    <option key={u.id} value={u.id}>{u.naam}</option>
+                  ))}
+                </select>
+              )}
+
+              <button
+                onClick={exportOverviewToCSV}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2 whitespace-nowrap"
+              >
+                <FileText size={18} />
+                Export CSV
+              </button>
+            </div>
+
+            {/* Transactions Table */}
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              {filteredTransactions.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                  Geen afboekingen gevonden
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Datum</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Aantal</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Locatie</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gebruiker</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Klant/Project</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notities</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 bg-white">
+                      {filteredTransactions.map((transaction) => (
+                        <tr key={transaction.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+                            {new Date(transaction.created_at).toLocaleString('nl-NL', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <div className="font-medium text-gray-900">{transaction.inventory_products?.name || '-'}</div>
+                            <div className="text-gray-500 text-xs">{transaction.inventory_products?.sku || ''}</div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-center text-gray-900 font-medium">
+                            {Math.abs(transaction.quantity)}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {transaction.inventory_locations?.name || '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {transaction.profiles?.naam || '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {transaction.customer_name || transaction.projects?.naam || '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500">
+                            {transaction.notes || '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Transaction Count */}
+            <div className="text-sm text-gray-600 text-right">
+              {filteredTransactions.length} {filteredTransactions.length === 1 ? 'afboeking' : 'afboekingen'} gevonden
             </div>
           </div>
         )}
