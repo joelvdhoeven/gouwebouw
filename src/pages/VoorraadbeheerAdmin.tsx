@@ -76,11 +76,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
   const [materialGroupFilter, setMaterialGroupFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
 
-  const [showBookingModal, setShowBookingModal] = useState(false);
-  const [selectedProject, setSelectedProject] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('');
-  const [bookingProducts, setBookingProducts] = useState<Array<{ product: Product; quantity: number }>>([]);
-  const [scanInput, setScanInput] = useState('');
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -216,59 +211,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
     }
   };
 
-  const handleAddToBooking = (product: Product) => {
-    const existing = bookingProducts.find(bp => bp.product.id === product.id);
-    if (existing) {
-      setBookingProducts(bookingProducts.map(bp =>
-        bp.product.id === product.id ? { ...bp, quantity: bp.quantity + 1 } : bp
-      ));
-    } else {
-      setBookingProducts([...bookingProducts, { product, quantity: 1 }]);
-    }
-  };
-
-  const handleScan = () => {
-    const product = products.find(p =>
-      p.ean === scanInput || p.sku === scanInput || p.name.toLowerCase().includes(scanInput.toLowerCase())
-    );
-    if (product) {
-      handleAddToBooking(product);
-      setScanInput('');
-    }
-  };
-
-  const handleBookProducts = async () => {
-    if (!selectedProject || !selectedLocation || bookingProducts.length === 0) {
-      alert('Selecteer een project, locatie en voeg producten toe');
-      return;
-    }
-
-    try {
-      const transactions = bookingProducts.map(bp => ({
-        product_id: bp.product.id,
-        location_id: selectedLocation,
-        project_id: selectedProject,
-        user_id: user?.id,
-        transaction_type: 'out',
-        quantity: -bp.quantity,
-        notes: `Geboekt voor project`
-      }));
-
-      const { error } = await supabase.from('inventory_transactions').insert(transactions);
-
-      if (error) throw error;
-
-      alert('Producten succesvol geboekt!');
-      setShowBookingModal(false);
-      setBookingProducts([]);
-      setSelectedProject('');
-      setSelectedLocation('');
-      loadData();
-    } catch (error) {
-      console.error('Error booking products:', error);
-      alert('Fout bij het boeken van producten');
-    }
-  };
 
   const handleEditProduct = async (product: Product) => {
     setEditingProduct(product);
@@ -1307,14 +1249,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   </div>
                 </div>
               )}
-              <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pb-4 border-b border-gray-200">
-                <button
-                  onClick={() => setShowBookingModal(true)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2"
-                >
-                  <ScanLine size={18} />
-                  Materiaal Boeken
-                </button>
+              <div className="flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-3 pb-4 border-b border-gray-200">
                 <div className="flex flex-wrap gap-2">
                   {canManage && (
                     <>
@@ -1817,146 +1752,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
                 >
                   Opslaan
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showBookingModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">Materiaal Boeken</h2>
-              <button onClick={() => setShowBookingModal(false)} className="text-gray-400 hover:text-gray-600">
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Project</label>
-                  <select
-                    value={selectedProject}
-                    onChange={(e) => setSelectedProject(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">Selecteer project</option>
-                    {projects.map(project => (
-                      <option key={project.id} value={project.id}>{project.naam} {project.project_nummer ? `(#${project.project_nummer})` : ''}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Locatie</label>
-                  <select
-                    value={selectedLocation}
-                    onChange={(e) => setSelectedLocation(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">Selecteer locatie</option>
-                    {locations.map(location => (
-                      <option key={location.id} value={location.id}>{location.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Scan of Zoek Product</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={scanInput}
-                    onChange={(e) => setScanInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleScan()}
-                    placeholder="Scan barcode of zoek op naam/SKU"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
-                  <button
-                    onClick={handleScan}
-                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                  >
-                    <Search size={20} />
-                  </button>
-                </div>
-              </div>
-
-              {bookingProducts.length > 0 && (
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Aantal</th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acties</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {bookingProducts.map((bp, idx) => (
-                        <tr key={idx}>
-                          <td className="px-4 py-3 text-sm">
-                            <div className="font-medium text-gray-900">{bp.product.name}</div>
-                            <div className="text-gray-500">{bp.product.sku}</div>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <button
-                                onClick={() => {
-                                  if (bp.quantity > 1) {
-                                    setBookingProducts(bookingProducts.map((p, i) =>
-                                      i === idx ? { ...p, quantity: p.quantity - 1 } : p
-                                    ));
-                                  }
-                                }}
-                                className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                              >
-                                -
-                              </button>
-                              <span className="font-medium w-12 text-center">{bp.quantity}</span>
-                              <button
-                                onClick={() => {
-                                  setBookingProducts(bookingProducts.map((p, i) =>
-                                    i === idx ? { ...p, quantity: p.quantity + 1 } : p
-                                  ));
-                                }}
-                                className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                              >
-                                +
-                              </button>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <button
-                              onClick={() => setBookingProducts(bookingProducts.filter((_, i) => i !== idx))}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <X size={18} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => setShowBookingModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-                >
-                  Annuleren
-                </button>
-                <button
-                  onClick={handleBookProducts}
-                  disabled={!selectedProject || !selectedLocation || bookingProducts.length === 0}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Boek Producten Af
                 </button>
               </div>
             </div>
