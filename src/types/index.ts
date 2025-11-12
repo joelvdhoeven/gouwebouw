@@ -30,6 +30,26 @@ export interface UrenRegistratie {
   updated_at: string;
 }
 
+export interface ProductCategory {
+  id: string;
+  name: string;
+  description?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MaterialGroup {
+  id: string;
+  code: string; // 01-10
+  name: string;
+  description?: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface MagazijnItem {
   id: string;
   naam: string; // Material description (Materiaalomschrijving)

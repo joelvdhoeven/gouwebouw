@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { User, Lock, Settings as SettingsIcon, Save, Eye, EyeOff, Package } from 'lucide-react';
+import { User, Lock, Settings as SettingsIcon, Save, Eye, EyeOff, Package, Tag } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
+import CategoryManagement from '../components/CategoryManagement';
 
 const Instellingen: React.FC = () => {
   const { user, hasPermission } = useAuth();
@@ -265,17 +266,30 @@ const Instellingen: React.FC = () => {
             <span>{t('beveiliging')}</span>
           </button>
           {hasPermission('manage_settings') && (
-            <button
-              onClick={() => setActiveTab('systeem')}
-              className={`${
-                activeTab === 'systeem'
-                  ? 'border-red-600 text-red-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
-            >
-              <SettingsIcon size={18} />
-              <span>{t('systeeminstellingen')}</span>
-            </button>
+            <>
+              <button
+                onClick={() => setActiveTab('systeem')}
+                className={`${
+                  activeTab === 'systeem'
+                    ? 'border-red-600 text-red-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
+              >
+                <SettingsIcon size={18} />
+                <span>{t('systeeminstellingen')}</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('categories')}
+                className={`${
+                  activeTab === 'categories'
+                    ? 'border-red-600 text-red-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
+              >
+                <Tag size={18} />
+                <span>Categorieën & Groepen</span>
+              </button>
+            </>
           )}
         </nav>
       </div>
@@ -763,6 +777,13 @@ const Instellingen: React.FC = () => {
               <span>Instellingen Opslaan</span>
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Categories & Material Groups Tab */}
+      {activeTab === 'categories' && hasPermission('manage_settings') && (
+        <div className="space-y-6">
+          <CategoryManagement />
         </div>
       )}
     </div>
