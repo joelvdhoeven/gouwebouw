@@ -9,15 +9,20 @@ import { Html5Qrcode } from 'html5-qrcode';
 
 interface Product {
   id: string;
-  name: string;
+  name: string; // Materiaalomschrijving
   sku: string;
-  ean: string | null;
+  gb_article_number?: string; // GB-art.nr.
+  ean: string | null; // EAN-code
   category: string;
+  material_group?: string; // Materiaalgroep (01-10)
   unit: string;
   minimum_stock: number;
   description: string | null;
   supplier: string | null;
+  supplier_article_number?: string; // Lev.art.nr.
   price: number | null;
+  price_per_unit?: number; // €/eenh
+  photo_path?: string; // Product photo path
 }
 
 interface Location {
@@ -126,6 +131,13 @@ const VoorraadbeheerAfboeken: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Helper function to get product photo URL from Supabase Storage
+  const getProductPhotoUrl = (photoPath: string | undefined): string | null => {
+    if (!photoPath) return null;
+    const { data } = supabase.storage.from('product-images').getPublicUrl(photoPath);
+    return data?.publicUrl || null;
+  };
 
   const loadData = async () => {
     try {
@@ -858,11 +870,34 @@ const VoorraadbeheerAfboeken: React.FC = () => {
 
               {line.product && (
                 <div className="ml-2 p-3 bg-gray-50 rounded-md">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start gap-3">
+                    {/* Product Photo */}
+                    {line.product.photo_path && getProductPhotoUrl(line.product.photo_path) && (
+                      <div className="flex-shrink-0">
+                        <img
+                          src={getProductPhotoUrl(line.product.photo_path)!}
+                          alt={line.product.name}
+                          className="w-20 h-20 object-cover rounded border border-gray-200"
+                        />
+                      </div>
+                    )}
+
+                    {/* Product Details */}
                     <div className="flex-1">
                       <div className="font-medium text-gray-900">{line.product.name}</div>
-                      <div className="text-sm text-gray-600">{line.product.sku} - {line.product.category}</div>
+                      <div className="text-sm text-gray-600 space-y-0.5 mt-1">
+                        <div>SKU: {line.product.sku}</div>
+                        {line.product.gb_article_number && (
+                          <div>GB-art.nr.: {line.product.gb_article_number}</div>
+                        )}
+                        {line.product.ean && (
+                          <div>EAN: {line.product.ean}</div>
+                        )}
+                        <div>{line.product.category}</div>
+                      </div>
                     </div>
+
+                    {/* Quantity Controls */}
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => updateLineQuantity(index, -1)}

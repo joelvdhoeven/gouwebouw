@@ -32,17 +32,22 @@ export interface UrenRegistratie {
 
 export interface MagazijnItem {
   id: string;
-  naam: string;
+  naam: string; // Material description (Materiaalomschrijving)
   artikelnummer?: string;
-  barcode?: string;
+  gb_article_number?: string; // GB-art.nr. (internal article number)
+  barcode?: string; // EAN-code
   categorie: string;
+  material_group?: string; // Materiaalgroep (01-10)
   locatie: string;
   projectId?: string;
   voorraad: number;
   minimumVoorraad: number;
   eenheid: string;
   prijs?: number;
-  leverancier?: string;
+  price_per_unit?: number; // €/eenh (price per unit)
+  leverancier?: string; // Supplier name
+  supplier_article_number?: string; // Lev.art.nr. (supplier article number)
+  photo_path?: string; // Path to product photo in Supabase Storage
   createdAt: string;
   updatedAt: string;
 }

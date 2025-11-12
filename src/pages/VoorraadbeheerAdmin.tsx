@@ -1,22 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Search, Plus, AlertCircle, Truck, Warehouse, Download, Upload, ScanLine, Filter, X, Edit, Trash2, Eye, ArrowRightLeft } from 'lucide-react';
+import { Package, Search, Plus, AlertCircle, Truck, Warehouse, Download, Upload, ScanLine, Filter, X, Edit, Trash2, Eye, ArrowRightLeft, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystemSettings } from '../contexts/SystemSettingsContext';
+import { MATERIAL_GROUPS, getMaterialGroupDisplayName } from '../constants/materialGroups';
 
 interface Product {
   id: string;
-  name: string;
+  name: string; // Materiaalomschrijving
   sku: string;
-  ean: string | null;
+  gb_article_number?: string; // GB-art.nr.
+  ean: string | null; // EAN-code
   category: string;
-  unit: string;
-  minimum_stock: number;
+  material_group?: string; // Materiaalgroep (01-10)
+  unit: string; // Eenheid
+  minimum_stock: number; // Min. voorraad
   description: string | null;
-  supplier: string | null;
+  supplier: string | null; // Leverancier
+  supplier_article_number?: string; // Lev.art.nr.
   price: number | null;
   purchase_price: number | null;
   sale_price: number | null;
+  price_per_unit?: number; // €/eenh
+  photo_path?: string; // Product photo path in Supabase Storage
 }
 
 interface Location {
@@ -65,6 +71,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [productSearchTerm, setProductSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [materialGroupFilter, setMaterialGroupFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
 
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -124,16 +131,22 @@ const VoorraadbeheerAdmin: React.FC = () => {
   const [newProductData, setNewProductData] = useState({
     name: '',
     sku: '',
+    gb_article_number: '',
     ean: '',
     category: '',
+    material_group: '',
     unit: '',
     minimum_stock: 0,
     description: '',
     supplier: '',
+    supplier_article_number: '',
     price: 0,
     purchase_price: 0,
-    sale_price: 0
+    sale_price: 0,
+    price_per_unit: 0
   });
+  const [newProductPhoto, setNewProductPhoto] = useState<File | null>(null);
+  const [newProductPhotoPreview, setNewProductPhotoPreview] = useState<string | null>(null);
 
   const [showMoveStockModal, setShowMoveStockModal] = useState(false);
   const [moveStockData, setMoveStockData] = useState<{
@@ -777,20 +790,45 @@ const VoorraadbeheerAdmin: React.FC = () => {
     }
 
     try {
+      let photoPath: string | null = null;
+
+      // Upload photo if provided
+      if (newProductPhoto) {
+        const fileExt = newProductPhoto.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `product-photos/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(filePath, newProductPhoto);
+
+        if (uploadError) {
+          console.error('Error uploading photo:', uploadError);
+          alert('Fout bij uploaden foto. Product wordt toegevoegd zonder foto.');
+        } else {
+          photoPath = filePath;
+        }
+      }
+
       const { error } = await supabase
         .from('inventory_products')
         .insert({
           name: newProductData.name,
           sku: newProductData.sku,
+          gb_article_number: newProductData.gb_article_number || null,
           ean: newProductData.ean || null,
           category: newProductData.category,
+          material_group: newProductData.material_group || null,
           unit: newProductData.unit,
           minimum_stock: newProductData.minimum_stock || 0,
           description: newProductData.description || null,
           supplier: newProductData.supplier || null,
+          supplier_article_number: newProductData.supplier_article_number || null,
           price: newProductData.price || null,
           purchase_price: newProductData.purchase_price || null,
-          sale_price: newProductData.sale_price || null
+          sale_price: newProductData.sale_price || null,
+          price_per_unit: newProductData.price_per_unit || null,
+          photo_path: photoPath
         });
 
       if (error) throw error;
@@ -800,16 +838,22 @@ const VoorraadbeheerAdmin: React.FC = () => {
       setNewProductData({
         name: '',
         sku: '',
+        gb_article_number: '',
         ean: '',
         category: '',
+        material_group: '',
         unit: '',
         minimum_stock: 0,
         description: '',
         supplier: '',
+        supplier_article_number: '',
         price: 0,
         purchase_price: 0,
-        sale_price: 0
+        sale_price: 0,
+        price_per_unit: 0
       });
+      setNewProductPhoto(null);
+      setNewProductPhotoPreview(null);
       loadData();
     } catch (error) {
       console.error('Error adding product:', error);
@@ -870,17 +914,37 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
     const separator = getCsvSeparator();
     const csv = [
-      ['SKU', 'Naam', 'Categorie', 'Eenheid', 'Min. Voorraad', 'EAN', 'Beschrijving', 'Leverancier', 'Prijs'].join(separator),
+      [
+        'SKU',
+        'GB-art.nr.',
+        'Materiaalomschrijving',
+        'Materiaalgroep',
+        'Categorie',
+        'Eenheid',
+        'Min. Voorraad',
+        'EAN-code',
+        'Leverancier',
+        'Lev.art.nr.',
+        '€/eenh',
+        'Inkoopprijs',
+        'Verkoopprijs',
+        'Beschrijving'
+      ].join(separator),
       ...products.map(p => [
         p.sku || '',
+        p.gb_article_number || '',
         p.name || '',
+        p.material_group ? getMaterialGroupDisplayName(p.material_group) : '',
         p.category || '',
         p.unit || '',
         p.minimum_stock || 0,
         p.ean || '',
-        p.description || '',
         p.supplier || '',
-        p.price || 0
+        p.supplier_article_number || '',
+        p.price_per_unit || 0,
+        p.purchase_price || 0,
+        p.sale_price || 0,
+        p.description || ''
       ].join(separator))
     ].join('\n');
 
@@ -894,11 +958,26 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
   const downloadImportTemplate = () => {
     const separator = getCsvSeparator();
-    const headers = ['sku', 'name', 'category', 'unit', 'minimum_stock', 'ean', 'description', 'supplier', 'price'];
+    const headers = [
+      'sku',
+      'gb_article_number',
+      'name',
+      'material_group',
+      'category',
+      'unit',
+      'minimum_stock',
+      'ean',
+      'supplier',
+      'supplier_article_number',
+      'price_per_unit',
+      'purchase_price',
+      'sale_price',
+      'description'
+    ];
     const exampleRows = [
-      ['PROD001', 'Houten Plank 2m', 'Hout', 'stuks', '10', '8712345678901', 'Houten plank voor constructie', 'Houthandel BV', '15.50'],
-      ['PROD002', 'Schroeven M8', 'Bevestiging', 'doos', '5', '8712345678902', 'Doos met 100 schroeven', 'IJzerhandel', '12.95'],
-      ['PROD003', 'Verf Wit 10L', 'Verf', 'liter', '3', '', 'Witte muurverf', 'Verfwinkel', '45.00']
+      ['PROD001', '45x70-300', 'Vuren C geschaafd 44x70 FSC, lengte 300 cm', '06', 'Hout', 'stuk', '10', '37215133001', 'Stiho', '160740', '5.13', '4.50', '6.00', 'Houten balk voor constructie'],
+      ['PROD002', 'SVD04040-500', 'Schroef 4.0x40 Voldraad, 500 per doosje', '03', 'Montage', 'doosje', '10', '', 'Berner', '410148-500', '8.85', '7.50', '10.00', 'Doos met 500 schroeven'],
+      ['PROD003', 'KIT-PUR-001', 'PUR Schuim 750ml', '02', 'Pur & Kit', 'bus', '5', '8712345678901', 'Soudal', 'PUR750', '4.25', '3.50', '5.50', 'Expansie PUR schuim 750ml']
     ];
 
     const csvContent = [
@@ -932,7 +1011,22 @@ const VoorraadbeheerAdmin: React.FC = () => {
         for (const row of rows) {
           if (!row.trim()) continue;
 
-          const [sku, name, category, unit, minimum_stock, ean, description, supplier, price] = row.split(separator);
+          const [
+            sku,
+            gb_article_number,
+            name,
+            material_group,
+            category,
+            unit,
+            minimum_stock,
+            ean,
+            supplier,
+            supplier_article_number,
+            price_per_unit,
+            purchase_price,
+            sale_price,
+            description
+          ] = row.split(separator);
 
           if (!sku || !name || !category || !unit) {
             errorCount++;
@@ -943,14 +1037,19 @@ const VoorraadbeheerAdmin: React.FC = () => {
             .from('inventory_products')
             .upsert({
               sku: sku.trim(),
+              gb_article_number: gb_article_number?.trim() || null,
               name: name.trim(),
+              material_group: material_group?.trim() || null,
               category: category.trim(),
               unit: unit.trim(),
               minimum_stock: parseInt(minimum_stock) || 0,
               ean: ean?.trim() || null,
-              description: description?.trim() || null,
               supplier: supplier?.trim() || null,
-              price: parseFloat(price) || null
+              supplier_article_number: supplier_article_number?.trim() || null,
+              price_per_unit: parseFloat(price_per_unit) || null,
+              purchase_price: parseFloat(purchase_price) || null,
+              sale_price: parseFloat(sale_price) || null,
+              description: description?.trim() || null
             }, { onConflict: 'sku' });
 
           if (error) {
@@ -977,8 +1076,9 @@ const VoorraadbeheerAdmin: React.FC = () => {
       s.product?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.product?.sku.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !categoryFilter || s.product?.category === categoryFilter;
+    const matchesMaterialGroup = !materialGroupFilter || s.product?.material_group === materialGroupFilter;
     const matchesLocation = !locationFilter || s.location_id === locationFilter;
-    return matchesSearch && matchesCategory && matchesLocation;
+    return matchesSearch && matchesCategory && matchesMaterialGroup && matchesLocation;
   });
 
   const categories = [...new Set(products.map(p => p.category))];
@@ -1161,6 +1261,18 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   <option value="">Alle Categorieën</option>
                   {categories.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                <select
+                  value={materialGroupFilter}
+                  onChange={(e) => setMaterialGroupFilter(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                >
+                  <option value="">Alle Materiaalgroepen</option>
+                  {MATERIAL_GROUPS.map(group => (
+                    <option key={group.code} value={group.code}>
+                      {group.code} {group.name}
+                    </option>
                   ))}
                 </select>
                 <select
@@ -2169,14 +2281,66 @@ const VoorraadbeheerAdmin: React.FC = () => {
             </div>
 
             <div className="p-6 space-y-4">
+              {/* Photo Upload Section */}
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                <input
+                  type="file"
+                  id="product-photo"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setNewProductPhoto(file);
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setNewProductPhotoPreview(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="hidden"
+                />
+                {newProductPhotoPreview ? (
+                  <div className="relative">
+                    <img src={newProductPhotoPreview} alt="Preview" className="mx-auto max-h-40 rounded" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewProductPhoto(null);
+                        setNewProductPhotoPreview(null);
+                      }}
+                      className="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <label htmlFor="product-photo" className="cursor-pointer">
+                    <ImageIcon size={48} className="mx-auto text-gray-400 mb-2" />
+                    <span className="text-sm text-gray-600">Klik om productfoto te uploaden</span>
+                  </label>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Productnaam *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Materiaalomschrijving *</label>
                   <input
                     type="text"
                     value={newProductData.name}
                     onChange={(e) => setNewProductData({ ...newProductData, name: e.target.value })}
-                    placeholder="Bijv. Cement 25kg"
+                    placeholder="Bijv. Vuren C geschaafd 44x70 FSC"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">GB-art.nr.</label>
+                  <input
+                    type="text"
+                    value={newProductData.gb_article_number}
+                    onChange={(e) => setNewProductData({ ...newProductData, gb_article_number: e.target.value })}
+                    placeholder="Bijv. 45x70-300"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
@@ -2190,6 +2354,33 @@ const VoorraadbeheerAdmin: React.FC = () => {
                     placeholder="Bijv. CEM-001"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">EAN-code</label>
+                  <input
+                    type="text"
+                    value={newProductData.ean}
+                    onChange={(e) => setNewProductData({ ...newProductData, ean: e.target.value })}
+                    placeholder="37215133001"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Materiaalgroep</label>
+                  <select
+                    value={newProductData.material_group}
+                    onChange={(e) => setNewProductData({ ...newProductData, material_group: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="">Selecteer groep</option>
+                    {MATERIAL_GROUPS.map((group) => (
+                      <option key={group.code} value={group.code}>
+                        {group.code} {group.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
@@ -2209,13 +2400,13 @@ const VoorraadbeheerAdmin: React.FC = () => {
                     type="text"
                     value={newProductData.unit}
                     onChange={(e) => setNewProductData({ ...newProductData, unit: e.target.value })}
-                    placeholder="Bijv. stuks, kg, m"
+                    placeholder="Bijv. stuk, doosje, kg, m"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Minimale Voorraad</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Min. voorraad</label>
                   <input
                     type="number"
                     min="0"
@@ -2226,12 +2417,36 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">EAN Code</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Leverancier</label>
                   <input
                     type="text"
-                    value={newProductData.ean}
-                    onChange={(e) => setNewProductData({ ...newProductData, ean: e.target.value })}
-                    placeholder="EAN barcode"
+                    value={newProductData.supplier}
+                    onChange={(e) => setNewProductData({ ...newProductData, supplier: e.target.value })}
+                    placeholder="Bijv. Stiho, Berner"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Lev.art.nr.</label>
+                  <input
+                    type="text"
+                    value={newProductData.supplier_article_number}
+                    onChange={(e) => setNewProductData({ ...newProductData, supplier_article_number: e.target.value })}
+                    placeholder="Bijv. 160740"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">€/eenh (prijs per eenheid)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={newProductData.price_per_unit}
+                    onChange={(e) => setNewProductData({ ...newProductData, price_per_unit: parseFloat(e.target.value) || 0 })}
+                    placeholder="5.13"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
@@ -2256,17 +2471,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
                     step="0.01"
                     value={newProductData.sale_price}
                     onChange={(e) => setNewProductData({ ...newProductData, sale_price: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Leverancier</label>
-                  <input
-                    type="text"
-                    value={newProductData.supplier}
-                    onChange={(e) => setNewProductData({ ...newProductData, supplier: e.target.value })}
-                    placeholder="Leverancier naam"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
