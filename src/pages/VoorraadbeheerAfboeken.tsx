@@ -117,6 +117,17 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Cleanup scanner on unmount
+  useEffect(() => {
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
+        scannerRef.current.clear();
+        scannerRef.current = null;
+      }
+    };
+  }, []);
+
   const loadData = async () => {
     try {
       const [productsRes, locationsRes, projectsRes] = await Promise.all([
@@ -237,13 +248,36 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
   // Scanner functions
   const startScanning = async (lineIndex: number) => {
     try {
+      // Clean up any existing scanner first
+      if (scannerRef.current) {
+        try {
+          await scannerRef.current.stop();
+          scannerRef.current.clear();
+          scannerRef.current = null;
+        } catch (e) {
+          console.log('Cleaned up old scanner');
+        }
+      }
+
       setShowScanner(true);
       setScanning(true);
       setScanningForLineIndex(lineIndex);
       setScannedValue('');
       setErrorMessage('');
 
+      console.log('Starting scanner for line index:', lineIndex);
+
+      // Delay to ensure modal and qr-reader div are rendered
+      await new Promise(resolve => setTimeout(resolve, 150));
+
+      // Check if element exists
+      const element = document.getElementById('qr-reader');
+      if (!element) {
+        throw new Error('Scanner element niet gevonden');
+      }
+
       const cameras = await Html5Qrcode.getCameras();
+      console.log('Cameras found:', cameras.length);
       if (!cameras || cameras.length === 0) {
         throw new Error('Geen camera gevonden');
       }
@@ -257,22 +291,25 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
         aspectRatio: 1.0
       };
 
-      let isProcessing = false;
+      console.log('Starting camera...');
 
+      // Start scanner with simple callback (no async)
       await scanner.start(
         { facingMode: 'environment' },
         config,
-        async (decodedText) => {
-          if (isProcessing) return;
-          isProcessing = true;
-          await handleScanSuccess(decodedText);
+        (decodedText) => {
+          // Direct state update when scan succeeds
+          console.log('✅ Barcode gescand:', decodedText);
+          handleScanSuccess(decodedText);
         },
         (errorMessage) => {
-          // Ignore scan errors
+          // Ignore continuous scan errors (they happen when no barcode is visible)
         }
       );
+
+      console.log('Camera started successfully');
     } catch (error: any) {
-      console.error('Error starting scanner:', error);
+      console.error('❌ Error starting scanner:', error);
       const errorMsg = error.message || 'Kon camera niet starten. Controleer de camera permissies.';
       setErrorMessage(errorMsg);
       setShowScanner(false);
@@ -297,24 +334,30 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
     setScannedValue('');
   };
 
-  const handleScanSuccess = async (decodedText: string) => {
-    // Stop scanning but keep modal open to show scanned value
+  const handleScanSuccess = (decodedText: string) => {
+    console.log('handleScanSuccess called with:', decodedText);
+
+    // Stop the scanner
     if (scannerRef.current) {
-      try {
-        await scannerRef.current.stop();
-        scannerRef.current.clear();
+      scannerRef.current.stop().then(() => {
+        console.log('Scanner stopped');
+        scannerRef.current?.clear();
         scannerRef.current = null;
-      } catch (error) {
-        console.error('Error stopping scanner:', error);
-      }
+      }).catch(err => console.error('Error stopping scanner:', err));
     }
+
+    // Update state
     setScanning(false);
     setScannedValue(decodedText);
   };
 
   const handleConfirmScan = () => {
+    console.log('Confirm scan clicked, value:', scannedValue, 'lineIndex:', scanningForLineIndex);
+
     if (scanningForLineIndex !== null && scannedValue) {
       const lineIndex = scanningForLineIndex;
+
+      // Update the search value and try to find product
       updateLineSearch(lineIndex, scannedValue);
 
       // Close scanner modal
@@ -322,12 +365,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
       setScanningForLineIndex(null);
       setScannedValue('');
 
-      setTimeout(() => {
-        const inputElement = document.querySelector(`input[placeholder*="Zoek"]`) as HTMLInputElement;
-        if (inputElement) {
-          inputElement.focus();
-        }
-      }, 100);
+      console.log('Scan confirmed, input should be filled now');
     }
   };
 
