@@ -834,23 +834,22 @@ const VoorraadbeheerAdmin: React.FC = () => {
         .insert({
           name: newProductData.name,
           sku: newProductData.sku,
-          gb_article_number: newProductData.gb_article_number || null,
           ean: newProductData.ean || null,
           category: newProductData.category,
-          material_group: newProductData.material_group || null,
           unit: newProductData.unit,
           minimum_stock: newProductData.minimum_stock || 0,
           description: newProductData.description || null,
           supplier: newProductData.supplier || null,
-          supplier_article_number: newProductData.supplier_article_number || null,
           price: newProductData.price || null,
           purchase_price: newProductData.purchase_price || null,
-          sale_price: newProductData.sale_price || null,
-          price_per_unit: newProductData.price_per_unit || null,
-          photo_path: photoPath
+          sale_price: newProductData.sale_price || null
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        alert('Fout bij het toevoegen van product. Zie console voor details.');
+        throw error;
+      }
 
       alert('Product succesvol toegevoegd!');
       closeAddProductModal();
