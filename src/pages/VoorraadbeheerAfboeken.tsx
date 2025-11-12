@@ -704,7 +704,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t('voorraadbeheer')}</h1>
-          <p className="text-gray-600 mt-1">Voorraad afboeken - stap voor stap</p>
+          <p className="text-gray-600 mt-1">{t('voorraadAfboekenStapVoorStap')}</p>
         </div>
       </div>
 
@@ -715,21 +715,21 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
             <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === 'action' ? 'border-red-600 bg-red-50' : currentStep !== 'action' ? 'border-red-600 bg-red-50' : 'border-gray-300'}`}>
               1
             </div>
-            <span className="ml-2 font-medium">Actie</span>
+            <span className="ml-2 font-medium">{t('actie')}</span>
           </div>
           <div className="flex-1 h-0.5 bg-gray-300 mx-4"></div>
           <div className={`flex items-center ${currentStep === 'customer' ? 'text-red-600' : ['products', 'overview'].includes(currentStep) ? 'text-red-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === 'customer' ? 'border-red-600 bg-red-50' : ['products', 'overview'].includes(currentStep) ? 'border-red-600 bg-red-50' : 'border-gray-300'}`}>
               2
             </div>
-            <span className="ml-2 font-medium">Klant</span>
+            <span className="ml-2 font-medium">{t('klant')}</span>
           </div>
           <div className="flex-1 h-0.5 bg-gray-300 mx-4"></div>
           <div className={`flex items-center ${currentStep === 'products' ? 'text-red-600' : currentStep === 'overview' ? 'text-red-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === 'products' ? 'border-red-600 bg-red-50' : currentStep === 'overview' ? 'border-red-600 bg-red-50' : 'border-gray-300'}`}>
               3
             </div>
-            <span className="ml-2 font-medium">Producten</span>
+            <span className="ml-2 font-medium">{t('producten')}</span>
           </div>
         </div>
 
@@ -750,15 +750,15 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
         {/* Step 1: Action Selection */}
         {currentStep === 'action' && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Kies een actie</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('kiesEenActie')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <button
                 onClick={() => handleActionSelect('booking')}
                 className="p-6 border-2 border-gray-300 rounded-lg hover:border-red-600 hover:bg-red-50 transition-colors text-left group"
               >
                 <Package className="text-red-600 mb-3" size={32} />
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-red-600">Voorraad Afboeken</h3>
-                <p className="text-sm text-gray-600 mt-1">Boek voorraad af voor een klant of project</p>
+                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-red-600">{t('voorraadAfboeken')}</h3>
+                <p className="text-sm text-gray-600 mt-1">{t('boekVoorraadAfVoor')}</p>
               </button>
 
               <button
@@ -766,8 +766,8 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
                 className="p-6 border-2 border-gray-300 rounded-lg hover:border-red-600 hover:bg-red-50 transition-colors text-left group"
               >
                 <FileText className="text-red-600 mb-3" size={32} />
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-red-600">Voorraad Afboeken Overzicht</h3>
-                <p className="text-sm text-gray-600 mt-1">Bekijk alle afboekingen en transacties</p>
+                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-red-600">{t('voorraadAfboekenOverzicht')}</h3>
+                <p className="text-sm text-gray-600 mt-1">{t('bekijkAlleAfboekingen')}</p>
               </button>
             </div>
           </div>
@@ -777,24 +777,24 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
         {currentStep === 'customer' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Klant of Project</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('klantOfProject')}</h2>
               <button
                 onClick={() => setCurrentStep('action')}
                 className="text-gray-600 hover:text-gray-900 flex items-center gap-1"
               >
                 <ArrowLeft size={16} />
-                Terug
+                {t('terug')}
               </button>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Project (optioneel)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('projectOptioneel')}</label>
               <select
                 value={selectedProject}
                 onChange={(e) => setSelectedProject(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
               >
-                <option value="">Geen project</option>
+                <option value="">{t('geenProject')}</option>
                 {projects.map(project => (
                   <option key={project.id} value={project.id}>
                     {project.project_nummer ? `${project.project_nummer} - ` : ''}{project.naam}
@@ -804,7 +804,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Klantnaam of notitie</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('klantnaamOfNotitie')}</label>
               <input
                 type="text"
                 value={customerName}
@@ -819,7 +819,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
                 onClick={handleCustomerNext}
                 className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
               >
-                Volgende
+                {t('volgende')}
                 <ArrowRight size={16} />
               </button>
             </div>
@@ -830,13 +830,13 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
         {currentStep === 'products' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Selecteer Producten</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('selecteerProducten')}</h2>
               <button
                 onClick={() => setCurrentStep('customer')}
                 className="text-gray-600 hover:text-gray-900 flex items-center gap-1"
               >
                 <ArrowLeft size={16} />
-                Terug
+                {t('terug')}
               </button>
             </div>
 
@@ -986,7 +986,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
                 className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-red-600 hover:text-red-600 hover:bg-red-50 flex items-center justify-center gap-2 transition-colors"
               >
                 <Plus size={20} />
-                Product Toevoegen
+                {t('productToevoegen')}
               </button>
             </div>
 
@@ -998,7 +998,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
                 className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <CheckCircle size={18} />
-                {loadingStock ? 'Bezig met afboeken...' : 'Afboeken Bevestigen'}
+                {loadingStock ? t('bezigMetAfboeken') : t('afboekenBevestigen')}
               </button>
             </div>
           </div>
@@ -1008,7 +1008,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
         {currentStep === 'overview' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Voorraad Afboeken Overzicht</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('voorraadAfboekenOverzicht')}</h2>
               <button
                 onClick={() => {
                   setCurrentStep('action');
@@ -1017,7 +1017,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
                 className="text-gray-600 hover:text-gray-900 flex items-center gap-1"
               >
                 <ArrowLeft size={16} />
-                Terug
+                {t('terug')}
               </button>
             </div>
 
@@ -1027,7 +1027,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
                 <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
                 <input
                   type="text"
-                  placeholder="Zoek op product, gebruiker, klant..."
+                  placeholder={t('zoekOpProductGebruikerKlant')}
                   value={overviewSearch}
                   onChange={(e) => setOverviewSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
@@ -1040,7 +1040,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
                   onChange={(e) => setUserFilter(e.target.value)}
                   className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
-                  <option value="">Alle Gebruikers</option>
+                  <option value="">{t('alleGebruikers')}</option>
                   {users.map(u => (
                     <option key={u.id} value={u.id}>{u.naam}</option>
                   ))}
@@ -1052,7 +1052,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2 whitespace-nowrap"
               >
                 <FileText size={18} />
-                Export CSV
+                {t('exportCsv')}
               </button>
             </div>
 
@@ -1060,20 +1060,20 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
             <div className="border border-gray-200 rounded-lg overflow-hidden">
               {filteredTransactions.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
-                  Geen afboekingen gevonden
+                  {t('geenAfboekingenGevonden')}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Datum</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('datum')}</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Aantal</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Locatie</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gebruiker</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Klant/Project</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notities</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">{t('aantal')}</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('locatie')}</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('gebruiker')}</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('klant')}/Project</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('notities')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white">
@@ -1117,7 +1117,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
 
             {/* Transaction Count */}
             <div className="text-sm text-gray-600 text-right">
-              {filteredTransactions.length} {filteredTransactions.length === 1 ? 'afboeking' : 'afboekingen'} gevonden
+              {filteredTransactions.length} {filteredTransactions.length === 1 ? t('afboeking') : t('afboekingen')} {t('gevonden')}
             </div>
           </div>
         )}
@@ -1128,7 +1128,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-lg w-full p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Scan Barcode</h3>
+              <h3 className="text-lg font-semibold">{t('scanBarcode')}</h3>
               <button
                 onClick={stopScanning}
                 className="text-gray-400 hover:text-gray-600"
@@ -1145,7 +1145,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Gescande waarde:
+                    {t('gescandeWaarde')}
                   </label>
                   <div className="px-4 py-3 bg-red-50 border-2 border-red-500 rounded-md">
                     <p className="text-lg font-mono text-red-900 break-all">{scannedValue}</p>
@@ -1157,7 +1157,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
                   className="w-full px-6 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2 transition-colors font-medium"
                 >
                   <CheckCircle size={20} />
-                  Doorgaan
+                  {t('doorgaan')}
                 </button>
               </div>
             )}
@@ -1170,7 +1170,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
-              <h3 className="text-lg font-semibold">Product Zoeken</h3>
+              <h3 className="text-lg font-semibold">{t('productZoeken')}</h3>
               <button
                 onClick={closeSearchModal}
                 className="text-gray-400 hover:text-gray-600"
@@ -1183,14 +1183,14 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
               {/* Step 1: Select Location */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  1. Selecteer Locatie *
+                  1. {t('selecteerLocatie')} *
                 </label>
                 <select
                   value={searchLocation}
                   onChange={(e) => handleSearchLocation(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
-                  <option value="">Kies een locatie</option>
+                  <option value="">{t('kiesEenLocatie')}</option>
                   {locations.map((location) => (
                     <option key={location.id} value={location.id}>
                       {location.name} ({location.type})
@@ -1224,7 +1224,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
               {searchLocation && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    3. Selecteer Product
+                    3. {t('selecteerProducten')}
                   </label>
                   {searchResults.length > 0 ? (
                     <div className="border border-gray-300 rounded-md max-h-96 overflow-y-auto">
