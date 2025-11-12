@@ -783,8 +783,9 @@ const VoorraadbeheerAfboeken: React.FC = () => {
         <div className="space-y-3">
           {bookingLines.map((line, index) => (
             <div key={index} className="space-y-2">
+              {/* Eerste rij: locatie, voorraad, scan en verwijder buttons */}
               <div className="flex gap-2">
-                <div className="w-48">
+                <div className="flex-1">
                   <select
                     value={line.location}
                     onChange={(e) => updateLineLocation(index, e.target.value)}
@@ -797,36 +798,6 @@ const VoorraadbeheerAfboeken: React.FC = () => {
                       </option>
                     ))}
                   </select>
-                </div>
-                <div className="flex-1 relative product-search-container">
-                  <input
-                    type="text"
-                    placeholder="Artikel, EAN of SKU"
-                    value={line.searchValue}
-                    onChange={(e) => updateLineSearch(index, e.target.value)}
-                    onFocus={() => {
-                      if (line.searchValue) {
-                        const newLines = [...bookingLines];
-                        newLines[index].showDropdown = true;
-                        setBookingLines(newLines);
-                      }
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
-                  {line.showDropdown && getFilteredProducts(line.searchValue).length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                      {getFilteredProducts(line.searchValue).map((product) => (
-                        <button
-                          key={product.id}
-                          onClick={() => selectProduct(index, product)}
-                          className="w-full px-3 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
-                        >
-                          <div className="font-medium text-gray-900">{product.name}</div>
-                          <div className="text-sm text-gray-600">{product.sku} - {product.category}</div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
                 <button
                   onClick={() => loadLocationStock(index)}
@@ -850,6 +821,38 @@ const VoorraadbeheerAfboeken: React.FC = () => {
                   >
                     <Trash2 size={20} />
                   </button>
+                )}
+              </div>
+
+              {/* Tweede rij: product input field */}
+              <div className="relative product-search-container">
+                <input
+                  type="text"
+                  placeholder="Zoek artikel, EAN of SKU, of gebruik de scanner"
+                  value={line.searchValue}
+                  onChange={(e) => updateLineSearch(index, e.target.value)}
+                  onFocus={() => {
+                    if (line.searchValue) {
+                      const newLines = [...bookingLines];
+                      newLines[index].showDropdown = true;
+                      setBookingLines(newLines);
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                />
+                {line.showDropdown && getFilteredProducts(line.searchValue).length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {getFilteredProducts(line.searchValue).map((product) => (
+                      <button
+                        key={product.id}
+                        onClick={() => selectProduct(index, product)}
+                        className="w-full px-3 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="font-medium text-gray-900">{product.name}</div>
+                        <div className="text-sm text-gray-600">{product.sku} - {product.category}</div>
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
 
