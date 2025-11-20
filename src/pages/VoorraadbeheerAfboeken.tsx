@@ -173,8 +173,8 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
         .from('inventory_transactions')
         .select(`
           *,
-          inventory_products(name, sku),
-          inventory_locations(name),
+          inventory_products!inner(name, sku),
+          inventory_locations!inner(name),
           profiles(naam),
           projects(naam, project_nummer)
         `)
@@ -188,22 +188,30 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error details:', error);
+        throw new Error(`Database fout: ${error.message}`);
+      }
 
       setTransactions(data || []);
       setFilteredTransactions(data || []);
 
       // Load users for filter dropdown (only if admin)
       if (isAdmin) {
-        const { data: usersData } = await supabase
+        const { data: usersData, error: usersError } = await supabase
           .from('profiles')
           .select('id, naam')
           .order('naam');
-        setUsers(usersData || []);
+
+        if (usersError) {
+          console.error('Error loading users:', usersError);
+        } else {
+          setUsers(usersData || []);
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading transactions:', error);
-      setErrorMessage('Fout bij het laden van transacties');
+      setErrorMessage(error?.message || 'Fout bij het laden van transacties');
     }
   };
 
@@ -217,7 +225,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
         t.inventory_products?.name?.toLowerCase().includes(overviewSearch.toLowerCase()) ||
         t.inventory_products?.sku?.toLowerCase().includes(overviewSearch.toLowerCase()) ||
         t.profiles?.naam?.toLowerCase().includes(overviewSearch.toLowerCase()) ||
-        t.customer_name?.toLowerCase().includes(overviewSearch.toLowerCase()) ||
+        t.notes?.toLowerCase().includes(overviewSearch.toLowerCase()) ||
         t.projects?.naam?.toLowerCase().includes(overviewSearch.toLowerCase())
       );
     }

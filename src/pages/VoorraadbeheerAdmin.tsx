@@ -68,12 +68,10 @@ const VoorraadbeheerAdmin: React.FC = () => {
   const [lowStockAlerts, setLowStockAlerts] = useState<LowStockAlert[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
-  const [materialGroups, setMaterialGroups] = useState<MaterialGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [productSearchTerm, setProductSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [materialGroupFilter, setMaterialGroupFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
 
 
@@ -131,7 +129,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
     gb_article_number: '',
     ean: '',
     category: '',
-    material_group: '',
     unit: '',
     minimum_stock: 0,
     description: '',
@@ -176,21 +173,15 @@ const VoorraadbeheerAdmin: React.FC = () => {
     loadData();
   }, []);
 
-  const getMaterialGroupDisplayName = (code: string): string => {
-    const group = materialGroups.find(g => g.code === code);
-    return group ? `${group.code} ${group.name}` : code;
-  };
-
   const loadData = async () => {
     setLoading(true);
     try {
-      const [productsRes, locationsRes, stockRes, projectsRes, categoriesRes, groupsRes] = await Promise.all([
+      const [productsRes, locationsRes, stockRes, projectsRes, categoriesRes] = await Promise.all([
         supabase.from('inventory_products').select('*').order('name'),
         supabase.from('inventory_locations').select('*').order('name'),
         supabase.from('inventory_stock').select('*, product:inventory_products(*), location:inventory_locations(*)'),
         supabase.from('projects').select('id, naam, project_nummer').eq('status', 'actief').order('naam'),
-        supabase.from('product_categories').select('*').eq('is_active', true).order('name'),
-        supabase.from('material_groups').select('*').eq('is_active', true).order('sort_order')
+        supabase.from('product_categories').select('*').eq('is_active', true).order('name')
       ]);
 
       if (productsRes.data) setProducts(productsRes.data);
@@ -198,7 +189,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
       if (stockRes.data) setStock(stockRes.data);
       if (projectsRes.data) setProjects(projectsRes.data);
       if (categoriesRes.data) setCategories(categoriesRes.data);
-      if (groupsRes.data) setMaterialGroups(groupsRes.data);
 
       if (canManage) {
         const { data: alerts } = await supabase.rpc('get_low_stock_products');
@@ -784,7 +774,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
           gb_article_number: newProductData.gb_article_number || null,
           ean: newProductData.ean || null,
           category: newProductData.category || null,
-          material_group: newProductData.material_group || null,
           unit: newProductData.unit || 'stuks',
           minimum_stock: newProductData.minimum_stock || 0,
           description: newProductData.description || null,
@@ -836,7 +825,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
         gb_article_number: '',
         ean: '',
         category: '',
-        material_group: '',
         unit: '',
         minimum_stock: 0,
         description: '',
@@ -983,7 +971,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
         'SKU',
         'GB-art.nr.',
         'Materiaalomschrijving',
-        'Materiaalgroep',
         'Categorie',
         'Eenheid',
         'Min. Voorraad',
@@ -999,7 +986,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
         p.sku || '',
         p.gb_article_number || '',
         p.name || '',
-        p.material_group ? getMaterialGroupDisplayName(p.material_group) : '',
         p.category || '',
         p.unit || '',
         p.minimum_stock || 0,
@@ -1027,7 +1013,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
       'sku',
       'gb_article_number',
       'name',
-      'material_group',
       'category',
       'unit',
       'minimum_stock',
@@ -1080,7 +1065,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
             sku,
             gb_article_number,
             name,
-            material_group,
             category,
             unit,
             minimum_stock,
@@ -1104,7 +1088,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
               sku: sku.trim(),
               gb_article_number: gb_article_number?.trim() || null,
               name: name.trim(),
-              material_group: material_group?.trim() || null,
               category: category.trim(),
               unit: unit.trim(),
               minimum_stock: parseInt(minimum_stock) || 0,
@@ -1141,9 +1124,8 @@ const VoorraadbeheerAdmin: React.FC = () => {
       s.product?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.product?.sku.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !categoryFilter || s.product?.category === categoryFilter;
-    const matchesMaterialGroup = !materialGroupFilter || s.product?.material_group === materialGroupFilter;
     const matchesLocation = !locationFilter || s.location_id === locationFilter;
-    return matchesSearch && matchesCategory && matchesMaterialGroup && matchesLocation;
+    return matchesSearch && matchesCategory && matchesLocation;
   });
 
   if (loading) {
@@ -1317,18 +1299,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   <option value="">Alle Categorieën</option>
                   {categories.map(cat => (
                     <option key={cat.id} value={cat.name}>{cat.name}</option>
-                  ))}
-                </select>
-                <select
-                  value={materialGroupFilter}
-                  onChange={(e) => setMaterialGroupFilter(e.target.value)}
-                  className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                >
-                  <option value="">Alle Materiaalgroepen</option>
-                  {materialGroups.map(group => (
-                    <option key={group.id} value={group.code}>
-                      {group.code} {group.name}
-                    </option>
                   ))}
                 </select>
                 <select
@@ -2333,22 +2303,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
                     placeholder="37215133001"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Materiaalgroep</label>
-                  <select
-                    value={newProductData.material_group}
-                    onChange={(e) => setNewProductData({ ...newProductData, material_group: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">Selecteer groep</option>
-                    {materialGroups.map((group) => (
-                      <option key={group.id} value={group.code}>
-                        {group.code} {group.name}
-                      </option>
-                    ))}
-                  </select>
                 </div>
 
                 <div>
