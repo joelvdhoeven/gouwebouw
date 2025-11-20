@@ -356,17 +356,21 @@ const VoorraadbeheerAfboeken: React.FC = () => {
       }
 
       // All stock checks passed, proceed with transactions
+      const projectName = projects.find(p => p.id === selectedProject)?.naam || '';
       const transactions = validLines.map(line => ({
         product_id: line.product!.id,
         location_id: line.location,
         project_id: selectedProject,
-        user_id: user?.id,
-        transaction_type: 'out',
-        quantity: -line.quantity,
-        notes: `Afgeboekt naar project`
+        user_id: user!.id,
+        transaction_type: 'out' as const,
+        quantity: -Math.abs(line.quantity),
+        notes: `Afgeboekt naar project ${projectName}`
       }));
 
-      const { error } = await supabase.from('inventory_transactions').insert(transactions);
+      const { error } = await supabase
+        .from('inventory_transactions')
+        .insert(transactions)
+        .select();
 
       if (error) {
         if (error.code === '23503') {

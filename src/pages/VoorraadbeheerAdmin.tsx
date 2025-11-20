@@ -212,20 +212,31 @@ const VoorraadbeheerAdmin: React.FC = () => {
       return;
     }
 
+    if (!user?.id) {
+      alert('Gebruiker niet gevonden. Log opnieuw in.');
+      return;
+    }
+
     try {
       const transactions = bookingProducts.map(bp => ({
         product_id: bp.product.id,
         location_id: selectedLocation,
         project_id: selectedProject,
-        user_id: user?.id,
-        transaction_type: 'out',
-        quantity: -bp.quantity,
-        notes: `Geboekt voor project`
+        user_id: user.id,
+        transaction_type: 'out' as const,
+        quantity: -Math.abs(bp.quantity),
+        notes: `Geboekt voor project ${projects.find(p => p.id === selectedProject)?.naam || ''}`
       }));
 
-      const { error } = await supabase.from('inventory_transactions').insert(transactions);
+      const { data, error } = await supabase
+        .from('inventory_transactions')
+        .insert(transactions)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       alert('Producten succesvol geboekt!');
       setShowBookingModal(false);
@@ -233,9 +244,9 @@ const VoorraadbeheerAdmin: React.FC = () => {
       setSelectedProject('');
       setSelectedLocation('');
       loadData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error booking products:', error);
-      alert('Fout bij het boeken van producten');
+      alert(`Fout bij het boeken van producten: ${error?.message || 'Onbekende fout'}`);
     }
   };
 
