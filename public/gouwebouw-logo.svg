@@ -1,0 +1,13 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Red triangle (top left) -->
+  <polygon points="10,10 10,90 90,10" fill="#B91C1C"/>
+  
+  <!-- Black triangle (top right) -->
+  <polygon points="110,10 190,10 190,90" fill="#000000"/>
+  
+  <!-- GOUWE text -->
+  <text x="100" y="130" font-family="Arial, sans-serif" font-size="32" font-weight="bold" text-anchor="middle" fill="#000000">GOUWE</text>
+  
+  <!-- BOUW text -->
+  <text x="100" y="170" font-family="Arial, sans-serif" font-size="32" font-weight="bold" text-anchor="middle" fill="#B91C1C">BOUW</text>
+</svg>
