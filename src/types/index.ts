@@ -5,6 +5,7 @@ export interface MaterialLine {
   description?: string;
   quantity: number;
   unit?: string;
+  location_id?: string;
 }
 
 export interface WorkLine {

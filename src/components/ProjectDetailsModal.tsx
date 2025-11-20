@@ -62,12 +62,22 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
   const loadProjectMaterials = async () => {
     const { data, error } = await supabase
       .from('inventory_transactions')
-      .select('*, product:inventory_products(*), location:inventory_locations(*), user:profiles(naam)')
+      .select(`
+        *,
+        product:inventory_products!inventory_transactions_product_id_fkey(*),
+        location:inventory_locations!inventory_transactions_location_id_fkey(*),
+        user:profiles!inventory_transactions_user_id_fkey(naam)
+      `)
       .eq('project_id', project.id)
+      .eq('transaction_type', 'out')
       .order('created_at', { ascending: false });
 
     if (data) {
       setProjectMaterials(data);
+    }
+
+    if (error) {
+      console.error('Error loading materials:', error);
     }
   };
 
