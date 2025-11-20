@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Scan, X, Plus, Minus, CheckCircle, AlertCircle, Trash2, FileText, Download, Search, Upload, FileSpreadsheet } from 'lucide-react';
+import { Scan, X, Plus, Minus, CheckCircle, AlertCircle, Trash2, FileText, Download, Search, Upload, FileSpreadsheet, Edit2 } from 'lucide-react';
 import { formatDate } from '../utils/dateUtils';
 import { exportToCSV } from '../utils/exportUtils';
 import { supabase } from '../lib/supabase';
@@ -105,6 +105,17 @@ const VoorraadbeheerAfboeken: React.FC = () => {
     requested: number;
   }>>([]);
   const [showBookingResultModal, setShowBookingResultModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    product_id: '',
+    location_id: '',
+    project_id: '',
+    quantity: 0,
+    notes: ''
+  });
+  const [showDeleteSingleConfirm, setShowDeleteSingleConfirm] = useState(false);
+  const [deletingTransactionId, setDeletingTransactionId] = useState<string | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -445,6 +456,75 @@ const VoorraadbeheerAfboeken: React.FC = () => {
       .reduce((sum, line) => sum + line.quantity, 0);
   };
 
+  // Helper function to check if user has admin privileges
+  const hasAdminPrivileges = () => {
+    return ['admin', 'superuser', 'kantoorpersoneel'].includes(userRole);
+  };
+
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setEditFormData({
+      product_id: transaction.product_id,
+      location_id: transaction.location_id,
+      project_id: transaction.project_id,
+      quantity: Math.abs(transaction.quantity),
+      notes: transaction.notes || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateTransaction = async () => {
+    if (!editingTransaction) return;
+
+    try {
+      const { error } = await supabase
+        .from('inventory_transactions')
+        .update({
+          product_id: editFormData.product_id,
+          location_id: editFormData.location_id,
+          project_id: editFormData.project_id,
+          quantity: -Math.abs(editFormData.quantity),
+          notes: editFormData.notes
+        })
+        .eq('id', editingTransaction.id);
+
+      if (error) throw error;
+
+      setSuccessMessage('Afboeking succesvol bijgewerkt!');
+      setShowEditModal(false);
+      setEditingTransaction(null);
+      await loadTransactions();
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error: any) {
+      console.error('Error updating transaction:', error);
+      setErrorMessage(error.message || 'Fout bij het bijwerken van de afboeking');
+      setTimeout(() => setErrorMessage(''), 5000);
+    }
+  };
+
+  const handleDeleteSingleTransaction = async () => {
+    if (!deletingTransactionId) return;
+
+    try {
+      const { error } = await supabase
+        .from('inventory_transactions')
+        .delete()
+        .eq('id', deletingTransactionId);
+
+      if (error) throw error;
+
+      setSuccessMessage('Afboeking succesvol verwijderd');
+      setShowDeleteSingleConfirm(false);
+      setDeletingTransactionId(null);
+      await loadTransactions();
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      setErrorMessage(error.message || 'Fout bij verwijderen');
+      setTimeout(() => setErrorMessage(''), 5000);
+    }
+  };
+
   const loadTransactions = async () => {
     setLoadingTransactions(true);
     try {
@@ -456,7 +536,8 @@ const VoorraadbeheerAfboeken: React.FC = () => {
 
       const role = profileData?.role || 'medewerker';
       setUserRole(role);
-      const canViewAll = role === 'admin' || role === 'kantoor_medewerker';
+      // admin, superuser, and kantoorpersoneel can see all transactions
+      const canViewAll = ['admin', 'superuser', 'kantoorpersoneel'].includes(role);
 
       let query = supabase
         .from('inventory_transactions')
@@ -469,6 +550,7 @@ const VoorraadbeheerAfboeken: React.FC = () => {
         `)
         .eq('transaction_type', 'out');
 
+      // zzper and medewerker can only see their own transactions
       if (!canViewAll) {
         query = query.eq('user_id', user?.id);
       }
@@ -1001,7 +1083,7 @@ const VoorraadbeheerAfboeken: React.FC = () => {
                     <Search size={20} />
                     Ververs
                   </button>
-                  {(userRole === 'admin' || userRole === 'kantoor_medewerker') && (
+                  {hasAdminPrivileges() && (
                     <>
                       <button
                         onClick={() => setShowImportModal(true)}
@@ -1020,7 +1102,7 @@ const VoorraadbeheerAfboeken: React.FC = () => {
                       </button>
                     </>
                   )}
-                  {!(userRole === 'admin' || userRole === 'kantoor_medewerker') && (
+                  {!hasAdminPrivileges() && (
                     <button
                       onClick={handleExportTransactions}
                       disabled={filteredTransactions.length === 0}
@@ -1033,7 +1115,7 @@ const VoorraadbeheerAfboeken: React.FC = () => {
                 </div>
               </div>
 
-              {(userRole === 'admin' || userRole === 'kantoor_medewerker') && selectedTransactions.size > 0 && (
+              {hasAdminPrivileges() && selectedTransactions.size > 0 && (
                 <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-lg p-3">
                   <span className="text-sm text-red-800 font-medium">
                     {selectedTransactions.size} {selectedTransactions.size === 1 ? 'afboeking' : 'afboekingen'} geselecteerd
@@ -1121,7 +1203,7 @@ const VoorraadbeheerAfboeken: React.FC = () => {
                     <table className="w-full">
                       <thead className="bg-gray-50">
                         <tr>
-                          {(userRole === 'admin' || userRole === 'kantoor_medewerker') && (
+                          {hasAdminPrivileges() && (
                             <th className="px-4 py-3 text-center">
                               <input
                                 type="checkbox"
@@ -1139,12 +1221,13 @@ const VoorraadbeheerAfboeken: React.FC = () => {
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Locatie</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medewerker</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Opmerkingen</th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acties</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 bg-white">
                         {filteredTransactions.map((transaction) => (
                           <tr key={transaction.id} className="hover:bg-gray-50 transition-colors">
-                            {(userRole === 'admin' || userRole === 'kantoor_medewerker') && (
+                            {hasAdminPrivileges() && (
                               <td className="px-4 py-3 text-center">
                                 <input
                                   type="checkbox"
@@ -1188,6 +1271,27 @@ const VoorraadbeheerAfboeken: React.FC = () => {
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate" title={transaction.notes || '-'}>
                               {transaction.notes || '-'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => handleEditTransaction(transaction)}
+                                  className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                  title="Bewerken"
+                                >
+                                  <Edit2 size={16} />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setDeletingTransactionId(transaction.id);
+                                    setShowDeleteSingleConfirm(true);
+                                  }}
+                                  className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                  title="Verwijderen"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -1470,6 +1574,160 @@ const VoorraadbeheerAfboeken: React.FC = () => {
               >
                 <Plus size={18} />
                 Nieuwe Afboeking
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditModal && editingTransaction && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">Afboeking Bewerken</h3>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingTransaction(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Product</label>
+                <select
+                  value={editFormData.product_id}
+                  onChange={(e) => setEditFormData({ ...editFormData, product_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                >
+                  <option value="">Selecteer product</option>
+                  {products.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.name} ({product.sku})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Locatie</label>
+                <select
+                  value={editFormData.location_id}
+                  onChange={(e) => setEditFormData({ ...editFormData, location_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                >
+                  <option value="">Selecteer locatie</option>
+                  {locations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Project</label>
+                <select
+                  value={editFormData.project_id}
+                  onChange={(e) => setEditFormData({ ...editFormData, project_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                >
+                  <option value="">Selecteer project</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.naam} {project.project_nummer ? `(#${project.project_nummer})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Aantal</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={editFormData.quantity}
+                  onChange={(e) => setEditFormData({ ...editFormData, quantity: parseFloat(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Opmerkingen</label>
+                <textarea
+                  value={editFormData.notes}
+                  onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  placeholder="Optionele opmerkingen..."
+                />
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingTransaction(null);
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+              >
+                Annuleren
+              </button>
+              <button
+                onClick={handleUpdateTransaction}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                Opslaan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteSingleConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <AlertCircle className="text-red-600" size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Afboeking Verwijderen</h3>
+                <p className="text-sm text-gray-600">
+                  Weet je zeker dat je deze afboeking wilt verwijderen?
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+              <p className="text-sm text-yellow-800">
+                Let op: Deze actie kan niet ongedaan worden gemaakt. De voorraad wordt automatisch bijgewerkt.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteSingleConfirm(false);
+                  setDeletingTransactionId(null);
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+              >
+                Annuleren
+              </button>
+              <button
+                onClick={handleDeleteSingleTransaction}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                Verwijderen
               </button>
             </div>
           </div>
