@@ -39,17 +39,6 @@ export interface ProductCategory {
   updated_at: string;
 }
 
-export interface MaterialGroup {
-  id: string;
-  code: string; // 01-10
-  name: string;
-  description?: string;
-  is_active: boolean;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface MagazijnItem {
   id: string;
   naam: string; // Material description (Materiaalomschrijving)
@@ -57,7 +46,6 @@ export interface MagazijnItem {
   gb_article_number?: string; // GB-art.nr. (internal article number)
   barcode?: string; // EAN-code
   categorie: string;
-  material_group?: string; // Materiaalgroep (01-10)
   locatie: string;
   projectId?: string;
   voorraad: number;
