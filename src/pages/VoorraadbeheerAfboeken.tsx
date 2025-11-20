@@ -108,6 +108,16 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [loadingStock, setLoadingStock] = useState(false);
 
+  // Booking tracking
+  const [lastBookingIds, setLastBookingIds] = useState<string[]>([]);
+  const [negativeStockWarnings, setNegativeStockWarnings] = useState<Array<{
+    product: string;
+    location: string;
+    available: number;
+    requested: number;
+  }>>([]);
+  const [showBookingResultModal, setShowBookingResultModal] = useState(false);
+
   // Overview state
   const [transactions, setTransactions] = useState<any[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<any[]>([]);
@@ -606,9 +616,12 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
 
     setLoadingStock(true);
     setErrorMessage('');
+    setNegativeStockWarnings([]);
 
     try {
-      // Check stock availability for each line
+      const warnings: Array<{product: string, location: string, available: number, requested: number}> = [];
+
+      // Check stock availability for warnings only (don't block)
       for (const line of validLines) {
         const { data: stockData } = await supabase
           .from('inventory_stock')
@@ -622,10 +635,12 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
         if (currentStock < line.quantity) {
           const productName = line.product!.name;
           const locationName = locations.find(l => l.id === line.location)?.name || 'deze locatie';
-          throw new Error(
-            `Er is geen voorraad van "${productName}" op ${locationName}. ` +
-            `Beschikbaar: ${currentStock} ${line.unit}, gevraagd: ${line.quantity} ${line.unit}`
-          );
+          warnings.push({
+            product: productName,
+            location: locationName,
+            available: currentStock,
+            requested: line.quantity
+          });
         }
       }
 
@@ -640,13 +655,18 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
         notes: customerName.trim() || null
       }));
 
-      const { error: transactionError } = await supabase
+      const { data: transactionData, error: transactionError } = await supabase
         .from('inventory_transactions')
-        .insert(transactions);
+        .insert(transactions)
+        .select('id');
 
       if (transactionError) throw transactionError;
 
-      // Update stock levels
+      // Save transaction IDs for later reference
+      const bookingIds = transactionData?.map(t => t.id) || [];
+      setLastBookingIds(bookingIds);
+
+      // Update stock levels (allow negative)
       for (const line of validLines) {
         const { data: currentStock } = await supabase
           .from('inventory_stock')
@@ -655,48 +675,51 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
           .eq('location_id', line.location)
           .maybeSingle();
 
+        const newQuantity = (currentStock?.quantity || 0) - line.quantity;
+
         if (currentStock) {
-          const newQuantity = currentStock.quantity - line.quantity;
-
-          if (newQuantity < 0) {
-            throw new Error(`Voorraad kan niet negatief worden voor ${line.product!.name}`);
-          }
-
-          if (newQuantity === 0) {
-            await supabase
-              .from('inventory_stock')
-              .delete()
-              .eq('product_id', line.product!.id)
-              .eq('location_id', line.location);
-          } else {
-            await supabase
-              .from('inventory_stock')
-              .update({ quantity: newQuantity })
-              .eq('product_id', line.product!.id)
-              .eq('location_id', line.location);
-          }
+          // Update existing stock (allow negative)
+          await supabase
+            .from('inventory_stock')
+            .update({ quantity: newQuantity })
+            .eq('product_id', line.product!.id)
+            .eq('location_id', line.location);
+        } else {
+          // Create new stock entry with negative quantity
+          await supabase
+            .from('inventory_stock')
+            .insert({
+              product_id: line.product!.id,
+              location_id: line.location,
+              quantity: newQuantity
+            });
         }
       }
 
-      setSuccessMessage('Voorraad succesvol afgeboekt!');
+      // If there were warnings, create notifications for office staff
+      if (warnings.length > 0) {
+        // Get admin and office staff users
+        const { data: officeUsers } = await supabase
+          .from('profiles')
+          .select('id')
+          .in('role', ['admin', 'kantoorpersoneel', 'superuser']);
 
-      // Reset form
-      setTimeout(() => {
-        setCurrentStep('action');
-        setSelectedAction(null);
-        setSelectedProject('');
-        setCustomerName('');
-        setProductLines([{
-          id: crypto.randomUUID(),
-          product: null,
-          quantity: 1,
-          unit: 'stuks',
-          location: '',
-          searchValue: '',
-          showDropdown: false
-        }]);
-        setSuccessMessage('');
-      }, 2000);
+        if (officeUsers && officeUsers.length > 0) {
+          const notifications = officeUsers.map(officeUser => ({
+            recipient_id: officeUser.id,
+            sender_id: user!.id,
+            type: 'system_alert' as const,
+            title: '⚠️ Negatieve voorraad na afboeking',
+            message: `${user?.naam || 'Een gebruiker'} heeft producten afgeboekt die niet op voorraad zijn:\n${warnings.map(w => `- ${w.product} op ${w.location}: ${w.available} beschikbaar, ${w.requested} afgeboekt`).join('\n')}\n\nControleer de voorraad en pas indien nodig aan.`,
+            status: 'unread' as const
+          }));
+
+          await supabase.from('notifications').insert(notifications);
+        }
+      }
+
+      setNegativeStockWarnings(warnings);
+      setShowBookingResultModal(true);
 
     } catch (error: any) {
       console.error('Error booking stock:', error);
@@ -1278,6 +1301,119 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
                   <p>Selecteer eerst een locatie om producten te zoeken</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Booking Result Modal */}
+      {showBookingResultModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              {negativeStockWarnings.length > 0 ? (
+                <>
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">⚠️</span>
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-xl font-bold text-gray-900 mb-2">
+                        Afboeking voltooid met waarschuwingen
+                      </h2>
+                      <p className="text-gray-700">
+                        De producten zijn afgeboekt, maar er was onvoldoende voorraad voor de volgende items:
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                    <h3 className="font-semibold text-gray-900 mb-3">Producten met onvoldoende voorraad:</h3>
+                    <div className="space-y-2">
+                      {negativeStockWarnings.map((warning, idx) => (
+                        <div key={idx} className="flex items-start gap-2 text-sm">
+                          <span className="text-yellow-600">•</span>
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900">{warning.product}</div>
+                            <div className="text-gray-600">
+                              Locatie: {warning.location} |
+                              Beschikbaar: {warning.available} |
+                              Afgeboekt: {warning.requested}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <div className="flex items-start gap-2">
+                      <span className="text-blue-600 text-xl">ℹ️</span>
+                      <div className="flex-1 text-sm">
+                        <p className="font-medium text-blue-900 mb-1">
+                          Er is een melding gemaakt naar het kantoor
+                        </p>
+                        <p className="text-blue-800">
+                          Het kantoorpersoneel is automatisch geïnformeerd om de voorraad te controleren en indien nodig aan te passen.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="text-green-600" size={28} />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-xl font-bold text-gray-900 mb-2">
+                        Afboeking succesvol voltooid!
+                      </h2>
+                      <p className="text-gray-700">
+                        Alle producten zijn succesvol afgeboekt.
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    setSelectedAction('overview');
+                    setCurrentStep('action');
+                    setShowBookingResultModal(false);
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 font-medium transition-colors"
+                >
+                  Bekijk afboekingen overzicht
+                </button>
+                <button
+                  onClick={() => {
+                    // Reset form
+                    setCurrentStep('action');
+                    setSelectedAction(null);
+                    setSelectedProject('');
+                    setCustomerName('');
+                    setProductLines([{
+                      id: crypto.randomUUID(),
+                      product: null,
+                      quantity: 1,
+                      unit: 'stuks',
+                      location: '',
+                      searchValue: '',
+                      showDropdown: false
+                    }]);
+                    setShowBookingResultModal(false);
+                    setNegativeStockWarnings([]);
+                    setLastBookingIds([]);
+                  }}
+                  className="flex-1 px-4 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium transition-colors"
+                >
+                  Nieuwe afboeking maken
+                </button>
+              </div>
             </div>
           </div>
         </div>
