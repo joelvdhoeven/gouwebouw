@@ -174,7 +174,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
         .select(`
           *,
           inventory_products!inner(name, sku),
-          inventory_locations!inner(name),
+          location:inventory_locations!location_id(name),
           profiles(naam),
           projects(naam, project_nummer)
         `)
@@ -260,7 +260,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
         t.inventory_products?.name || '',
         t.inventory_products?.sku || '',
         Math.abs(t.quantity),
-        t.inventory_locations?.name || '',
+        t.location?.name || '',
         t.profiles?.naam || '',
         t.customer_name || t.projects?.naam || '',
         t.notes || ''
@@ -1104,7 +1104,7 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
                             {Math.abs(transaction.quantity)}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900">
-                            {transaction.inventory_locations?.name || '-'}
+                            {transaction.location?.name || '-'}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900">
                             {transaction.profiles?.naam || '-'}
