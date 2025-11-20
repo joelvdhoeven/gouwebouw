@@ -97,6 +97,14 @@ const VoorraadbeheerAfboeken: React.FC = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
+  const [lastBookingIds, setLastBookingIds] = useState<string[]>([]);
+  const [negativeStockWarnings, setNegativeStockWarnings] = useState<Array<{
+    product: string;
+    location: string;
+    available: number;
+    requested: number;
+  }>>([]);
+  const [showBookingResultModal, setShowBookingResultModal] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -329,8 +337,13 @@ const VoorraadbeheerAfboeken: React.FC = () => {
       return;
     }
 
+    setLoadingStock(true);
+    setNegativeStockWarnings([]);
+
     try {
-      // Check stock availability for each product
+      const warnings: Array<{product: string, location: string, available: number, requested: number}> = [];
+
+      // Check stock availability for warnings only (don't block)
       for (const line of validLines) {
         const { data: stockData, error: stockError } = await supabase
           .from('inventory_stock')
@@ -348,14 +361,16 @@ const VoorraadbeheerAfboeken: React.FC = () => {
         if (currentStock < line.quantity) {
           const productName = line.product!.name;
           const locationName = locations.find(l => l.id === line.location)?.name || 'deze locatie';
-          throw new Error(
-            `Er is geen voorraad van "${productName}" op ${locationName}. ` +
-            `Beschikbaar: ${currentStock} ${line.product!.unit}, Gevraagd: ${line.quantity} ${line.product!.unit}`
-          );
+          warnings.push({
+            product: productName,
+            location: locationName,
+            available: currentStock,
+            requested: line.quantity
+          });
         }
       }
 
-      // All stock checks passed, proceed with transactions
+      // Proceed with transactions regardless of stock
       const projectName = projects.find(p => p.id === selectedProject)?.naam || '';
       const transactions = validLines.map(line => ({
         product_id: line.product!.id,
@@ -367,7 +382,7 @@ const VoorraadbeheerAfboeken: React.FC = () => {
         notes: `Afgeboekt naar project ${projectName}`
       }));
 
-      const { error } = await supabase
+      const { data: insertedTransactions, error } = await supabase
         .from('inventory_transactions')
         .insert(transactions)
         .select();
@@ -382,15 +397,45 @@ const VoorraadbeheerAfboeken: React.FC = () => {
         throw new Error(`Database fout: ${error.message}`);
       }
 
-      setSuccessMessage('Producten succesvol afgeboekt!');
+      // Track booking IDs
+      if (insertedTransactions) {
+        setLastBookingIds(insertedTransactions.map(t => t.id));
+      }
+
+      // If there are warnings, send notifications to office staff
+      if (warnings.length > 0) {
+        const { data: officeUsers } = await supabase
+          .from('profiles')
+          .select('id')
+          .in('role', ['admin', 'kantoorpersoneel', 'superuser']);
+
+        if (officeUsers && officeUsers.length > 0) {
+          const notifications = officeUsers.map(officeUser => ({
+            recipient_id: officeUser.id,
+            sender_id: user!.id,
+            type: 'system_alert' as const,
+            title: '⚠️ Negatieve voorraad na afboeking',
+            message: `${user?.naam || 'Een gebruiker'} heeft producten afgeboekt die niet op voorraad zijn:\n${warnings.map(w => `- ${w.product} op ${w.location}: ${w.available} beschikbaar, ${w.requested} afgeboekt`).join('\n')}\n\nControleer de voorraad en pas indien nodig aan.`,
+            status: 'unread' as const
+          }));
+
+          await supabase.from('notifications').insert(notifications);
+        }
+      }
+
+      // Store warnings and show result modal
+      setNegativeStockWarnings(warnings);
+      setShowBookingResultModal(true);
+
+      // Reset form
       setBookingLines([{ searchValue: '', product: null, quantity: 1, showDropdown: false, location: '' }]);
       setSelectedProject('');
-
-      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error: any) {
       console.error('Error booking products:', error);
       setErrorMessage(error.message || 'Fout bij het afboeken van producten');
       setTimeout(() => setErrorMessage(''), 5000);
+    } finally {
+      setLoadingStock(false);
     }
   };
 
@@ -1328,6 +1373,103 @@ const VoorraadbeheerAfboeken: React.FC = () => {
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
               >
                 Verwijderen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBookingResultModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                {negativeStockWarnings.length === 0 ? (
+                  <>
+                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                      <CheckCircle className="text-green-600" size={24} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Afboeking Succesvol</h3>
+                      <p className="text-sm text-gray-600">
+                        De producten zijn succesvol afgeboekt
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
+                      <AlertCircle className="text-yellow-600" size={24} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Afboeking Voltooid met Waarschuwingen</h3>
+                      <p className="text-sm text-gray-600">
+                        De producten zijn afgeboekt, maar er was onvoldoende voorraad
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {negativeStockWarnings.length > 0 && (
+                <>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-yellow-900 mb-2">Onvoldoende Voorraad</h4>
+                    <p className="text-sm text-yellow-800 mb-3">
+                      De volgende producten hadden onvoldoende voorraad. Het kantoorpersoneel is automatisch op de hoogte gebracht.
+                    </p>
+                    <div className="space-y-2">
+                      {negativeStockWarnings.map((warning, index) => (
+                        <div key={index} className="bg-white rounded p-3 text-sm">
+                          <div className="font-medium text-gray-900">{warning.product}</div>
+                          <div className="text-gray-600">Locatie: {warning.location}</div>
+                          <div className="text-yellow-700 mt-1">
+                            Beschikbaar: <span className="font-medium">{warning.available}</span> |
+                            Afgeboekt: <span className="font-medium">{warning.requested}</span> |
+                            Tekort: <span className="font-medium">{warning.requested - warning.available}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm text-blue-800">
+                      <strong>Let op:</strong> Het kantoorpersoneel is automatisch geïnformeerd over deze negatieve voorraad en zal de situatie controleren.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm text-gray-700">
+                  {negativeStockWarnings.length > 0
+                    ? 'De afboeking is succesvol verwerkt. Je kunt de afboeking bekijken in het overzicht of een nieuwe afboeking maken.'
+                    : 'De afboeking is succesvol verwerkt en de voorraad is bijgewerkt.'
+                  }
+                </p>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowBookingResultModal(false);
+                  setShowOverview(true);
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 flex items-center justify-center gap-2"
+              >
+                <FileText size={18} />
+                Bekijk Overzicht
+              </button>
+              <button
+                onClick={() => setShowBookingResultModal(false)}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2"
+              >
+                <Plus size={18} />
+                Nieuwe Afboeking
               </button>
             </div>
           </div>
