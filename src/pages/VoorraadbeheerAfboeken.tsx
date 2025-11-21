@@ -1338,14 +1338,14 @@ const VoorraadbeheerAfboekenNew: React.FC = () => {
               {searchLocation && searchResults.length > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    2. Filter op Categorie (optioneel)
+                    2. Filter op Materiaal groep (optioneel)
                   </label>
                   <select
                     value={searchCategory}
                     onChange={(e) => handleSearchCategory(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
-                    <option value="">Alle categorieën</option>
+                    <option value="">Alle materiaal groepen</option>
                     {getAvailableCategories().map((category) => (
                       <option key={category} value={category}>
                         {category}

@@ -37,32 +37,28 @@ CREATE INDEX IF NOT EXISTS idx_product_categories_active ON product_categories(i
 CREATE INDEX IF NOT EXISTS idx_material_groups_code ON material_groups(code);
 CREATE INDEX IF NOT EXISTS idx_material_groups_active ON material_groups(is_active);
 
--- Insert default material groups (01-10)
+-- Insert default material groups (01-08)
 INSERT INTO material_groups (code, name, description, sort_order) VALUES
-  ('01', 'Diversen', 'Isolatiematerialen, funderingsmaterialen, elektromaterialen, rioleringsmaterialen, rubbers (kozijnen), folies, voegklemmen, spouwankers, etc.', 1),
-  ('02', 'Pur & Kit', 'Pur, kitten, aanverwanten als cleaner, primer, etc.', 2),
-  ('03', 'Montage', 'Schroeven, kozijnschroeven, vulplaatjes, Hannoband, etc.', 3),
-  ('04', 'Afwerking', 'Vensterbanken (kunststof/hardsteen), afwerklijsten (kunststof/MDF), binnendeurdorpels, douchedorpels, etc.', 4),
-  ('05', 'Gevelbekledingen', 'Rabat, gevelsteen, volkern kunststof, etc.', 5),
-  ('06', 'Hout', 'Houten balken, houten beplating, etc.', 6),
-  ('07', 'Zakgoed', 'Mortels (metselen/stuc), etc.', 7),
-  ('08', 'Tapes en bescherming', 'Ducttape, paneltap, primacover, etc.', 8),
-  ('09', '—', 'Gereserveerd voor toekomstig gebruik', 9),
-  ('10', '—', 'Gereserveerd voor toekomstig gebruik', 10)
+  ('01', '01 Diversen', 'Isolatiematerialen, funderingsmaterialen, elektromaterialen, rioleringsmaterialen, rubbers (kozijnen), folies, voegklemmen, spouwankers, etc.', 1),
+  ('02', '02 Pur & Kit', 'Pur, kitten, aanverwanten als cleaner, primer, etc.', 2),
+  ('03', '03 Montage', 'Schroeven, kozijnschroeven, vulplaatjes, Hannoband, etc.', 3),
+  ('04', '04 Afwerking', 'Vensterbanken (kunststof/hardsteen), afwerklijsten (kunststof/MDF), binnendeurdorpels, douchedorpels, etc.', 4),
+  ('05', '05 Gevelbekledingen', 'Rabat, gevelsteen, volkern kunststof, etc.', 5),
+  ('06', '06 Hout', 'Houten balken, houten beplating, etc.', 6),
+  ('07', '07 Zakgoed', 'Mortels (metselen/stuc), etc.', 7),
+  ('08', '08 Tapes en bescherming', 'Ducttape, paneltap, primacover, etc.', 8)
 ON CONFLICT (code) DO NOTHING;
 
--- Insert default product categories
+-- Insert default product categories (matching material groups)
 INSERT INTO product_categories (name, description) VALUES
-  ('Bouwmaterialen', 'Algemene bouwmaterialen en constructiematerialen'),
-  ('Hout', 'Houten producten en balken'),
-  ('Bevestigingsmaterialen', 'Schroeven, bouten, ankers, etc.'),
-  ('Afwerking', 'Afwerkingsmaterialen en dorpels'),
-  ('Isolatie', 'Isolatiematerialen'),
-  ('Pur en Kit', 'PUR schuim, kitten en sealants'),
-  ('Gevelbekledingen', 'Materialen voor gevelbekleding'),
-  ('Zakgoed', 'Mortels en droge bouwstoffen'),
-  ('Tapes en Bescherming', 'Beschermingsmaterialen en tape'),
-  ('Gereedschap', 'Gereedschappen en hulpmiddelen')
+  ('01 Diversen', 'Isolatiematerialen, funderingsmaterialen, elektromaterialen, etc.'),
+  ('02 Pur & Kit', 'Pur, kitten, cleaner, primer, etc.'),
+  ('03 Montage', 'Schroeven, kozijnschroeven, vulplaatjes, Hannoband, etc.'),
+  ('04 Afwerking', 'Vensterbanken, afwerklijsten, dorpels, etc.'),
+  ('05 Gevelbekledingen', 'Rabat, gevelsteen, volkern kunststof, etc.'),
+  ('06 Hout', 'Houten balken, houten beplating, etc.'),
+  ('07 Zakgoed', 'Mortels (metselen/stuc), etc.'),
+  ('08 Tapes en bescherming', 'Ducttape, paneltap, primacover, etc.')
 ON CONFLICT (name) DO NOTHING;
 
 -- Create trigger to update updated_at timestamp

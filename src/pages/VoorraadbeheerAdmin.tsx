@@ -629,7 +629,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
     const separator = ';';
     const csv = [
-      ['SKU', 'Naam', 'Categorie', 'Voorraad', 'Eenheid', 'Min. Voorraad', 'EAN'].join(separator),
+      ['SKU', 'Naam', 'Materiaal groep', 'Voorraad', 'Eenheid', 'Min. Voorraad', 'EAN'].join(separator),
       ...locationStock.map(s => [
         s.product?.sku || '',
         s.product?.name || '',
@@ -939,7 +939,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
     const separator = getCsvSeparator();
     const csv = [
-      ['SKU', 'Naam', 'Categorie', 'Locatie', 'Voorraad', 'Eenheid', 'Min. Voorraad'].join(separator),
+      ['SKU', 'Naam', 'Materiaal groep', 'Locatie', 'Voorraad', 'Eenheid', 'Min. Voorraad'].join(separator),
       ...filteredStock.map(s => [
         s.product?.sku || '',
         s.product?.name || '',
@@ -971,7 +971,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
         'SKU',
         'GB-art.nr.',
         'Materiaalomschrijving',
-        'Categorie',
+        'Materiaal groep',
         'Eenheid',
         'Min. Voorraad',
         'EAN-code',
@@ -1296,7 +1296,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   onChange={(e) => setCategoryFilter(e.target.value)}
                   className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
-                  <option value="">Alle Categorieën</option>
+                  <option value="">Alle Materiaal groepen</option>
                   {categories.map(cat => (
                     <option key={cat.id} value={cat.name}>{cat.name}</option>
                   ))}
@@ -1327,7 +1327,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categorie</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Materiaal groep</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Locatie</th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Voorraad</th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Min.</th>
@@ -1430,7 +1430,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
                   <input
                     type="text"
-                    placeholder="Zoek op naam, SKU of categorie..."
+                    placeholder="Zoek op naam, SKU of materiaal groep..."
                     value={productSearchTerm}
                     onChange={(e) => setProductSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
@@ -2121,11 +2121,11 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 <h3 className="font-semibold text-blue-900 mb-2">CSV Formaat</h3>
                 <p className="text-sm text-blue-800 mb-2">Het CSV bestand moet de volgende kolommen bevatten:</p>
                 <code className="text-xs bg-blue-100 px-2 py-1 rounded block">
-                  SKU,Naam,Categorie,Voorraad
+                  SKU,Naam,Materiaal groep,Voorraad
                 </code>
                 <p className="text-sm text-blue-700 mt-2">Voorbeeld:</p>
                 <code className="text-xs bg-blue-100 px-2 py-1 rounded block">
-                  SKU001,Product Naam,Categorie,10
+                  SKU001,Product Naam,Cement,10
                 </code>
               </div>
 
@@ -2306,13 +2306,13 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Categorie</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Materiaal groep</label>
                   <select
                     value={newProductData.category}
                     onChange={(e) => setNewProductData({ ...newProductData, category: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
-                    <option value="">Selecteer categorie</option>
+                    <option value="">Selecteer materiaal groep</option>
                     {categories.map((cat) => (
                       <option key={cat.id} value={cat.name}>
                         {cat.name}
