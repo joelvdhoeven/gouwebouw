@@ -255,9 +255,27 @@ const VoorraadbeheerAdmin: React.FC = () => {
   };
 
   const updateStockQuantity = (locationId: string, newQuantity: number) => {
-    setProductStockByLocation(productStockByLocation.map(s =>
-      s.location_id === locationId ? { ...s, quantity: Math.max(0, newQuantity) } : s
-    ));
+    const existingStockIndex = productStockByLocation.findIndex(s => s.location_id === locationId);
+
+    if (existingStockIndex >= 0) {
+      // Update existing stock
+      setProductStockByLocation(productStockByLocation.map(s =>
+        s.location_id === locationId ? { ...s, quantity: Math.max(0, newQuantity) } : s
+      ));
+    } else {
+      // Add new stock entry for this location
+      const location = locations.find(l => l.id === locationId);
+      if (location && editingProduct) {
+        const newStockItem: Stock = {
+          product_id: editingProduct.id,
+          location_id: locationId,
+          quantity: Math.max(0, newQuantity),
+          product: editingProduct,
+          location: location
+        };
+        setProductStockByLocation([...productStockByLocation, newStockItem]);
+      }
+    }
   };
 
   const handleEditStock = (stockItem: Stock) => {
@@ -1677,36 +1695,45 @@ const VoorraadbeheerAdmin: React.FC = () => {
               <div>
                 <h3 className="text-sm font-medium text-gray-700 mb-3">Voorraad per Locatie</h3>
                 <div className="space-y-2">
-                  {productStockByLocation.map((stockItem) => (
-                    <div key={stockItem.location_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        {stockItem.location?.type === 'bus' ? <Truck size={18} /> : <Warehouse size={18} />}
-                        <span className="font-medium">{stockItem.location?.name}</span>
+                  {locations.map((location) => {
+                    // Find existing stock for this location
+                    const existingStock = productStockByLocation.find(s => s.location_id === location.id);
+                    const currentQuantity = existingStock?.quantity || 0;
+
+                    return (
+                      <div key={location.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          {location.type === 'bus' ? <Truck size={18} /> : <Warehouse size={18} />}
+                          <span className="font-medium">{location.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              const newQuantity = Math.max(0, currentQuantity - 1);
+                              updateStockQuantity(location.id, newQuantity);
+                            }}
+                            className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                          >
+                            -
+                          </button>
+                          <input
+                            type="number"
+                            min="0"
+                            value={currentQuantity}
+                            onChange={(e) => updateStockQuantity(location.id, parseInt(e.target.value) || 0)}
+                            className="w-20 px-2 py-1 text-center border border-gray-300 rounded"
+                          />
+                          <span className="text-sm text-gray-600">{editingProduct?.unit || 'stuks'}</span>
+                          <button
+                            onClick={() => updateStockQuantity(location.id, currentQuantity + 1)}
+                            className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => updateStockQuantity(stockItem.location_id, stockItem.quantity - 1)}
-                          className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                        >
-                          -
-                        </button>
-                        <input
-                          type="number"
-                          min="0"
-                          value={stockItem.quantity}
-                          onChange={(e) => updateStockQuantity(stockItem.location_id, parseInt(e.target.value) || 0)}
-                          className="w-20 px-2 py-1 text-center border border-gray-300 rounded"
-                        />
-                        <span className="text-sm text-gray-600">{editingProduct.unit}</span>
-                        <button
-                          onClick={() => updateStockQuantity(stockItem.location_id, stockItem.quantity + 1)}
-                          className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
