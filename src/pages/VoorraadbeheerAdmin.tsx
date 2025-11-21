@@ -734,9 +734,9 @@ const VoorraadbeheerAdmin: React.FC = () => {
   };
 
   const handleAddProduct = async () => {
-    // Only name and SKU are required
-    if (!newProductData.name || !newProductData.sku) {
-      alert('Vul minimaal naam en SKU in');
+    // Name and GB-art.nr. are required
+    if (!newProductData.name || !newProductData.gb_article_number) {
+      alert('Vul minimaal naam en GB-art.nr. in');
       return;
     }
 
@@ -770,8 +770,8 @@ const VoorraadbeheerAdmin: React.FC = () => {
         .from('inventory_products')
         .insert({
           name: newProductData.name,
-          sku: newProductData.sku,
-          gb_article_number: newProductData.gb_article_number || null,
+          sku: newProductData.gb_article_number || `GB-${Date.now()}`, // Use GB-art.nr. as SKU or generate
+          gb_article_number: newProductData.gb_article_number,
           ean: newProductData.ean || null,
           category: newProductData.category || null,
           unit: newProductData.unit || 'stuks',
@@ -2273,23 +2273,12 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">GB-art.nr.</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">GB-art.nr. *</label>
                   <input
                     type="text"
                     value={newProductData.gb_article_number}
                     onChange={(e) => setNewProductData({ ...newProductData, gb_article_number: e.target.value })}
                     placeholder="Bijv. 45x70-300"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">SKU *</label>
-                  <input
-                    type="text"
-                    value={newProductData.sku}
-                    onChange={(e) => setNewProductData({ ...newProductData, sku: e.target.value })}
-                    placeholder="Bijv. CEM-001"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
