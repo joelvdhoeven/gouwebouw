@@ -1,22 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { Package, Search, Plus, AlertCircle, Truck, Warehouse, Download, Upload, ScanLine, Filter, X, Edit, Trash2, Eye, ArrowRightLeft } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Package, Search, Plus, AlertCircle, Truck, Warehouse, Download, Upload, ScanLine, Filter, X, Edit, Trash2, Eye, ArrowRightLeft, Image as ImageIcon, Camera } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystemSettings } from '../contexts/SystemSettingsContext';
+import type { ProductCategory, MaterialGroup } from '../types';
 
 interface Product {
   id: string;
-  name: string;
-  sku: string;
-  ean: string | null;
+  name: string; // Materiaalomschrijving
+  gb_article_number: string; // GB-art.nr. (required)
+  ean: string | null; // EAN-code
   category: string;
-  unit: string;
-  minimum_stock: number;
+  material_group?: string; // Materiaalgroep (01-10)
+  unit: string; // Eenheid
+  minimum_stock: number; // Min. voorraad
   description: string | null;
-  supplier: string | null;
+  supplier: string | null; // Leverancier
+  supplier_article_number?: string; // Lev.art.nr.
   price: number | null;
   purchase_price: number | null;
   sale_price: number | null;
+  price_per_unit?: number; // €/eenh
+  photo_path?: string; // Product photo path in Supabase Storage
 }
 
 interface Location {
@@ -38,7 +43,7 @@ interface Stock {
 interface LowStockAlert {
   product_id: string;
   product_name: string;
-  sku: string;
+  gb_article_number: string;
   category: string;
   location_id: string;
   location_name: string;
@@ -61,17 +66,13 @@ const VoorraadbeheerAdmin: React.FC = () => {
   const [stock, setStock] = useState<Stock[]>([]);
   const [lowStockAlerts, setLowStockAlerts] = useState<LowStockAlert[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [productSearchTerm, setProductSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
 
-  const [showBookingModal, setShowBookingModal] = useState(false);
-  const [selectedProject, setSelectedProject] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('');
-  const [bookingProducts, setBookingProducts] = useState<Array<{ product: Product; quantity: number }>>([]);
-  const [scanInput, setScanInput] = useState('');
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -123,17 +124,28 @@ const VoorraadbeheerAdmin: React.FC = () => {
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [newProductData, setNewProductData] = useState({
     name: '',
-    sku: '',
+    gb_article_number: '',
     ean: '',
     category: '',
     unit: '',
     minimum_stock: 0,
     description: '',
     supplier: '',
+    supplier_article_number: '',
     price: 0,
     purchase_price: 0,
-    sale_price: 0
+    sale_price: 0,
+    price_per_unit: 0
   });
+  const [newProductPhoto, setNewProductPhoto] = useState<File | null>(null);
+  const [newProductPhotoPreview, setNewProductPhotoPreview] = useState<string | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Initial stock for new product
+  const [initialStockLocation, setInitialStockLocation] = useState('');
+  const [initialStockQuantity, setInitialStockQuantity] = useState(0);
 
   const [showMoveStockModal, setShowMoveStockModal] = useState(false);
   const [moveStockData, setMoveStockData] = useState<{
@@ -162,17 +174,19 @@ const VoorraadbeheerAdmin: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [productsRes, locationsRes, stockRes, projectsRes] = await Promise.all([
+      const [productsRes, locationsRes, stockRes, projectsRes, categoriesRes] = await Promise.all([
         supabase.from('inventory_products').select('*').order('name'),
         supabase.from('inventory_locations').select('*').order('name'),
         supabase.from('inventory_stock').select('*, product:inventory_products(*), location:inventory_locations(*)'),
-        supabase.from('projects').select('id, naam, project_nummer').eq('status', 'actief').order('naam')
+        supabase.from('projects').select('id, naam, project_nummer').eq('status', 'actief').order('naam'),
+        supabase.from('product_categories').select('*').eq('is_active', true).order('name')
       ]);
 
       if (productsRes.data) setProducts(productsRes.data);
       if (locationsRes.data) setLocations(locationsRes.data);
       if (stockRes.data) setStock(stockRes.data);
       if (projectsRes.data) setProjects(projectsRes.data);
+      if (categoriesRes.data) setCategories(categoriesRes.data);
 
       if (canManage) {
         const { data: alerts } = await supabase.rpc('get_low_stock_products');
@@ -185,70 +199,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
     }
   };
 
-  const handleAddToBooking = (product: Product) => {
-    const existing = bookingProducts.find(bp => bp.product.id === product.id);
-    if (existing) {
-      setBookingProducts(bookingProducts.map(bp =>
-        bp.product.id === product.id ? { ...bp, quantity: bp.quantity + 1 } : bp
-      ));
-    } else {
-      setBookingProducts([...bookingProducts, { product, quantity: 1 }]);
-    }
-  };
-
-  const handleScan = () => {
-    const product = products.find(p =>
-      p.ean === scanInput || p.sku === scanInput || p.name.toLowerCase().includes(scanInput.toLowerCase())
-    );
-    if (product) {
-      handleAddToBooking(product);
-      setScanInput('');
-    }
-  };
-
-  const handleBookProducts = async () => {
-    if (!selectedProject || !selectedLocation || bookingProducts.length === 0) {
-      alert('Selecteer een project, locatie en voeg producten toe');
-      return;
-    }
-
-    if (!user?.id) {
-      alert('Gebruiker niet gevonden. Log opnieuw in.');
-      return;
-    }
-
-    try {
-      const transactions = bookingProducts.map(bp => ({
-        product_id: bp.product.id,
-        location_id: selectedLocation,
-        project_id: selectedProject,
-        user_id: user.id,
-        transaction_type: 'out' as const,
-        quantity: -Math.abs(bp.quantity),
-        notes: `Geboekt voor project ${projects.find(p => p.id === selectedProject)?.naam || ''}`
-      }));
-
-      const { data, error } = await supabase
-        .from('inventory_transactions')
-        .insert(transactions)
-        .select();
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-
-      alert('Producten succesvol geboekt!');
-      setShowBookingModal(false);
-      setBookingProducts([]);
-      setSelectedProject('');
-      setSelectedLocation('');
-      loadData();
-    } catch (error: any) {
-      console.error('Error booking products:', error);
-      alert(`Fout bij het boeken van producten: ${error?.message || 'Onbekende fout'}`);
-    }
-  };
 
   const handleEditProduct = async (product: Product) => {
     setEditingProduct(product);
@@ -677,9 +627,9 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
     const separator = ';';
     const csv = [
-      ['SKU', 'Naam', 'Categorie', 'Voorraad', 'Eenheid', 'Min. Voorraad', 'EAN'].join(separator),
+      ['GB-art.nr.', 'Naam', 'Categorie', 'Voorraad', 'Eenheid', 'Min. Voorraad', 'EAN'].join(separator),
       ...locationStock.map(s => [
-        s.product?.sku || '',
+        s.product?.gb_article_number || '',
         s.product?.name || '',
         s.product?.category || '',
         s.quantity,
@@ -719,14 +669,14 @@ const VoorraadbeheerAdmin: React.FC = () => {
         for (const row of rows) {
           if (!row.trim()) continue;
 
-          const [sku, , , quantity] = row.split(separator);
+          const [gb_article_number, , , quantity] = row.split(separator);
 
-          if (!sku || !quantity) continue;
+          if (!gb_article_number || !quantity) continue;
 
           const { data: productData } = await supabase
             .from('inventory_products')
             .select('id')
-            .eq('sku', sku.trim())
+            .eq('gb_article_number', gb_article_number.trim())
             .maybeSingle();
 
           if (!productData) {
@@ -782,50 +732,182 @@ const VoorraadbeheerAdmin: React.FC = () => {
   };
 
   const handleAddProduct = async () => {
-    if (!newProductData.name || !newProductData.sku || !newProductData.category || !newProductData.unit) {
-      alert('Vul minimaal naam, SKU, categorie en eenheid in');
+    // Name and GB-art.nr. are required
+    if (!newProductData.name || !newProductData.gb_article_number) {
+      alert('Vul minimaal naam en GB-art.nr. in');
       return;
     }
 
     try {
-      const { error } = await supabase
+      let photoPath: string | null = null;
+
+      // Upload photo if provided (skip if bucket doesn't exist)
+      if (newProductPhoto) {
+        try {
+          const fileExt = newProductPhoto.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const filePath = `product-photos/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('product-images')
+            .upload(filePath, newProductPhoto);
+
+          if (uploadError) {
+            console.error('Error uploading photo:', uploadError);
+            // Continue without photo - don't block product creation
+          } else {
+            photoPath = filePath;
+          }
+        } catch (photoError) {
+          console.error('Photo upload failed:', photoError);
+          // Continue without photo - don't block product creation
+        }
+      }
+
+      const { data: newProduct, error } = await supabase
         .from('inventory_products')
         .insert({
           name: newProductData.name,
-          sku: newProductData.sku,
+          gb_article_number: newProductData.gb_article_number,
           ean: newProductData.ean || null,
-          category: newProductData.category,
-          unit: newProductData.unit,
+          category: newProductData.category || null,
+          unit: newProductData.unit || 'stuks',
           minimum_stock: newProductData.minimum_stock || 0,
           description: newProductData.description || null,
           supplier: newProductData.supplier || null,
+          supplier_article_number: newProductData.supplier_article_number || null,
           price: newProductData.price || null,
           purchase_price: newProductData.purchase_price || null,
-          sale_price: newProductData.sale_price || null
-        });
+          sale_price: newProductData.sale_price || null,
+          price_per_unit: newProductData.price_per_unit || null,
+          photo_path: photoPath
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+
+        // User-friendly error messages
+        if (error.message && error.message.includes('gb_article_number')) {
+          alert('⚠️ Database migratie vereist!\n\nVoer eerst de SQL migratie uit in Supabase:\n1. Kopieer de SQL code\n2. Ga naar Supabase > SQL Editor\n3. Plak en voer uit');
+        } else {
+          alert('Fout bij het toevoegen van product. Zie console voor details.');
+        }
+
+        throw error;
+      }
+
+      // Add initial stock if location and quantity are provided
+      if (newProduct && initialStockLocation && initialStockQuantity > 0) {
+        const { error: stockError } = await supabase
+          .from('inventory_stock')
+          .insert({
+            product_id: newProduct.id,
+            location_id: initialStockLocation,
+            quantity: initialStockQuantity
+          });
+
+        if (stockError) {
+          console.error('Error adding initial stock:', stockError);
+          alert('Product toegevoegd, maar er ging iets mis bij het toevoegen van voorraad. Voeg handmatig voorraad toe in het overzicht.');
+        }
+      }
 
       alert('Product succesvol toegevoegd!');
-      setShowAddProductModal(false);
+      closeAddProductModal();
       setNewProductData({
         name: '',
-        sku: '',
+        gb_article_number: '',
         ean: '',
         category: '',
         unit: '',
         minimum_stock: 0,
         description: '',
         supplier: '',
+        supplier_article_number: '',
         price: 0,
         purchase_price: 0,
-        sale_price: 0
+        sale_price: 0,
+        price_per_unit: 0
       });
+      setNewProductPhoto(null);
+      setNewProductPhotoPreview(null);
       loadData();
     } catch (error) {
       console.error('Error adding product:', error);
       alert('Fout bij het toevoegen van product');
     }
+  };
+
+  // Camera functions for product photo
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: 1280, height: 720 }
+      });
+      setCameraStream(stream);
+      setShowCamera(true);
+
+      // Wait for video element to be ready
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      }, 100);
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      alert('Kon camera niet starten. Controleer de camera permissies.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], `product-photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+            setNewProductPhoto(file);
+
+            // Create preview
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              setNewProductPhotoPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+
+            // Stop camera
+            stopCamera();
+          }
+        }, 'image/jpeg', 0.9);
+      }
+    }
+  };
+
+  const closeAddProductModal = () => {
+    // Stop camera if running
+    stopCamera();
+    // Reset form
+    setNewProductPhoto(null);
+    setNewProductPhotoPreview(null);
+    setInitialStockLocation('');
+    setInitialStockQuantity(0);
+    setShowAddProductModal(false);
   };
 
   const handleEditFullProduct = (product: Product) => {
@@ -853,9 +935,9 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
     const separator = getCsvSeparator();
     const csv = [
-      ['SKU', 'Naam', 'Categorie', 'Locatie', 'Voorraad', 'Eenheid', 'Min. Voorraad'].join(separator),
+      ['GB-art.nr.', 'Naam', 'Categorie', 'Locatie', 'Voorraad', 'Eenheid', 'Min. Voorraad'].join(separator),
       ...filteredStock.map(s => [
-        s.product?.sku || '',
+        s.product?.gb_article_number || '',
         s.product?.name || '',
         s.product?.category || '',
         s.location?.name || '',
@@ -881,17 +963,33 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
     const separator = getCsvSeparator();
     const csv = [
-      ['SKU', 'Naam', 'Categorie', 'Eenheid', 'Min. Voorraad', 'EAN', 'Beschrijving', 'Leverancier', 'Prijs'].join(separator),
+      [
+        'GB-art.nr.',
+        'Materiaalomschrijving',
+        'Categorie',
+        'Eenheid',
+        'Min. Voorraad',
+        'EAN-code',
+        'Leverancier',
+        'Lev.art.nr.',
+        '€/eenh',
+        'Inkoopprijs',
+        'Verkoopprijs',
+        'Beschrijving'
+      ].join(separator),
       ...products.map(p => [
-        p.sku || '',
+        p.gb_article_number || '',
         p.name || '',
         p.category || '',
         p.unit || '',
         p.minimum_stock || 0,
         p.ean || '',
-        p.description || '',
         p.supplier || '',
-        p.price || 0
+        p.supplier_article_number || '',
+        p.price_per_unit || 0,
+        p.purchase_price || 0,
+        p.sale_price || 0,
+        p.description || ''
       ].join(separator))
     ].join('\n');
 
@@ -905,11 +1003,24 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
   const downloadImportTemplate = () => {
     const separator = getCsvSeparator();
-    const headers = ['sku', 'name', 'category', 'unit', 'minimum_stock', 'ean', 'description', 'supplier', 'price'];
+    const headers = [
+      'gb_article_number',
+      'name',
+      'category',
+      'unit',
+      'minimum_stock',
+      'ean',
+      'supplier',
+      'supplier_article_number',
+      'price_per_unit',
+      'purchase_price',
+      'sale_price',
+      'description'
+    ];
     const exampleRows = [
-      ['PROD001', 'Houten Plank 2m', 'Hout', 'stuks', '10', '8712345678901', 'Houten plank voor constructie', 'Houthandel BV', '15.50'],
-      ['PROD002', 'Schroeven M8', 'Bevestiging', 'doos', '5', '8712345678902', 'Doos met 100 schroeven', 'IJzerhandel', '12.95'],
-      ['PROD003', 'Verf Wit 10L', 'Verf', 'liter', '3', '', 'Witte muurverf', 'Verfwinkel', '45.00']
+      ['45x70-300', 'Vuren C geschaafd 44x70 FSC, lengte 300 cm', 'Hout', 'stuk', '10', '37215133001', 'Stiho', '160740', '5.13', '4.50', '6.00', 'Houten balk voor constructie'],
+      ['SVD04040-500', 'Schroef 4.0x40 Voldraad, 500 per doosje', 'Montage', 'doosje', '10', '', 'Berner', '410148-500', '8.85', '7.50', '10.00', 'Doos met 500 schroeven'],
+      ['KIT-PUR-001', 'PUR Schuim 750ml', 'Pur & Kit', 'bus', '5', '8712345678901', 'Soudal', 'PUR750', '4.25', '3.50', '5.50', 'Expansie PUR schuim 750ml']
     ];
 
     const csvContent = [
@@ -943,9 +1054,22 @@ const VoorraadbeheerAdmin: React.FC = () => {
         for (const row of rows) {
           if (!row.trim()) continue;
 
-          const [sku, name, category, unit, minimum_stock, ean, description, supplier, price] = row.split(separator);
+          const [
+            gb_article_number,
+            name,
+            category,
+            unit,
+            minimum_stock,
+            ean,
+            supplier,
+            supplier_article_number,
+            price_per_unit,
+            purchase_price,
+            sale_price,
+            description
+          ] = row.split(separator);
 
-          if (!sku || !name || !category || !unit) {
+          if (!gb_article_number || !name || !category || !unit) {
             errorCount++;
             continue;
           }
@@ -953,16 +1077,19 @@ const VoorraadbeheerAdmin: React.FC = () => {
           const { error } = await supabase
             .from('inventory_products')
             .upsert({
-              sku: sku.trim(),
+              gb_article_number: gb_article_number.trim(),
               name: name.trim(),
               category: category.trim(),
               unit: unit.trim(),
               minimum_stock: parseInt(minimum_stock) || 0,
               ean: ean?.trim() || null,
-              description: description?.trim() || null,
               supplier: supplier?.trim() || null,
-              price: parseFloat(price) || null
-            }, { onConflict: 'sku' });
+              supplier_article_number: supplier_article_number?.trim() || null,
+              price_per_unit: parseFloat(price_per_unit) || null,
+              purchase_price: parseFloat(purchase_price) || null,
+              sale_price: parseFloat(sale_price) || null,
+              description: description?.trim() || null
+            }, { onConflict: 'gb_article_number' });
 
           if (error) {
             errorCount++;
@@ -986,13 +1113,11 @@ const VoorraadbeheerAdmin: React.FC = () => {
   const filteredStock = stock.filter(s => {
     const matchesSearch = !searchTerm ||
       s.product?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.product?.sku.toLowerCase().includes(searchTerm.toLowerCase());
+      s.product?.gb_article_number.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !categoryFilter || s.product?.category === categoryFilter;
     const matchesLocation = !locationFilter || s.location_id === locationFilter;
     return matchesSearch && matchesCategory && matchesLocation;
   });
-
-  const categories = [...new Set(products.map(p => p.category))];
 
   if (loading) {
     return (
@@ -1004,7 +1129,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Voorraadbeheer</h1>
           <p className="text-gray-600">Beheer voorraad en boek materiaal af op projecten</p>
@@ -1058,11 +1183,11 @@ const VoorraadbeheerAdmin: React.FC = () => {
             <div className="space-y-4">
               {selectedStockIds.size > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <span className="text-blue-900 font-medium">
                       {selectedStockIds.size} item(s) geselecteerd
                     </span>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
                         onClick={selectAllStock}
                         className="px-3 py-1.5 text-sm bg-white border border-blue-300 text-blue-700 rounded hover:bg-blue-50"
@@ -1097,15 +1222,8 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   </div>
                 </div>
               )}
-              <div className="flex justify-between items-center gap-2 pb-4 border-b border-gray-200">
-                <button
-                  onClick={() => setShowBookingModal(true)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
-                >
-                  <ScanLine size={18} />
-                  Materiaal Boeken
-                </button>
-                <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-3 pb-4 border-b border-gray-200">
+                <div className="flex flex-wrap gap-2">
                   {canManage && (
                     <>
                       <button
@@ -1153,12 +1271,12 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   )}
                 </div>
               </div>
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
                   <input
                     type="text"
-                    placeholder="Zoek op naam of SKU..."
+                    placeholder="Zoek op naam of GB-art.nr..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
@@ -1167,17 +1285,17 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="">Alle Categorieën</option>
                   {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                    <option key={cat.id} value={cat.name}>{cat.name}</option>
                   ))}
                 </select>
                 <select
                   value={locationFilter}
                   onChange={(e) => setLocationFilter(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="">Alle Locaties</option>
                   {locations.map(loc => (
@@ -1199,7 +1317,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                         />
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">GB-art.nr.</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categorie</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Locatie</th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Voorraad</th>
@@ -1224,7 +1342,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                             />
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900">{item.product?.name}</td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{item.product?.sku}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{item.product?.gb_article_number}</td>
                           <td className="px-4 py-3 text-sm text-gray-600">{item.product?.category}</td>
                           <td className="px-4 py-3 text-sm text-gray-600">
                             <div className="flex items-center gap-2">
@@ -1297,22 +1415,24 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
           {activeTab === 'producten' && (
             <div className="space-y-4">
-              <div className="flex gap-4 items-center">
+              {/* Search and Actions - Mobile Responsive */}
+              <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
                   <input
                     type="text"
-                    placeholder="Zoek op naam, SKU of categorie..."
+                    placeholder="Zoek op naam, GB-art.nr. of categorie..."
                     value={productSearchTerm}
                     onChange={(e) => setProductSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
                 {canManage && (
-                  <>
-                    <label className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2 cursor-pointer">
+                  <div className="flex flex-wrap gap-2">
+                    <label className="flex-1 sm:flex-none px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap">
                       <Upload size={18} />
-                      Import CSV
+                      <span className="hidden sm:inline">Import CSV</span>
+                      <span className="sm:hidden">Import</span>
                       <input
                         type="file"
                         accept=".csv"
@@ -1322,33 +1442,35 @@ const VoorraadbeheerAdmin: React.FC = () => {
                     </label>
                     <button
                       onClick={exportProductsToCSV}
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
+                      className="flex-1 sm:flex-none px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2 whitespace-nowrap"
                     >
                       <Download size={18} />
-                      Export CSV
+                      <span className="hidden sm:inline">Export CSV</span>
+                      <span className="sm:hidden">Export</span>
                     </button>
                     <button
                       onClick={() => setShowAddProductModal(true)}
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
+                      className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2 whitespace-nowrap"
                     >
                       <Plus size={18} />
-                      Product Toevoegen
+                      <span className="hidden sm:inline">Product Toevoegen</span>
+                      <span className="sm:hidden">Toevoegen</span>
                     </button>
-                  </>
+                  </div>
                 )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {products.filter(p =>
                   !productSearchTerm ||
                   p.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
-                  p.sku.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+                  p.gb_article_number.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
                   p.category.toLowerCase().includes(productSearchTerm.toLowerCase())
                 ).map((product) => (
                   <div key={product.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">{product.sku}</span>
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-2 mb-2">
+                      <h3 className="font-semibold text-gray-900 flex-1 break-words">{product.name}</h3>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs bg-gray-100 px-2 py-1 rounded whitespace-nowrap">{product.gb_article_number}</span>
                         {canManage && (
                           <>
                             <button
@@ -1371,14 +1493,14 @@ const VoorraadbeheerAdmin: React.FC = () => {
                     </div>
                     <p className="text-sm text-gray-600 mb-2">{product.category}</p>
                     {product.description && (
-                      <p className="text-sm text-gray-500 mb-2">{product.description}</p>
+                      <p className="text-sm text-gray-500 mb-2 line-clamp-2">{product.description}</p>
                     )}
-                    <div className="flex justify-between text-sm">
+                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
                       <span className="text-gray-600">Min. voorraad: {product.minimum_stock}</span>
                       <span className="text-gray-600">Eenheid: {product.unit}</span>
                     </div>
                     {product.ean && (
-                      <div className="mt-2 text-xs text-gray-500">EAN: {product.ean}</div>
+                      <div className="mt-2 text-xs text-gray-500 truncate" title={product.ean}>EAN: {product.ean}</div>
                     )}
                   </div>
                 ))}
@@ -1484,7 +1606,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
             </div>
 
             <div className="p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Minimale Voorraad</label>
                   <input
@@ -1598,146 +1720,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
         </div>
       )}
 
-      {showBookingModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">Materiaal Boeken</h2>
-              <button onClick={() => setShowBookingModal(false)} className="text-gray-400 hover:text-gray-600">
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Project</label>
-                  <select
-                    value={selectedProject}
-                    onChange={(e) => setSelectedProject(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">Selecteer project</option>
-                    {projects.map(project => (
-                      <option key={project.id} value={project.id}>{project.naam} {project.project_nummer ? `(#${project.project_nummer})` : ''}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Locatie</label>
-                  <select
-                    value={selectedLocation}
-                    onChange={(e) => setSelectedLocation(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">Selecteer locatie</option>
-                    {locations.map(location => (
-                      <option key={location.id} value={location.id}>{location.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Scan of Zoek Product</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={scanInput}
-                    onChange={(e) => setScanInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleScan()}
-                    placeholder="Scan barcode of zoek op naam/SKU"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
-                  <button
-                    onClick={handleScan}
-                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                  >
-                    <Search size={20} />
-                  </button>
-                </div>
-              </div>
-
-              {bookingProducts.length > 0 && (
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Aantal</th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acties</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {bookingProducts.map((bp, idx) => (
-                        <tr key={idx}>
-                          <td className="px-4 py-3 text-sm">
-                            <div className="font-medium text-gray-900">{bp.product.name}</div>
-                            <div className="text-gray-500">{bp.product.sku}</div>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <button
-                                onClick={() => {
-                                  if (bp.quantity > 1) {
-                                    setBookingProducts(bookingProducts.map((p, i) =>
-                                      i === idx ? { ...p, quantity: p.quantity - 1 } : p
-                                    ));
-                                  }
-                                }}
-                                className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                              >
-                                -
-                              </button>
-                              <span className="font-medium w-12 text-center">{bp.quantity}</span>
-                              <button
-                                onClick={() => {
-                                  setBookingProducts(bookingProducts.map((p, i) =>
-                                    i === idx ? { ...p, quantity: p.quantity + 1 } : p
-                                  ));
-                                }}
-                                className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                              >
-                                +
-                              </button>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <button
-                              onClick={() => setBookingProducts(bookingProducts.filter((_, i) => i !== idx))}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <X size={18} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => setShowBookingModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-                >
-                  Annuleren
-                </button>
-                <button
-                  onClick={handleBookProducts}
-                  disabled={!selectedProject || !selectedLocation || bookingProducts.length === 0}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Boek Producten Af
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {showStockEditModal && editingStock && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full">
@@ -1791,7 +1773,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Inkoopprijs (€)</label>
                   <input
@@ -1946,7 +1928,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
             </div>
 
             <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4 pb-4 border-b border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-gray-200">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Type</label>
                   <p className="text-gray-900">{selectedLocationForDetails.type === 'bus' ? 'Bus' : 'Magazijn'}</p>
@@ -1976,7 +1958,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">GB-art.nr.</th>
                           <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Voorraad</th>
                           <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Min.</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -1989,7 +1971,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                           return (
                             <tr key={item.product_id} className={isLow ? 'bg-yellow-50' : ''}>
                               <td className="px-4 py-3 text-sm text-gray-900">{item.product?.name}</td>
-                              <td className="px-4 py-3 text-sm text-gray-600">{item.product?.sku}</td>
+                              <td className="px-4 py-3 text-sm text-gray-600">{item.product?.gb_article_number}</td>
                               <td className="px-4 py-3 text-sm text-right font-medium">
                                 {item.quantity} {item.product?.unit}
                               </td>
@@ -2130,11 +2112,11 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 <h3 className="font-semibold text-blue-900 mb-2">CSV Formaat</h3>
                 <p className="text-sm text-blue-800 mb-2">Het CSV bestand moet de volgende kolommen bevatten:</p>
                 <code className="text-xs bg-blue-100 px-2 py-1 rounded block">
-                  SKU,Naam,Categorie,Voorraad
+                  GB-art.nr.,Naam,Categorie,Voorraad
                 </code>
                 <p className="text-sm text-blue-700 mt-2">Voorbeeld:</p>
                 <code className="text-xs bg-blue-100 px-2 py-1 rounded block">
-                  SKU001,Product Naam,Categorie,10
+                  45x70-300,Product Naam,Categorie,10
                 </code>
               </div>
 
@@ -2174,59 +2156,164 @@ const VoorraadbeheerAdmin: React.FC = () => {
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
               <h2 className="text-xl font-bold text-gray-900">Product Toevoegen</h2>
-              <button onClick={() => setShowAddProductModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={closeAddProductModal} className="text-gray-400 hover:text-gray-600">
                 <X size={24} />
               </button>
             </div>
 
             <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              {/* Photo Upload Section */}
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                <input
+                  type="file"
+                  id="product-photo"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setNewProductPhoto(file);
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setNewProductPhotoPreview(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="hidden"
+                />
+
+                {showCamera ? (
+                  /* Camera Preview */
+                  <div className="space-y-3">
+                    <div className="relative bg-black rounded-lg overflow-hidden">
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        className="w-full max-h-80 object-contain"
+                      />
+                    </div>
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        type="button"
+                        onClick={capturePhoto}
+                        className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
+                      >
+                        <Camera size={18} />
+                        Foto Maken
+                      </button>
+                      <button
+                        type="button"
+                        onClick={stopCamera}
+                        className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                      >
+                        Annuleren
+                      </button>
+                    </div>
+                  </div>
+                ) : newProductPhotoPreview ? (
+                  /* Photo Preview */
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <img src={newProductPhotoPreview} alt="Preview" className="mx-auto max-h-60 rounded" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewProductPhoto(null);
+                          setNewProductPhotoPreview(null);
+                        }}
+                        className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 hover:bg-red-700 shadow-lg"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Upload Options */
+                  <div className="text-center space-y-4">
+                    <ImageIcon size={48} className="mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-600 mb-4">Product Foto Toevoegen</p>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                      <label htmlFor="product-photo" className="cursor-pointer px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2">
+                        <Upload size={18} />
+                        Bestand Kiezen
+                      </label>
+                      <button
+                        type="button"
+                        onClick={startCamera}
+                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2"
+                      >
+                        <Camera size={18} />
+                        Camera Gebruiken
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Productnaam *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Materiaalomschrijving *</label>
                   <input
                     type="text"
                     value={newProductData.name}
                     onChange={(e) => setNewProductData({ ...newProductData, name: e.target.value })}
-                    placeholder="Bijv. Cement 25kg"
+                    placeholder="Bijv. Vuren C geschaafd 44x70 FSC"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">SKU *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">GB-art.nr. *</label>
                   <input
                     type="text"
-                    value={newProductData.sku}
-                    onChange={(e) => setNewProductData({ ...newProductData, sku: e.target.value })}
-                    placeholder="Bijv. CEM-001"
+                    value={newProductData.gb_article_number}
+                    onChange={(e) => setNewProductData({ ...newProductData, gb_article_number: e.target.value })}
+                    placeholder="Bijv. 45x70-300"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Categorie *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">EAN-code</label>
                   <input
                     type="text"
+                    value={newProductData.ean}
+                    onChange={(e) => setNewProductData({ ...newProductData, ean: e.target.value })}
+                    placeholder="37215133001"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Categorie</label>
+                  <select
                     value={newProductData.category}
                     onChange={(e) => setNewProductData({ ...newProductData, category: e.target.value })}
-                    placeholder="Bijv. Bouwmateriaal"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
+                  >
+                    <option value="">Selecteer categorie</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.name}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Eenheid *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Eenheid</label>
                   <input
                     type="text"
                     value={newProductData.unit}
                     onChange={(e) => setNewProductData({ ...newProductData, unit: e.target.value })}
-                    placeholder="Bijv. stuks, kg, m"
+                    placeholder="Bijv. stuk, doosje, kg, m"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Minimale Voorraad</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Min. voorraad</label>
                   <input
                     type="number"
                     min="0"
@@ -2237,12 +2324,36 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">EAN Code</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Leverancier</label>
                   <input
                     type="text"
-                    value={newProductData.ean}
-                    onChange={(e) => setNewProductData({ ...newProductData, ean: e.target.value })}
-                    placeholder="EAN barcode"
+                    value={newProductData.supplier}
+                    onChange={(e) => setNewProductData({ ...newProductData, supplier: e.target.value })}
+                    placeholder="Bijv. Stiho, Berner"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Lev.art.nr.</label>
+                  <input
+                    type="text"
+                    value={newProductData.supplier_article_number}
+                    onChange={(e) => setNewProductData({ ...newProductData, supplier_article_number: e.target.value })}
+                    placeholder="Bijv. 160740"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">€/eenh (prijs per eenheid)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={newProductData.price_per_unit}
+                    onChange={(e) => setNewProductData({ ...newProductData, price_per_unit: parseFloat(e.target.value) || 0 })}
+                    placeholder="5.13"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
@@ -2270,17 +2381,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Leverancier</label>
-                  <input
-                    type="text"
-                    value={newProductData.supplier}
-                    onChange={(e) => setNewProductData({ ...newProductData, supplier: e.target.value })}
-                    placeholder="Leverancier naam"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
-                </div>
               </div>
 
               <div>
@@ -2294,9 +2394,53 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 />
               </div>
 
+              {/* Initial Stock Section */}
+              <div className="border-t border-gray-200 pt-4">
+                <h3 className="text-md font-semibold text-gray-900 mb-3">Initiële Voorraad (optioneel)</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Voeg direct voorraad toe zodat het product in het overzicht verschijnt. Je kunt dit ook later doen.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Locatie</label>
+                    <select
+                      value={initialStockLocation}
+                      onChange={(e) => setInitialStockLocation(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    >
+                      <option value="">Geen (later toevoegen)</option>
+                      {locations.map((location) => (
+                        <option key={location.id} value={location.id}>
+                          {location.name} ({location.type})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Aantal</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={initialStockQuantity}
+                      onChange={(e) => setInitialStockQuantity(parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                      disabled={!initialStockLocation}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+                {initialStockLocation && initialStockQuantity > 0 && (
+                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-md">
+                    <p className="text-sm text-green-800">
+                      ✓ Product wordt toegevoegd met {initialStockQuantity} stuks op {locations.find(l => l.id === initialStockLocation)?.name}
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                 <button
-                  onClick={() => setShowAddProductModal(false)}
+                  onClick={closeAddProductModal}
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
                 >
                   Annuleren

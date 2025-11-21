@@ -1,23 +1,45 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Scan, X, Plus, Minus, CheckCircle, AlertCircle, Trash2, FileText, Download, Search, Upload, FileSpreadsheet, Edit2 } from 'lucide-react';
-import { formatDate } from '../utils/dateUtils';
-import { exportToCSV } from '../utils/exportUtils';
+import { ArrowRight, ArrowLeft, Package, FileText, Plus, Trash2, CheckCircle, Scan, X, Search, Edit2, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { useSystemSettings } from '../contexts/SystemSettingsContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Html5Qrcode } from 'html5-qrcode';
+
+// Common unit types for products
+const COMMON_UNITS = [
+  'stuks',
+  'meter',
+  'meter²',
+  'meter³',
+  'liter',
+  'kilogram',
+  'gram',
+  'ton',
+  'zak',
+  'doos',
+  'set',
+  'paar',
+  'rol',
+  'bus',
+  'fles',
+  'pak'
+];
 
 interface Product {
   id: string;
   name: string;
-  sku: string;
+  gb_article_number: string;
   ean: string | null;
   category: string;
+  material_group?: string;
   unit: string;
   minimum_stock: number;
   description: string | null;
   supplier: string | null;
+  supplier_article_number?: string;
   price: number | null;
+  price_per_unit?: number;
+  photo_path?: string;
 }
 
 interface Location {
@@ -34,69 +56,58 @@ interface Project {
   project_nummer: string | null;
 }
 
-interface BookingLine {
-  searchValue: string;
+interface ProductLine {
+  id: string; // Unique ID for the line
   product: Product | null;
   quantity: number;
-  showDropdown: boolean;
+  unit: string;
   location: string;
+  searchValue: string;
+  showDropdown: boolean;
 }
 
-interface StockItem {
-  product_id: string;
-  product: Product;
-  quantity: number;
-  location_id: string;
-}
+type WizardStep = 'action' | 'customer' | 'products' | 'overview';
 
-interface Transaction {
-  id: string;
-  created_at: string;
-  product_id: string;
-  location_id: string;
-  project_id: string;
-  user_id: string;
-  transaction_type: string;
-  quantity: number;
-  notes: string | null;
-  product?: Product;
-  location?: Location;
-  project?: Project;
-  user?: { id: string; email: string; naam: string | null };
-}
-
-type DateFilter = 'vandaag' | 'deze_week' | 'deze_maand' | 'dit_jaar' | 'custom';
-
-const VoorraadbeheerAfboeken: React.FC = () => {
+const VoorraadbeheerAfboekenNew: React.FC = () => {
   const { user } = useAuth();
-  const { getCsvSeparator } = useSystemSettings();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const { t } = useLanguage();
+
+  // Wizard state
+  const [currentStep, setCurrentStep] = useState<WizardStep>('action');
+  const [selectedAction, setSelectedAction] = useState<'booking' | 'overview' | null>(null);
+
+  // Customer/Project data
   const [selectedProject, setSelectedProject] = useState('');
-  const [showStockModal, setShowStockModal] = useState(false);
-  const [stockModalLineIndex, setStockModalLineIndex] = useState<number | null>(null);
-  const [locationStock, setLocationStock] = useState<StockItem[]>([]);
-  const [loadingStock, setLoadingStock] = useState(false);
-  const [bookingLines, setBookingLines] = useState<BookingLine[]>([{ searchValue: '', product: null, quantity: 1, showDropdown: false, location: '' }]);
+  const [customerName, setCustomerName] = useState('');
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  // Product selection
+  const [productLines, setProductLines] = useState<ProductLine[]>([
+    { id: crypto.randomUUID(), product: null, quantity: 1, unit: 'stuks', location: '', searchValue: '', showDropdown: false }
+  ]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
+
+  // Scanner
   const [showScanner, setShowScanner] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanningForLineIndex, setScanningForLineIndex] = useState<number | null>(null);
+  const [scannedValue, setScannedValue] = useState<string>('');
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+
+  // Search modal
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchingForLineIndex, setSearchingForLineIndex] = useState<number | null>(null);
+  const [searchLocation, setSearchLocation] = useState('');
+  const [searchCategory, setSearchCategory] = useState('');
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+
+  // Messages
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [showOverview, setShowOverview] = useState(false);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState<DateFilter>('deze_maand');
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
-  const [loadingTransactions, setLoadingTransactions] = useState(false);
-  const [selectedTransactions, setSelectedTransactions] = useState<Set<string>>(new Set());
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [userRole, setUserRole] = useState<string>('medewerker');
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [importFile, setImportFile] = useState<File | null>(null);
-  const [importing, setImporting] = useState(false);
+  const [loadingStock, setLoadingStock] = useState(false);
+
+  // Booking tracking
   const [lastBookingIds, setLastBookingIds] = useState<string[]>([]);
   const [negativeStockWarnings, setNegativeStockWarnings] = useState<Array<{
     product: string;
@@ -105,8 +116,17 @@ const VoorraadbeheerAfboeken: React.FC = () => {
     requested: number;
   }>>([]);
   const [showBookingResultModal, setShowBookingResultModal] = useState(false);
+
+  // Overview state
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [overviewSearch, setOverviewSearch] = useState('');
+  const [userFilter, setUserFilter] = useState('');
+
+  // Edit/Delete state
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<any | null>(null);
   const [editFormData, setEditFormData] = useState({
     product_id: '',
     location_id: '',
@@ -116,34 +136,32 @@ const VoorraadbeheerAfboeken: React.FC = () => {
   });
   const [showDeleteSingleConfirm, setShowDeleteSingleConfirm] = useState(false);
   const [deletingTransactionId, setDeletingTransactionId] = useState<string | null>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadData();
   }, []);
 
   useEffect(() => {
-    if (showOverview) {
-      loadTransactions();
-    }
-  }, [showOverview]);
-
-  useEffect(() => {
-    // Reset selection when filters change
-    setSelectedTransactions(new Set());
-  }, [searchTerm, dateFilter, customStartDate, customEndDate]);
-
-  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (!target.closest('.product-search-container')) {
-        setBookingLines(lines => lines.map(line => ({ ...line, showDropdown: false })));
+        setProductLines(lines => lines.map(line => ({ ...line, showDropdown: false })));
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Cleanup scanner on unmount
+  useEffect(() => {
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
+        scannerRef.current.clear();
+        scannerRef.current = null;
+      }
+    };
   }, []);
 
   const loadData = async () => {
@@ -162,306 +180,18 @@ const VoorraadbeheerAfboeken: React.FC = () => {
     }
   };
 
-  const startScanning = async (lineIndex: number) => {
-    try {
-      setShowScanner(true);
-      setScanning(true);
-      setScanningForLineIndex(lineIndex);
-      setErrorMessage('');
-
-      const cameras = await Html5Qrcode.getCameras();
-      if (!cameras || cameras.length === 0) {
-        throw new Error('Geen camera gevonden');
-      }
-
-      const scanner = new Html5Qrcode('qr-reader');
-      scannerRef.current = scanner;
-
-      const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0
-      };
-
-      await scanner.start(
-        { facingMode: 'environment' },
-        config,
-        (decodedText) => {
-          handleScanSuccess(decodedText);
-        },
-        (errorMessage) => {
-        }
-      );
-    } catch (error: any) {
-      console.error('Error starting scanner:', error);
-      const errorMsg = error.message || 'Kon camera niet starten. Controleer de camera permissies.';
-      setErrorMessage(errorMsg);
-      setShowScanner(false);
-      setScanning(false);
-      setScanningForLineIndex(null);
-    }
-  };
-
-  const stopScanning = async () => {
-    if (scannerRef.current) {
-      try {
-        await scannerRef.current.stop();
-        scannerRef.current.clear();
-        scannerRef.current = null;
-      } catch (error) {
-        console.error('Error stopping scanner:', error);
-      }
-    }
-    setShowScanner(false);
-    setScanning(false);
-    setScanningForLineIndex(null);
-  };
-
-  const handleScanSuccess = (decodedText: string) => {
-    if (scanningForLineIndex !== null) {
-      updateLineSearch(scanningForLineIndex, decodedText);
-      stopScanning();
-    }
-  };
-
-  const updateLineSearch = (index: number, value: string) => {
-    const newLines = [...bookingLines];
-    newLines[index].searchValue = value;
-    newLines[index].showDropdown = value.length > 0;
-
-    const foundProduct = products.find(p =>
-      p.ean === value ||
-      p.sku.toLowerCase() === value.toLowerCase()
-    );
-
-    newLines[index].product = foundProduct || null;
-    setBookingLines(newLines);
-  };
-
-  const selectProduct = (index: number, product: Product) => {
-    const newLines = [...bookingLines];
-    newLines[index].product = product;
-    newLines[index].searchValue = product.name;
-    newLines[index].showDropdown = false;
-    setBookingLines(newLines);
-  };
-
-  const getFilteredProducts = (searchValue: string) => {
-    if (!searchValue) return [];
-    const search = searchValue.toLowerCase();
-    return products.filter(p =>
-      p.name.toLowerCase().includes(search) ||
-      p.sku.toLowerCase().includes(search) ||
-      (p.ean && p.ean.toLowerCase().includes(search))
-    ).slice(0, 5);
-  };
-
-  const updateLineQuantity = (index: number, delta: number) => {
-    const newLines = [...bookingLines];
-    newLines[index].quantity = Math.max(1, newLines[index].quantity + delta);
-    setBookingLines(newLines);
-  };
-
-  const addLine = () => {
-    setBookingLines([...bookingLines, { searchValue: '', product: null, quantity: 1, showDropdown: false, location: '' }]);
-  };
-
-  const updateLineLocation = (index: number, locationId: string) => {
-    const newLines = [...bookingLines];
-    newLines[index].location = locationId;
-    setBookingLines(newLines);
-  };
-
-  const loadLocationStock = async (lineIndex: number) => {
-    const line = bookingLines[lineIndex];
-    if (!line.location) {
-      setErrorMessage('Selecteer eerst een locatie');
-      setTimeout(() => setErrorMessage(''), 3000);
-      return;
-    }
-
-    setStockModalLineIndex(lineIndex);
-    setShowStockModal(true);
-    setLoadingStock(true);
-
-    try {
-      const { data, error } = await supabase
-        .from('inventory_stock')
-        .select(`
-          product_id,
-          quantity,
-          location_id,
-          product:inventory_products!inventory_stock_product_id_fkey(*)
-        `)
-        .eq('location_id', line.location)
-        .gt('quantity', 0)
-        .order('product(name)');
-
-      if (error) throw error;
-      setLocationStock(data || []);
-    } catch (error: any) {
-      console.error('Error loading stock:', error);
-      setErrorMessage('Fout bij het laden van voorraad');
-      setTimeout(() => setErrorMessage(''), 3000);
-    } finally {
-      setLoadingStock(false);
-    }
-  };
-
-  const selectProductFromStock = (stockItem: StockItem) => {
-    if (stockModalLineIndex !== null) {
-      const newLines = [...bookingLines];
-      newLines[stockModalLineIndex].product = stockItem.product;
-      newLines[stockModalLineIndex].searchValue = stockItem.product.name;
-      newLines[stockModalLineIndex].showDropdown = false;
-      setBookingLines(newLines);
-      setShowStockModal(false);
-      setStockModalLineIndex(null);
-    }
-  };
-
-  const removeLine = (index: number) => {
-    if (bookingLines.length > 1) {
-      setBookingLines(bookingLines.filter((_, i) => i !== index));
-    }
-  };
-
-  const handleBookProducts = async () => {
-    const validLines = bookingLines.filter(line => line.product !== null && line.location);
-
-    if (!selectedProject) {
-      setErrorMessage('Selecteer een project');
-      setTimeout(() => setErrorMessage(''), 3000);
-      return;
-    }
-
-    const missingLocations = bookingLines.some(line => line.product && !line.location);
-    if (missingLocations) {
-      setErrorMessage('Selecteer een locatie voor alle producten');
-      setTimeout(() => setErrorMessage(''), 3000);
-      return;
-    }
-
-    if (validLines.length === 0) {
-      setErrorMessage('Voeg minimaal 1 geldig product toe');
-      setTimeout(() => setErrorMessage(''), 3000);
-      return;
-    }
-
-    setLoadingStock(true);
-    setNegativeStockWarnings([]);
-
-    try {
-      const warnings: Array<{product: string, location: string, available: number, requested: number}> = [];
-
-      // Check stock availability for warnings only (don't block)
-      for (const line of validLines) {
-        const { data: stockData, error: stockError } = await supabase
-          .from('inventory_stock')
-          .select('quantity')
-          .eq('product_id', line.product!.id)
-          .eq('location_id', line.location)
-          .maybeSingle();
-
-        if (stockError) {
-          throw new Error(`Fout bij het controleren van voorraad: ${stockError.message}`);
-        }
-
-        const currentStock = stockData?.quantity || 0;
-
-        if (currentStock < line.quantity) {
-          const productName = line.product!.name;
-          const locationName = locations.find(l => l.id === line.location)?.name || 'deze locatie';
-          warnings.push({
-            product: productName,
-            location: locationName,
-            available: currentStock,
-            requested: line.quantity
-          });
-        }
-      }
-
-      // Proceed with transactions regardless of stock
-      const projectName = projects.find(p => p.id === selectedProject)?.naam || '';
-      const transactions = validLines.map(line => ({
-        product_id: line.product!.id,
-        location_id: line.location,
-        project_id: selectedProject,
-        user_id: user!.id,
-        transaction_type: 'out' as const,
-        quantity: -Math.abs(line.quantity),
-        notes: `Afgeboekt naar project ${projectName}`
-      }));
-
-      const { data: insertedTransactions, error } = await supabase
-        .from('inventory_transactions')
-        .insert(transactions)
-        .select();
-
-      if (error) {
-        if (error.code === '23503') {
-          throw new Error('Een van de geselecteerde producten of locaties bestaat niet meer');
-        }
-        if (error.code === '23505') {
-          throw new Error('Deze afboeking bestaat al in het systeem');
-        }
-        throw new Error(`Database fout: ${error.message}`);
-      }
-
-      // Track booking IDs
-      if (insertedTransactions) {
-        setLastBookingIds(insertedTransactions.map(t => t.id));
-      }
-
-      // If there are warnings, send notifications to office staff
-      if (warnings.length > 0) {
-        const { data: officeUsers } = await supabase
-          .from('profiles')
-          .select('id')
-          .in('role', ['admin', 'kantoorpersoneel', 'superuser']);
-
-        if (officeUsers && officeUsers.length > 0) {
-          const notifications = officeUsers.map(officeUser => ({
-            recipient_id: officeUser.id,
-            sender_id: user!.id,
-            type: 'system_alert' as const,
-            title: '⚠️ Negatieve voorraad na afboeking',
-            message: `${user?.naam || 'Een gebruiker'} heeft producten afgeboekt die niet op voorraad zijn:\n${warnings.map(w => `- ${w.product} op ${w.location}: ${w.available} beschikbaar, ${w.requested} afgeboekt`).join('\n')}\n\nControleer de voorraad en pas indien nodig aan.`,
-            status: 'unread' as const
-          }));
-
-          await supabase.from('notifications').insert(notifications);
-        }
-      }
-
-      // Store warnings and show result modal
-      setNegativeStockWarnings(warnings);
-      setShowBookingResultModal(true);
-
-      // Reset form
-      setBookingLines([{ searchValue: '', product: null, quantity: 1, showDropdown: false, location: '' }]);
-      setSelectedProject('');
-    } catch (error: any) {
-      console.error('Error booking products:', error);
-      setErrorMessage(error.message || 'Fout bij het afboeken van producten');
-      setTimeout(() => setErrorMessage(''), 5000);
-    } finally {
-      setLoadingStock(false);
-    }
-  };
-
-  const getTotalItems = () => {
-    return bookingLines
-      .filter(line => line.product !== null)
-      .reduce((sum, line) => sum + line.quantity, 0);
+  const getProductPhotoUrl = (photoPath: string | undefined): string | null => {
+    if (!photoPath) return null;
+    const { data } = supabase.storage.from('product-images').getPublicUrl(photoPath);
+    return data?.publicUrl || null;
   };
 
   // Helper function to check if user has admin privileges
   const hasAdminPrivileges = () => {
-    return ['admin', 'superuser', 'kantoorpersoneel'].includes(userRole);
+    return ['admin', 'superuser', 'kantoorpersoneel'].includes(user?.role || '');
   };
 
-  const handleEditTransaction = (transaction: Transaction) => {
+  const handleEditTransaction = (transaction: any) => {
     setEditingTransaction(transaction);
     setEditFormData({
       product_id: transaction.product_id,
@@ -526,778 +256,1147 @@ const VoorraadbeheerAfboeken: React.FC = () => {
   };
 
   const loadTransactions = async () => {
-    setLoadingTransactions(true);
     try {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user?.id)
-        .single();
-
-      const role = profileData?.role || 'medewerker';
-      setUserRole(role);
-      // admin, superuser, and kantoorpersoneel can see all transactions
-      const canViewAll = ['admin', 'superuser', 'kantoorpersoneel'].includes(role);
+      // Check if user is admin/superuser to see all transactions
+      const isAdmin = user?.role === 'admin' || user?.role === 'superuser' || user?.role === 'kantoorpersoneel';
 
       let query = supabase
         .from('inventory_transactions')
         .select(`
           *,
-          product:inventory_products!inventory_transactions_product_id_fkey(*),
-          location:inventory_locations!inventory_transactions_location_id_fkey(*),
-          project:projects!inventory_transactions_project_id_fkey(id, naam, project_nummer),
-          user:profiles!inventory_transactions_user_id_fkey(id, email, naam)
+          inventory_products!inner(name, gb_article_number),
+          location:inventory_locations!location_id(name),
+          profiles(naam),
+          projects(naam, project_nummer)
         `)
-        .eq('transaction_type', 'out');
+        .eq('transaction_type', 'out')
+        .order('created_at', { ascending: false });
 
-      // zzper and medewerker can only see their own transactions
-      if (!canViewAll) {
-        query = query.eq('user_id', user?.id);
+      // If not admin, only show own transactions
+      if (!isAdmin && user?.id) {
+        query = query.eq('user_id', user.id);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error details:', error);
+        throw new Error(`Database fout: ${error.message}`);
+      }
+
       setTransactions(data || []);
-    } catch (error) {
-      console.error('Error loading transactions:', error);
-      setErrorMessage('Fout bij het laden van afboekingen');
-    } finally {
-      setLoadingTransactions(false);
-    }
-  };
+      setFilteredTransactions(data || []);
 
-  const getDateRange = () => {
-    const now = new Date();
-    let startDate = new Date();
-    let endDate = new Date();
+      // Load users for filter dropdown (only if admin)
+      if (isAdmin) {
+        const { data: usersData, error: usersError } = await supabase
+          .from('profiles')
+          .select('id, naam')
+          .order('naam');
 
-    switch (dateFilter) {
-      case 'vandaag':
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      case 'deze_week':
-        const day = now.getDay();
-        const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-        startDate = new Date(now.setDate(diff));
-        startDate.setHours(0, 0, 0, 0);
-        endDate = new Date();
-        endDate.setHours(23, 59, 59, 999);
-        break;
-      case 'deze_maand':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-        break;
-      case 'dit_jaar':
-        startDate = new Date(now.getFullYear(), 0, 1);
-        endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
-        break;
-      case 'custom':
-        if (customStartDate) startDate = new Date(customStartDate);
-        if (customEndDate) {
-          endDate = new Date(customEndDate);
-          endDate.setHours(23, 59, 59, 999);
+        if (usersError) {
+          console.error('Error loading users:', usersError);
+        } else {
+          setUsers(usersData || []);
         }
-        break;
+      }
+    } catch (error: any) {
+      console.error('Error loading transactions:', error);
+      setErrorMessage(error?.message || 'Fout bij het laden van transacties');
     }
-
-    return { startDate, endDate };
   };
 
-  const filteredTransactions = transactions.filter(transaction => {
-    const { startDate, endDate } = getDateRange();
-    const transactionDate = new Date(transaction.created_at);
+  // Filter transactions based on search and user filter
+  useEffect(() => {
+    let filtered = [...transactions];
 
-    if (transactionDate < startDate || transactionDate > endDate) {
-      return false;
+    // Filter by search term
+    if (overviewSearch) {
+      filtered = filtered.filter(t =>
+        t.inventory_products?.name?.toLowerCase().includes(overviewSearch.toLowerCase()) ||
+        t.inventory_products?.gb_article_number?.toLowerCase().includes(overviewSearch.toLowerCase()) ||
+        t.profiles?.naam?.toLowerCase().includes(overviewSearch.toLowerCase()) ||
+        t.notes?.toLowerCase().includes(overviewSearch.toLowerCase()) ||
+        t.projects?.naam?.toLowerCase().includes(overviewSearch.toLowerCase())
+      );
     }
 
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      const matchesProject = transaction.project?.naam.toLowerCase().includes(search) ||
-                            transaction.project?.project_nummer?.toLowerCase().includes(search);
-      const matchesUser = transaction.user?.naam?.toLowerCase().includes(search) ||
-                         transaction.user?.email.toLowerCase().includes(search);
-      const matchesProduct = transaction.product?.name.toLowerCase().includes(search) ||
-                            transaction.product?.sku.toLowerCase().includes(search) ||
-                            transaction.product?.category.toLowerCase().includes(search);
-      const matchesLocation = transaction.location?.name.toLowerCase().includes(search);
+    // Filter by user
+    if (userFilter) {
+      filtered = filtered.filter(t => t.user_id === userFilter);
+    }
 
-      if (!matchesProject && !matchesUser && !matchesProduct && !matchesLocation) {
-        return false;
+    setFilteredTransactions(filtered);
+  }, [overviewSearch, userFilter, transactions]);
+
+  const exportOverviewToCSV = () => {
+    try {
+      // Get Excel export settings from localStorage
+      const settings = JSON.parse(localStorage.getItem('excelExportSettings') || '{}');
+      const delimiter = settings.delimiter || ';';
+
+      const headers = [
+        'Datum',
+        'Product',
+        'GB-art.nr.',
+        'Aantal',
+        'Locatie',
+        'Gebruiker',
+        'Klant/Project',
+        'Notities'
+      ];
+
+      const rows = filteredTransactions.map(t => [
+        new Date(t.created_at).toLocaleString('nl-NL'),
+        t.inventory_products?.name || '',
+        t.inventory_products?.gb_article_number || '',
+        Math.abs(t.quantity),
+        t.location?.name || '',
+        t.profiles?.naam || '',
+        t.customer_name || t.projects?.naam || '',
+        t.notes || ''
+      ]);
+
+      const csv = [
+        headers.join(delimiter),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(delimiter))
+      ].join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `voorraad-afboekingen-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+    } catch (error) {
+      console.error('Error exporting:', error);
+      alert('Fout bij exporteren');
+    }
+  };
+
+  // Step 1: Action Selection
+  const handleActionSelect = async (action: 'booking' | 'overview') => {
+    setSelectedAction(action);
+    if (action === 'overview') {
+      // Load transactions and show overview
+      await loadTransactions();
+      setCurrentStep('overview');
+    } else {
+      setCurrentStep('customer');
+    }
+  };
+
+  // Step 2: Customer/Project Input
+  const handleCustomerNext = () => {
+    if (!selectedProject && !customerName.trim()) {
+      setErrorMessage('Selecteer een project of voer een klantnaam in');
+      return;
+    }
+    setErrorMessage('');
+    setCurrentStep('products');
+  };
+
+  // Step 3: Product Lines Management
+  const addProductLine = () => {
+    setProductLines([
+      ...productLines,
+      {
+        id: crypto.randomUUID(),
+        product: null,
+        quantity: 1,
+        unit: 'stuks',
+        location: '',
+        searchValue: '',
+        showDropdown: false
+      }
+    ]);
+  };
+
+  const removeProductLine = (id: string) => {
+    if (productLines.length > 1) {
+      setProductLines(productLines.filter(line => line.id !== id));
+    }
+  };
+
+  const updateProductLine = (id: string, updates: Partial<ProductLine>) => {
+    setProductLines(productLines.map(line =>
+      line.id === id ? { ...line, ...updates } : line
+    ));
+  };
+
+  const updateLineSearch = (index: number, value: string) => {
+    const newLines = [...productLines];
+    newLines[index].searchValue = value;
+    newLines[index].showDropdown = value.length > 0;
+
+    // Search by EAN, GB article number, or name
+    const searchLower = value.toLowerCase().trim();
+    const foundProduct = products.find(p =>
+      p.ean === value ||
+      p.gb_article_number.toLowerCase() === searchLower ||
+      p.name.toLowerCase().includes(searchLower)
+    );
+
+    newLines[index].product = foundProduct || null;
+
+    // If product found, set its default unit and close dropdown
+    if (foundProduct) {
+      newLines[index].unit = foundProduct.unit;
+      newLines[index].showDropdown = false;
+    }
+
+    setProductLines(newLines);
+  };
+
+  const selectProduct = (index: number, product: Product) => {
+    const newLines = [...productLines];
+    newLines[index].product = product;
+    newLines[index].searchValue = product.name;
+    newLines[index].unit = product.unit;
+    newLines[index].showDropdown = false;
+    setProductLines(newLines);
+  };
+
+  const getFilteredProducts = (searchValue: string) => {
+    if (!searchValue) return [];
+    const search = searchValue.toLowerCase();
+    return products.filter(p =>
+      p.name.toLowerCase().includes(search) ||
+      p.gb_article_number.toLowerCase().includes(search) ||
+      (p.ean && p.ean.toLowerCase().includes(search)) ||
+      (p.supplier_article_number && p.supplier_article_number.toLowerCase().includes(search))
+    ).slice(0, 8);
+  };
+
+  // Scanner functions
+  const startScanning = async (lineIndex: number) => {
+    try {
+      // Clean up any existing scanner first
+      if (scannerRef.current) {
+        try {
+          await scannerRef.current.stop();
+          scannerRef.current.clear();
+          scannerRef.current = null;
+        } catch (e) {
+          console.log('Cleaned up old scanner');
+        }
+      }
+
+      setShowScanner(true);
+      setScanning(true);
+      setScanningForLineIndex(lineIndex);
+      setScannedValue('');
+      setErrorMessage('');
+
+      console.log('Starting scanner for line index:', lineIndex);
+
+      // Delay to ensure modal and qr-reader div are rendered
+      await new Promise(resolve => setTimeout(resolve, 150));
+
+      // Check if element exists
+      const element = document.getElementById('qr-reader');
+      if (!element) {
+        throw new Error('Scanner element niet gevonden');
+      }
+
+      const cameras = await Html5Qrcode.getCameras();
+      console.log('Cameras found:', cameras.length);
+      if (!cameras || cameras.length === 0) {
+        throw new Error('Geen camera gevonden');
+      }
+
+      const scanner = new Html5Qrcode('qr-reader');
+      scannerRef.current = scanner;
+
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0
+      };
+
+      console.log('Starting camera...');
+
+      // Start scanner with simple callback (no async)
+      await scanner.start(
+        { facingMode: 'environment' },
+        config,
+        (decodedText) => {
+          // Direct state update when scan succeeds
+          console.log('✅ Barcode gescand:', decodedText);
+          handleScanSuccess(decodedText);
+        },
+        (errorMessage) => {
+          // Ignore continuous scan errors (they happen when no barcode is visible)
+        }
+      );
+
+      console.log('Camera started successfully');
+    } catch (error: any) {
+      console.error('❌ Error starting scanner:', error);
+      const errorMsg = error.message || 'Kon camera niet starten. Controleer de camera permissies.';
+      setErrorMessage(errorMsg);
+      setShowScanner(false);
+      setScanning(false);
+      setScanningForLineIndex(null);
+    }
+  };
+
+  const stopScanning = async () => {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        scannerRef.current.clear();
+        scannerRef.current = null;
+      } catch (error) {
+        console.error('Error stopping scanner:', error);
       }
     }
+    setShowScanner(false);
+    setScanning(false);
+    setScanningForLineIndex(null);
+    setScannedValue('');
+  };
 
-    return true;
-  });
+  const handleScanSuccess = (decodedText: string) => {
+    console.log('handleScanSuccess called with:', decodedText);
 
-  const handleExportTransactions = () => {
-    if (filteredTransactions.length === 0) {
-      setErrorMessage('Geen afboekingen om te exporteren');
-      setTimeout(() => setErrorMessage(''), 3000);
+    // Stop the scanner
+    if (scannerRef.current) {
+      scannerRef.current.stop().then(() => {
+        console.log('Scanner stopped');
+        scannerRef.current?.clear();
+        scannerRef.current = null;
+      }).catch(err => console.error('Error stopping scanner:', err));
+    }
+
+    // Update state
+    setScanning(false);
+    setScannedValue(decodedText);
+  };
+
+  const handleConfirmScan = () => {
+    console.log('Confirm scan clicked, value:', scannedValue, 'lineIndex:', scanningForLineIndex);
+
+    if (scanningForLineIndex !== null && scannedValue) {
+      const lineIndex = scanningForLineIndex;
+
+      // Update the search value and try to find product
+      updateLineSearch(lineIndex, scannedValue);
+
+      // Close scanner modal
+      setShowScanner(false);
+      setScanningForLineIndex(null);
+      setScannedValue('');
+
+      console.log('Scan confirmed, input should be filled now');
+    }
+  };
+
+  // Search modal functions
+  const openSearchModal = (lineIndex: number) => {
+    setSearchingForLineIndex(lineIndex);
+    setShowSearchModal(true);
+    setSearchLocation('');
+    setSearchCategory('');
+    setSearchResults([]);
+  };
+
+  const closeSearchModal = () => {
+    setShowSearchModal(false);
+    setSearchingForLineIndex(null);
+    setSearchLocation('');
+    setSearchCategory('');
+    setSearchResults([]);
+  };
+
+  const handleSearchLocation = async (locationId: string) => {
+    setSearchLocation(locationId);
+    setSearchCategory('');
+
+    if (!locationId) {
+      setSearchResults([]);
       return;
     }
 
-    const separator = getCsvSeparator();
-    const headers = ['Datum', 'Project', 'Product', 'Categorie', 'Aantal', 'Eenheid', 'Locatie', 'Medewerker', 'Opmerkingen'];
-    const data = filteredTransactions.map(t => ({
-      datum: formatDate(t.created_at),
-      project: `${t.project?.naam || ''} ${t.project?.project_nummer ? `(#${t.project.project_nummer})` : ''}`,
-      product: `${t.product?.name || ''} (${t.product?.sku || ''})`,
-      categorie: t.product?.category || '',
-      aantal: Math.abs(t.quantity),
-      eenheid: t.product?.unit || '',
-      locatie: t.location?.name || '',
-      medewerker: t.user?.naam || t.user?.email || '',
-      opmerkingen: t.notes || ''
-    }));
+    // Get products available in this location from stock
+    const { data: stockData } = await supabase
+      .from('inventory_stock')
+      .select('product_id, inventory_products(*)')
+      .eq('location_id', locationId)
+      .gt('quantity', 0);
 
-    const csvContent = [
-      headers.join(separator),
-      ...data.map(row =>
-        headers.map(header => {
-          const value = row[header.toLowerCase().replace(/\s+/g, '')];
-          const stringValue = value !== null && value !== undefined ? String(value) : '';
-          return stringValue.includes(separator) || stringValue.includes('"') || stringValue.includes('\n')
-            ? `"${stringValue.replace(/"/g, '""')}"`
-            : stringValue;
-        }).join(separator)
-      )
-    ].join('\n');
-
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `afboekingen_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (stockData) {
+      const productsInLocation = stockData
+        .map(s => s.inventory_products)
+        .filter(Boolean) as Product[];
+      setSearchResults(productsInLocation);
+    }
   };
 
-  const downloadTemplate = () => {
-    const separator = getCsvSeparator();
-    const headers = ['Datum', 'Project', 'Product SKU', 'Aantal', 'Locatie', 'Opmerkingen'];
-    const example = [
-      `14-10-2025${separator}J. Raaijmakers${separator}CEM-25KG${separator}3${separator}Magazijn Moordrecht${separator}Afgeboekt naar project`,
-      `14-10-2025${separator}A.S. Schuch${separator}AFD-FOL-45${separator}5${separator}Bus 2${separator}Materiaal gebruikt`
-    ];
+  const handleSearchCategory = async (category: string) => {
+    setSearchCategory(category);
 
-    const csvContent = [headers.join(separator), ...example].join('\n');
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'afboekingen_sjabloon.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (!searchLocation) {
+      return;
+    }
+
+    // Get products from stock filtered by location
+    const { data: stockData } = await supabase
+      .from('inventory_stock')
+      .select('product_id, inventory_products(*)')
+      .eq('location_id', searchLocation)
+      .gt('quantity', 0);
+
+    if (stockData) {
+      let productsInLocation = stockData
+        .map(s => s.inventory_products)
+        .filter(Boolean) as Product[];
+
+      // Filter by category if selected
+      if (category) {
+        productsInLocation = productsInLocation.filter(p => p.category === category);
+      }
+
+      setSearchResults(productsInLocation);
+    }
   };
 
-  const handleImport = async () => {
-    if (!importFile) return;
+  const getAvailableCategories = () => {
+    const categories = new Set(searchResults.map(p => p.category).filter(Boolean));
+    return Array.from(categories).sort();
+  };
 
-    setImporting(true);
+  const selectProductFromSearch = (product: Product) => {
+    if (searchingForLineIndex !== null) {
+      const lineIndex = searchingForLineIndex;
+
+      // Update the product line
+      const newLines = [...productLines];
+      newLines[lineIndex].product = product;
+      newLines[lineIndex].searchValue = product.name;
+      newLines[lineIndex].unit = product.unit;
+      newLines[lineIndex].location = searchLocation;
+      newLines[lineIndex].showDropdown = false;
+      setProductLines(newLines);
+
+      // Close modal
+      closeSearchModal();
+    }
+  };
+
+  // Final submission
+  const handleSubmitBooking = async () => {
+    // Validation
+    const validLines = productLines.filter(line => line.product && line.location && line.quantity > 0);
+
+    if (validLines.length === 0) {
+      setErrorMessage('Voeg minimaal 1 product toe met locatie en aantal');
+      return;
+    }
+
+    setLoadingStock(true);
+    setErrorMessage('');
+    setNegativeStockWarnings([]);
+
     try {
-      const text = await importFile.text();
-      const separator = getCsvSeparator();
-      const lines = text.split('\n').filter(line => line.trim());
+      const warnings: Array<{product: string, location: string, available: number, requested: number}> = [];
 
-      if (lines.length < 2) {
-        throw new Error('Bestand is leeg of heeft geen data');
-      }
-
-      // Skip header
-      const dataLines = lines.slice(1);
-      const importedTransactions = [];
-
-      for (const line of dataLines) {
-        const values = line.split(separator).map(v => v.trim().replace(/^"|"$/g, ''));
-
-        if (values.length < 6) continue;
-
-        const [dateStr, projectName, productSku, quantityStr, locationName, notes] = values;
-
-        // Find project
-        const { data: projectData } = await supabase
-          .from('projects')
-          .select('id')
-          .ilike('naam', `%${projectName}%`)
+      // Check stock availability for warnings only (don't block)
+      for (const line of validLines) {
+        const { data: stockData } = await supabase
+          .from('inventory_stock')
+          .select('quantity')
+          .eq('product_id', line.product!.id)
+          .eq('location_id', line.location)
           .maybeSingle();
 
-        if (!projectData) {
-          console.warn(`Project niet gevonden: ${projectName}`);
-          continue;
+        const currentStock = stockData?.quantity || 0;
+
+        if (currentStock < line.quantity) {
+          const productName = line.product!.name;
+          const locationName = locations.find(l => l.id === line.location)?.name || 'deze locatie';
+          warnings.push({
+            product: productName,
+            location: locationName,
+            available: currentStock,
+            requested: line.quantity
+          });
         }
-
-        // Find product
-        const { data: productData } = await supabase
-          .from('inventory_products')
-          .select('id')
-          .eq('sku', productSku)
-          .maybeSingle();
-
-        if (!productData) {
-          console.warn(`Product niet gevonden: ${productSku}`);
-          continue;
-        }
-
-        // Find location
-        const { data: locationData } = await supabase
-          .from('inventory_locations')
-          .select('id')
-          .ilike('name', `%${locationName}%`)
-          .maybeSingle();
-
-        if (!locationData) {
-          console.warn(`Locatie niet gevonden: ${locationName}`);
-          continue;
-        }
-
-        importedTransactions.push({
-          product_id: productData.id,
-          location_id: locationData.id,
-          project_id: projectData.id,
-          user_id: user?.id,
-          transaction_type: 'out',
-          quantity: -Math.abs(parseFloat(quantityStr)),
-          notes: notes || 'Geïmporteerd via CSV'
-        });
       }
 
-      if (importedTransactions.length === 0) {
-        throw new Error('Geen geldige regels gevonden om te importeren');
-      }
+      // Create transactions
+      const transactions = validLines.map(line => ({
+        product_id: line.product!.id,
+        location_id: line.location,
+        project_id: selectedProject || null,
+        quantity: -Math.abs(line.quantity), // Negative for outbound
+        transaction_type: 'out' as const,
+        user_id: user!.id,
+        notes: customerName.trim() || null
+      }));
 
-      const { error } = await supabase
+      const { data: transactionData, error: transactionError } = await supabase
         .from('inventory_transactions')
-        .insert(importedTransactions);
+        .insert(transactions)
+        .select('id');
 
-      if (error) throw error;
+      if (transactionError) throw transactionError;
 
-      setSuccessMessage(`${importedTransactions.length} afboekingen succesvol geïmporteerd!`);
-      setShowImportModal(false);
-      setImportFile(null);
-      await loadTransactions();
-      setTimeout(() => setSuccessMessage(''), 3000);
+      // Save transaction IDs for later reference
+      const bookingIds = transactionData?.map(t => t.id) || [];
+      setLastBookingIds(bookingIds);
+
+      // Update stock levels (allow negative)
+      for (const line of validLines) {
+        const { data: currentStock } = await supabase
+          .from('inventory_stock')
+          .select('quantity')
+          .eq('product_id', line.product!.id)
+          .eq('location_id', line.location)
+          .maybeSingle();
+
+        const newQuantity = (currentStock?.quantity || 0) - line.quantity;
+
+        if (currentStock) {
+          // Update existing stock (allow negative)
+          await supabase
+            .from('inventory_stock')
+            .update({ quantity: newQuantity })
+            .eq('product_id', line.product!.id)
+            .eq('location_id', line.location);
+        } else {
+          // Create new stock entry with negative quantity
+          await supabase
+            .from('inventory_stock')
+            .insert({
+              product_id: line.product!.id,
+              location_id: line.location,
+              quantity: newQuantity
+            });
+        }
+      }
+
+      // If there were warnings, create notifications for office staff
+      if (warnings.length > 0) {
+        // Get admin and office staff users
+        const { data: officeUsers } = await supabase
+          .from('profiles')
+          .select('id')
+          .in('role', ['admin', 'kantoorpersoneel', 'superuser']);
+
+        if (officeUsers && officeUsers.length > 0) {
+          const notifications = officeUsers.map(officeUser => ({
+            recipient_id: officeUser.id,
+            sender_id: user!.id,
+            type: 'system_alert' as const,
+            title: '⚠️ Negatieve voorraad na afboeking',
+            message: `${user?.naam || 'Een gebruiker'} heeft producten afgeboekt die niet op voorraad zijn:\n${warnings.map(w => `- ${w.product} op ${w.location}: ${w.available} beschikbaar, ${w.requested} afgeboekt`).join('\n')}\n\nControleer de voorraad en pas indien nodig aan.`,
+            status: 'unread' as const
+          }));
+
+          await supabase.from('notifications').insert(notifications);
+        }
+      }
+
+      setNegativeStockWarnings(warnings);
+      setShowBookingResultModal(true);
+
     } catch (error: any) {
-      console.error('Import error:', error);
-      setErrorMessage(error.message || 'Fout bij importeren');
-      setTimeout(() => setErrorMessage(''), 5000);
+      console.error('Error booking stock:', error);
+      setErrorMessage(error.message || 'Fout bij afboeken van voorraad');
     } finally {
-      setImporting(false);
-    }
-  };
-
-  const toggleSelectTransaction = (id: string) => {
-    const newSelected = new Set(selectedTransactions);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedTransactions(newSelected);
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedTransactions.size === filteredTransactions.length) {
-      setSelectedTransactions(new Set());
-    } else {
-      setSelectedTransactions(new Set(filteredTransactions.map(t => t.id)));
-    }
-  };
-
-  const handleDeleteSelected = async () => {
-    if (selectedTransactions.size === 0) return;
-
-    try {
-      const { error } = await supabase
-        .from('inventory_transactions')
-        .delete()
-        .in('id', Array.from(selectedTransactions));
-
-      if (error) throw error;
-
-      setSuccessMessage(`${selectedTransactions.size} afboeking(en) succesvol verwijderd`);
-      setSelectedTransactions(new Set());
-      setShowDeleteConfirm(false);
-      await loadTransactions();
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (error: any) {
-      console.error('Delete error:', error);
-      setErrorMessage(error.message || 'Fout bij verwijderen');
-      setTimeout(() => setErrorMessage(''), 5000);
+      setLoadingStock(false);
     }
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="flex justify-between items-start">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Voorraad Afboeken</h1>
-          <p className="text-gray-600">Scan of zoek producten en boek ze af op een project</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('voorraadbeheer')}</h1>
+          <p className="text-gray-600 mt-1">{t('voorraadAfboekenStapVoorStap')}</p>
         </div>
-        <button
-          onClick={() => setShowOverview(true)}
-          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
-        >
-          <FileText size={20} />
-          Overzicht
-        </button>
       </div>
 
-      {successMessage && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
-          <CheckCircle className="text-green-600" size={20} />
-          <span className="text-green-800">{successMessage}</span>
+      {/* Progress Steps */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between mb-8">
+          <div className={`flex items-center ${currentStep === 'action' ? 'text-red-600' : currentStep !== 'action' ? 'text-red-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === 'action' ? 'border-red-600 bg-red-50' : currentStep !== 'action' ? 'border-red-600 bg-red-50' : 'border-gray-300'}`}>
+              1
+            </div>
+            <span className="ml-2 font-medium">{t('actie')}</span>
+          </div>
+          <div className="flex-1 h-0.5 bg-gray-300 mx-4"></div>
+          <div className={`flex items-center ${currentStep === 'customer' ? 'text-red-600' : ['products', 'overview'].includes(currentStep) ? 'text-red-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === 'customer' ? 'border-red-600 bg-red-50' : ['products', 'overview'].includes(currentStep) ? 'border-red-600 bg-red-50' : 'border-gray-300'}`}>
+              2
+            </div>
+            <span className="ml-2 font-medium">{t('klant')}</span>
+          </div>
+          <div className="flex-1 h-0.5 bg-gray-300 mx-4"></div>
+          <div className={`flex items-center ${currentStep === 'products' ? 'text-red-600' : currentStep === 'overview' ? 'text-red-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === 'products' ? 'border-red-600 bg-red-50' : currentStep === 'overview' ? 'border-red-600 bg-red-50' : 'border-gray-300'}`}>
+              3
+            </div>
+            <span className="ml-2 font-medium">{t('producten')}</span>
+          </div>
         </div>
-      )}
 
-      {errorMessage && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
-          <AlertCircle className="text-red-600" size={20} />
-          <span className="text-red-800">{errorMessage}</span>
-        </div>
-      )}
+        {/* Success/Error Messages */}
+        {successMessage && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+            <CheckCircle className="text-red-600" size={20} />
+            <span className="text-red-800">{successMessage}</span>
+          </div>
+        )}
 
+        {errorMessage && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800">{errorMessage}</p>
+          </div>
+        )}
+
+        {/* Step 1: Action Selection */}
+        {currentStep === 'action' && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('kiesEenActie')}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button
+                onClick={() => handleActionSelect('booking')}
+                className="p-6 border-2 border-gray-300 rounded-lg hover:border-red-600 hover:bg-red-50 transition-colors text-left group"
+              >
+                <Package className="text-red-600 mb-3" size={32} />
+                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-red-600">{t('voorraadAfboeken')}</h3>
+                <p className="text-sm text-gray-600 mt-1">{t('boekVoorraadAfVoor')}</p>
+              </button>
+
+              <button
+                onClick={() => handleActionSelect('overview')}
+                className="p-6 border-2 border-gray-300 rounded-lg hover:border-red-600 hover:bg-red-50 transition-colors text-left group"
+              >
+                <FileText className="text-red-600 mb-3" size={32} />
+                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-red-600">{t('voorraadAfboekenOverzicht')}</h3>
+                <p className="text-sm text-gray-600 mt-1">{t('bekijkAlleAfboekingen')}</p>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Customer/Project Input */}
+        {currentStep === 'customer' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">{t('klantOfProject')}</h2>
+              <button
+                onClick={() => setCurrentStep('action')}
+                className="text-gray-600 hover:text-gray-900 flex items-center gap-1"
+              >
+                <ArrowLeft size={16} />
+                {t('terug')}
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('projectOptioneel')}</label>
+              <select
+                value={selectedProject}
+                onChange={(e) => setSelectedProject(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              >
+                <option value="">{t('geenProject')}</option>
+                {projects.map(project => (
+                  <option key={project.id} value={project.id}>
+                    {project.project_nummer ? `${project.project_nummer} - ` : ''}{project.naam}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('klantnaamOfNotitie')}</label>
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Bijv. Jan Jansen of bouwproject locatie X"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              />
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <button
+                onClick={handleCustomerNext}
+                className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
+              >
+                {t('volgende')}
+                <ArrowRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Product Selection */}
+        {currentStep === 'products' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">{t('selecteerProducten')}</h2>
+              <button
+                onClick={() => setCurrentStep('customer')}
+                className="text-gray-600 hover:text-gray-900 flex items-center gap-1"
+              >
+                <ArrowLeft size={16} />
+                {t('terug')}
+              </button>
+            </div>
+
+            {/* Product Lines */}
+            <div className="space-y-4">
+              {productLines.map((line, index) => (
+                <div key={line.id} className="border border-gray-300 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-gray-900">Product {index + 1}</span>
+                    {productLines.length > 1 && (
+                      <button
+                        onClick={() => removeProductLine(line.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Product Search with Scanner */}
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative product-search-container">
+                      <input
+                        type="text"
+                        value={line.searchValue}
+                        onChange={(e) => updateLineSearch(index, e.target.value)}
+                        onFocus={() => {
+                          if (line.searchValue) {
+                            const newLines = [...productLines];
+                            newLines[index].showDropdown = true;
+                            setProductLines(newLines);
+                          }
+                        }}
+                        placeholder="Zoek op naam, EAN of GB-art.nr."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      />
+
+                      {/* Dropdown */}
+                      {line.showDropdown && getFilteredProducts(line.searchValue).length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                          {getFilteredProducts(line.searchValue).map((product) => (
+                            <button
+                              key={product.id}
+                              onClick={() => selectProduct(index, product)}
+                              className="w-full px-3 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="font-medium text-gray-900">{product.name}</div>
+                              <div className="text-sm text-gray-600 space-y-0.5">
+                                <div>GB-art.nr.: {product.gb_article_number}</div>
+                                {product.ean && <div>EAN: {product.ean}</div>}
+                                <div>{product.category}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => openSearchModal(index)}
+                        className="p-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                        title="Zoeken"
+                      >
+                        <Search size={20} />
+                      </button>
+                      <button
+                        onClick={() => startScanning(index)}
+                        className="p-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                        title="Scannen"
+                      >
+                        <Scan size={20} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Selected Product Display */}
+                  {line.product && (
+                    <div className="bg-gray-50 rounded-md p-3">
+                      <div className="flex items-start gap-3">
+                        {line.product.photo_path && getProductPhotoUrl(line.product.photo_path) && (
+                          <img
+                            src={getProductPhotoUrl(line.product.photo_path)!}
+                            alt={line.product.name}
+                            className="w-16 h-16 object-cover rounded border border-gray-200"
+                          />
+                        )}
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">{line.product.name}</div>
+                          <div className="text-sm text-gray-600">GB-art.nr.: {line.product.gb_article_number}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Location, Quantity, Unit */}
+                  {line.product && (
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Locatie *</label>
+                        <select
+                          value={line.location}
+                          onChange={(e) => updateProductLine(line.id, { location: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        >
+                          <option value="">Selecteer</option>
+                          {locations.map(loc => (
+                            <option key={loc.id} value={loc.id}>{loc.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Aantal *</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={line.quantity}
+                          onChange={(e) => updateProductLine(line.id, { quantity: parseInt(e.target.value) || 1 })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Eenheid *</label>
+                        <select
+                          value={line.unit}
+                          onChange={(e) => updateProductLine(line.id, { unit: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        >
+                          {COMMON_UNITS.map(unit => (
+                            <option key={unit} value={unit}>{unit}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Add Product Button */}
+              <button
+                onClick={addProductLine}
+                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-red-600 hover:text-red-600 hover:bg-red-50 flex items-center justify-center gap-2 transition-colors"
+              >
+                <Plus size={20} />
+                {t('productToevoegen')}
+              </button>
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+              <button
+                onClick={handleSubmitBooking}
+                disabled={loadingStock}
+                className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <CheckCircle size={18} />
+                {loadingStock ? t('bezigMetAfboeken') : t('afboekenBevestigen')}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step: Overview */}
+        {currentStep === 'overview' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">{t('voorraadAfboekenOverzicht')}</h2>
+              <button
+                onClick={() => {
+                  setCurrentStep('action');
+                  setSelectedAction(null);
+                }}
+                className="text-gray-600 hover:text-gray-900 flex items-center gap-1"
+              >
+                <ArrowLeft size={16} />
+                {t('terug')}
+              </button>
+            </div>
+
+            {/* Search and Filter Controls */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+                <input
+                  type="text"
+                  placeholder={t('zoekOpProductGebruikerKlant')}
+                  value={overviewSearch}
+                  onChange={(e) => setOverviewSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                />
+              </div>
+
+              {users.length > 0 && (
+                <select
+                  value={userFilter}
+                  onChange={(e) => setUserFilter(e.target.value)}
+                  className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                >
+                  <option value="">{t('alleGebruikers')}</option>
+                  {users.map(u => (
+                    <option key={u.id} value={u.id}>{u.naam}</option>
+                  ))}
+                </select>
+              )}
+
+              <button
+                onClick={exportOverviewToCSV}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2 whitespace-nowrap"
+              >
+                <FileText size={18} />
+                {t('exportCsv')}
+              </button>
+            </div>
+
+            {/* Transactions Table */}
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              {filteredTransactions.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                  {t('geenAfboekingenGevonden')}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('datum')}</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">{t('aantal')}</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('locatie')}</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('gebruiker')}</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('klant')}/Project</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('notities')}</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acties</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 bg-white">
+                      {filteredTransactions.map((transaction) => (
+                        <tr key={transaction.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+                            {new Date(transaction.created_at).toLocaleString('nl-NL', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <div className="font-medium text-gray-900">{transaction.inventory_products?.name || '-'}</div>
+                            <div className="text-gray-500 text-xs">{transaction.inventory_products?.gb_article_number || ''}</div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-center text-gray-900 font-medium">
+                            {Math.abs(transaction.quantity)}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {transaction.location?.name || '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {transaction.profiles?.naam || '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {transaction.customer_name || transaction.projects?.naam || '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500">
+                            {transaction.notes || '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => handleEditTransaction(transaction)}
+                                className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                title="Bewerken"
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setDeletingTransactionId(transaction.id);
+                                  setShowDeleteSingleConfirm(true);
+                                }}
+                                className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                title="Verwijderen"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Transaction Count */}
+            <div className="text-sm text-gray-600 text-right">
+              {filteredTransactions.length} {filteredTransactions.length === 1 ? t('afboeking') : t('afboekingen')} {t('gevonden')}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Scanner Modal */}
       {showScanner && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-4">
+          <div className="bg-white rounded-lg max-w-lg w-full p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Scan Barcode</h3>
+              <h3 className="text-lg font-semibold">{t('scanBarcode')}</h3>
               <button
                 onClick={stopScanning}
-                className="p-2 text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600"
               >
                 <X size={24} />
               </button>
             </div>
-            <div className="relative border-2 border-red-500 rounded-lg overflow-hidden">
-              <div id="qr-reader" className="w-full"></div>
-            </div>
+
+            {/* Camera Scanner */}
+            {scanning && <div id="qr-reader" className="w-full mb-4"></div>}
+
+            {/* Scanned Value Display */}
+            {scannedValue && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('gescandeWaarde')}
+                  </label>
+                  <div className="px-4 py-3 bg-red-50 border-2 border-red-500 rounded-md">
+                    <p className="text-lg font-mono text-red-900 break-all">{scannedValue}</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleConfirmScan}
+                  className="w-full px-6 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2 transition-colors font-medium"
+                >
+                  <CheckCircle size={20} />
+                  {t('doorgaan')}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Project *</label>
-            <select
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-            >
-              <option value="">Selecteer project</option>
-              {projects.map(project => (
-                <option key={project.id} value={project.id}>
-                  {project.naam} {project.project_nummer ? `(#${project.project_nummer})` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
+      {/* Search Modal */}
+      {showSearchModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
+              <h3 className="text-lg font-semibold">{t('productZoeken')}</h3>
+              <button
+                onClick={closeSearchModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
 
-        </div>
-      </div>
+            <div className="p-6 space-y-4">
+              {/* Step 1: Select Location */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  1. {t('selecteerLocatie')} *
+                </label>
+                <select
+                  value={searchLocation}
+                  onChange={(e) => handleSearchLocation(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                >
+                  <option value="">{t('kiesEenLocatie')}</option>
+                  {locations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name} ({location.type})
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-900">Producten</h2>
-          <span className="text-sm text-gray-600">
-            {getTotalItems()} {getTotalItems() === 1 ? 'artikel' : 'artikelen'}
-          </span>
-        </div>
-
-        <div className="space-y-3">
-          {bookingLines.map((line, index) => (
-            <div key={index} className="space-y-2">
-              <div className="flex gap-2">
-                <div className="w-48">
+              {/* Step 2: Select Category (only if location selected) */}
+              {searchLocation && searchResults.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    2. Filter op Categorie (optioneel)
+                  </label>
                   <select
-                    value={line.location}
-                    onChange={(e) => updateLineLocation(index, e.target.value)}
+                    value={searchCategory}
+                    onChange={(e) => handleSearchCategory(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
-                    <option value="">Selecteer locatie</option>
-                    {locations.map(location => (
-                      <option key={location.id} value={location.id}>
-                        {location.name}
+                    <option value="">Alle categorieën</option>
+                    {getAvailableCategories().map((category) => (
+                      <option key={category} value={category}>
+                        {category}
                       </option>
                     ))}
                   </select>
                 </div>
-                <div className="flex-1 relative product-search-container">
-                  <input
-                    type="text"
-                    placeholder="Artikel, EAN of SKU"
-                    value={line.searchValue}
-                    onChange={(e) => updateLineSearch(index, e.target.value)}
-                    onFocus={() => {
-                      if (line.searchValue) {
-                        const newLines = [...bookingLines];
-                        newLines[index].showDropdown = true;
-                        setBookingLines(newLines);
-                      }
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
-                  {line.showDropdown && getFilteredProducts(line.searchValue).length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                      {getFilteredProducts(line.searchValue).map((product) => (
+              )}
+
+              {/* Step 3: Product Results */}
+              {searchLocation && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    3. {t('selecteerProducten')}
+                  </label>
+                  {searchResults.length > 0 ? (
+                    <div className="border border-gray-300 rounded-md max-h-96 overflow-y-auto">
+                      {searchResults.map((product) => (
                         <button
                           key={product.id}
-                          onClick={() => selectProduct(index, product)}
-                          className="w-full px-3 py-2 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                          onClick={() => selectProductFromSearch(product)}
+                          className="w-full px-4 py-3 text-left hover:bg-red-50 border-b border-gray-100 last:border-b-0 transition-colors"
                         >
-                          <div className="font-medium text-gray-900">{product.name}</div>
-                          <div className="text-sm text-gray-600">{product.sku} - {product.category}</div>
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="font-medium text-gray-900">{product.name}</div>
+                              <div className="text-sm text-gray-600 mt-1 space-y-0.5">
+                                <div>GB-art.nr.: {product.gb_article_number}</div>
+                                {product.ean && <div>EAN: {product.ean}</div>}
+                                <div className="text-red-600 font-medium">{product.category}</div>
+                                <div>Eenheid: {product.unit}</div>
+                              </div>
+                            </div>
+                            {product.photo_path && (
+                              <img
+                                src={getProductPhotoUrl(product.photo_path) || ''}
+                                alt={product.name}
+                                className="w-16 h-16 object-cover rounded"
+                              />
+                            )}
+                          </div>
                         </button>
                       ))}
                     </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Package size={48} className="mx-auto mb-2 text-gray-400" />
+                      <p>Geen producten beschikbaar op deze locatie</p>
+                    </div>
                   )}
                 </div>
-                <button
-                  onClick={() => loadLocationStock(index)}
-                  disabled={!line.location}
-                  className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:opacity-50 flex items-center gap-2"
-                  title="Bekijk voorraad"
-                >
-                  <Search size={20} />
-                </button>
-                <button
-                  onClick={() => startScanning(index)}
-                  disabled={scanning}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
-                >
-                  <Scan size={20} />
-                </button>
-                {bookingLines.length > 1 && (
-                  <button
-                    onClick={() => removeLine(index)}
-                    className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-md"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                )}
-              </div>
-
-              {line.product && (
-                <div className="ml-2 p-3 bg-gray-50 rounded-md">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">{line.product.name}</div>
-                      <div className="text-sm text-gray-600">{line.product.sku} - {line.product.category}</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => updateLineQuantity(index, -1)}
-                        className="p-1 bg-white border border-gray-300 rounded hover:bg-gray-100"
-                      >
-                        <Minus size={16} />
-                      </button>
-                      <span className="font-medium w-16 text-center">
-                        {line.quantity} {line.product.unit}
-                      </span>
-                      <button
-                        onClick={() => updateLineQuantity(index, 1)}
-                        className="p-1 bg-white border border-gray-300 rounded hover:bg-gray-100"
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
               )}
 
-              {line.searchValue && !line.product && (
-                <div className="ml-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-                  Product niet gevonden
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <button
-          onClick={addLine}
-          className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2"
-        >
-          <Plus size={20} />
-          Voeg regel toe
-        </button>
-
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-          <button
-            onClick={() => {
-              setBookingLines([{ searchValue: '', product: null, quantity: 1, showDropdown: false, location: '' }]);
-              setSelectedProject('');
-            }}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-          >
-            Annuleren
-          </button>
-          <button
-            onClick={handleBookProducts}
-            disabled={!selectedProject || bookingLines.filter(l => l.product && l.location).length === 0}
-            className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Afboeken
-          </button>
-        </div>
-      </div>
-
-      {showOverview && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
-              <h2 className="text-xl font-bold text-gray-900">Overzicht Afboekingen</h2>
-              <button
-                onClick={() => setShowOverview(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-3 text-gray-400" size={20} />
-                  <input
-                    type="text"
-                    placeholder="Zoek op project, medewerker, product, locatie..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={loadTransactions}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 flex items-center gap-2"
-                    title="Ververs overzicht"
-                  >
-                    <Search size={20} />
-                    Ververs
-                  </button>
-                  {hasAdminPrivileges() && (
-                    <>
-                      <button
-                        onClick={() => setShowImportModal(true)}
-                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2"
-                      >
-                        <Upload size={20} />
-                        Import
-                      </button>
-                      <button
-                        onClick={handleExportTransactions}
-                        disabled={filteredTransactions.length === 0}
-                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
-                      >
-                        <Download size={20} />
-                        Export
-                      </button>
-                    </>
-                  )}
-                  {!hasAdminPrivileges() && (
-                    <button
-                      onClick={handleExportTransactions}
-                      disabled={filteredTransactions.length === 0}
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
-                    >
-                      <Download size={20} />
-                      Export
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {hasAdminPrivileges() && selectedTransactions.size > 0 && (
-                <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-lg p-3">
-                  <span className="text-sm text-red-800 font-medium">
-                    {selectedTransactions.size} {selectedTransactions.size === 1 ? 'afboeking' : 'afboekingen'} geselecteerd
-                  </span>
-                  <button
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
-                  >
-                    <Trash2 size={18} />
-                    Verwijderen
-                  </button>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Periode</label>
-                  <select
-                    value={dateFilter}
-                    onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="vandaag">Vandaag</option>
-                    <option value="deze_week">Deze Week</option>
-                    <option value="deze_maand">Deze Maand</option>
-                    <option value="dit_jaar">Dit Jaar</option>
-                    <option value="custom">Aangepaste Periode</option>
-                  </select>
-                </div>
-
-                {dateFilter === 'custom' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Van Datum</label>
-                      <input
-                        type="date"
-                        value={customStartDate}
-                        onChange={(e) => setCustomStartDate(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Tot Datum</label>
-                      <input
-                        type="date"
-                        value={customEndDate}
-                        onChange={(e) => setCustomEndDate(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
-                <div>
-                  <div className="text-sm text-gray-600">Totaal Afboekingen</div>
-                  <div className="text-2xl font-bold text-gray-900">{filteredTransactions.length}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-600">Totaal Producten</div>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {filteredTransactions.reduce((sum, t) => sum + Math.abs(t.quantity), 0).toFixed(0)}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-600">Unieke Producten</div>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {new Set(filteredTransactions.map(t => t.product_id)).size}
-                  </div>
-                </div>
-              </div>
-
-              {loadingTransactions ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-                </div>
-              ) : filteredTransactions.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  Geen afboekingen gevonden
-                </div>
-              ) : (
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          {hasAdminPrivileges() && (
-                            <th className="px-4 py-3 text-center">
-                              <input
-                                type="checkbox"
-                                checked={selectedTransactions.size === filteredTransactions.length && filteredTransactions.length > 0}
-                                onChange={toggleSelectAll}
-                                className="rounded border-gray-300 text-red-600 focus:ring-red-500"
-                              />
-                            </th>
-                          )}
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum & Tijd</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categorie</th>
-                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aantal</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Locatie</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medewerker</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Opmerkingen</th>
-                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acties</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200 bg-white">
-                        {filteredTransactions.map((transaction) => (
-                          <tr key={transaction.id} className="hover:bg-gray-50 transition-colors">
-                            {hasAdminPrivileges() && (
-                              <td className="px-4 py-3 text-center">
-                                <input
-                                  type="checkbox"
-                                  checked={selectedTransactions.has(transaction.id)}
-                                  onChange={() => toggleSelectTransaction(transaction.id)}
-                                  className="rounded border-gray-300 text-red-600 focus:ring-red-500"
-                                />
-                              </td>
-                            )}
-                            <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
-                              <div>{new Date(transaction.created_at).toLocaleDateString('nl-NL')}</div>
-                              <div className="text-xs text-gray-500">{new Date(transaction.created_at).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}</div>
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              <div className="font-medium text-gray-900">{transaction.project?.naam}</div>
-                              {transaction.project?.project_nummer && (
-                                <div className="text-xs text-gray-500">#{transaction.project.project_nummer}</div>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              <div className="font-medium text-gray-900">{transaction.product?.name}</div>
-                              <div className="text-xs text-gray-500">{transaction.product?.sku}</div>
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                                {transaction.product?.category}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-sm text-center">
-                              <div className="font-semibold text-gray-900">{Math.abs(transaction.quantity)}</div>
-                              <div className="text-xs text-gray-500">{transaction.product?.unit}</div>
-                            </td>
-                            <td className="px-4 py-3 text-sm">
-                              <div className="font-medium text-gray-900">{transaction.location?.name}</div>
-                              {transaction.location?.type && (
-                                <div className="text-xs text-gray-500 capitalize">{transaction.location.type}</div>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-900">
-                              {transaction.user?.naam || transaction.user?.email}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate" title={transaction.notes || '-'}>
-                              {transaction.notes || '-'}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-center">
-                              <div className="flex items-center justify-center gap-2">
-                                <button
-                                  onClick={() => handleEditTransaction(transaction)}
-                                  className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                  title="Bewerken"
-                                >
-                                  <Edit2 size={16} />
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setDeletingTransactionId(transaction.id);
-                                    setShowDeleteSingleConfirm(true);
-                                  }}
-                                  className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                  title="Verwijderen"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+              {!searchLocation && (
+                <div className="text-center py-8 text-gray-500">
+                  <Search size={48} className="mx-auto mb-2 text-gray-400" />
+                  <p>Selecteer eerst een locatie om producten te zoeken</p>
                 </div>
               )}
             </div>
@@ -1305,281 +1404,120 @@ const VoorraadbeheerAfboeken: React.FC = () => {
         </div>
       )}
 
-      {showImportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-lg w-full p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Afboekingen Importeren</h3>
-              <button
-                onClick={() => {
-                  setShowImportModal(false);
-                  setImportFile(null);
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-600 mb-3">
-                  Upload een CSV bestand met afboekingen. Het bestand moet de volgende kolommen bevatten:
-                </p>
-                <ul className="text-sm text-gray-600 list-disc list-inside space-y-1 mb-3">
-                  <li>Datum (bijv. 14-10-2025)</li>
-                  <li>Project (naam)</li>
-                  <li>Product SKU</li>
-                  <li>Aantal</li>
-                  <li>Locatie (naam)</li>
-                  <li>Opmerkingen (optioneel)</li>
-                </ul>
-                <button
-                  onClick={downloadTemplate}
-                  className="text-sm text-red-600 hover:text-red-700 flex items-center gap-2"
-                >
-                  <FileSpreadsheet size={16} />
-                  Download CSV sjabloon
-                </button>
-              </div>
-
-              <div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv"
-                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                  className="hidden"
-                />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-red-400 text-gray-600 hover:text-red-600 flex items-center justify-center gap-2"
-                >
-                  <Upload size={20} />
-                  {importFile ? importFile.name : 'Selecteer CSV bestand'}
-                </button>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowImportModal(false);
-                    setImportFile(null);
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-                >
-                  Annuleren
-                </button>
-                <button
-                  onClick={handleImport}
-                  disabled={!importFile || importing}
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {importing ? 'Importeren...' : 'Importeren'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showStockModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
-              <h2 className="text-xl font-bold text-gray-900">
-                Voorraad - {stockModalLineIndex !== null && bookingLines[stockModalLineIndex]?.location
-                  ? locations.find(l => l.id === bookingLines[stockModalLineIndex!].location)?.name
-                  : 'Locatie'}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowStockModal(false);
-                  setStockModalLineIndex(null);
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="p-6">
-              {loadingStock ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-                </div>
-              ) : locationStock.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  Geen voorraad beschikbaar op deze locatie
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {locationStock.map((stockItem) => (
-                    <button
-                      key={stockItem.product_id}
-                      onClick={() => selectProductFromStock(stockItem)}
-                      className="w-full p-4 border border-gray-200 rounded-lg hover:border-red-500 hover:bg-red-50 text-left transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-900">{stockItem.product.name}</div>
-                          <div className="text-sm text-gray-600">
-                            SKU: {stockItem.product.sku} | Categorie: {stockItem.product.category}
-                          </div>
-                          {stockItem.product.ean && (
-                            <div className="text-sm text-gray-500">EAN: {stockItem.product.ean}</div>
-                          )}
-                        </div>
-                        <div className="ml-4 text-right">
-                          <div className="text-lg font-bold text-gray-900">{stockItem.quantity}</div>
-                          <div className="text-sm text-gray-600">{stockItem.product.unit}</div>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                <AlertCircle className="text-red-600" size={24} />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Afboekingen Verwijderen</h3>
-                <p className="text-sm text-gray-600">
-                  Weet je zeker dat je {selectedTransactions.size} {selectedTransactions.size === 1 ? 'afboeking' : 'afboekingen'} wilt verwijderen?
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-              <p className="text-sm text-yellow-800">
-                Let op: Deze actie kan niet ongedaan worden gemaakt. De voorraad wordt automatisch bijgewerkt.
-              </p>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-              >
-                Annuleren
-              </button>
-              <button
-                onClick={handleDeleteSelected}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-              >
-                Verwijderen
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* Booking Result Modal */}
       {showBookingResultModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center gap-3">
-                {negativeStockWarnings.length === 0 ? (
-                  <>
-                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                      <CheckCircle className="text-green-600" size={24} />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Afboeking Succesvol</h3>
-                      <p className="text-sm text-gray-600">
-                        De producten zijn succesvol afgeboekt
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
-                      <AlertCircle className="text-yellow-600" size={24} />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Afboeking Voltooid met Waarschuwingen</h3>
-                      <p className="text-sm text-gray-600">
-                        De producten zijn afgeboekt, maar er was onvoldoende voorraad
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {negativeStockWarnings.length > 0 && (
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              {negativeStockWarnings.length > 0 ? (
                 <>
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-yellow-900 mb-2">Onvoldoende Voorraad</h4>
-                    <p className="text-sm text-yellow-800 mb-3">
-                      De volgende producten hadden onvoldoende voorraad. Het kantoorpersoneel is automatisch op de hoogte gebracht.
-                    </p>
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">⚠️</span>
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-xl font-bold text-gray-900 mb-2">
+                        Afboeking voltooid met waarschuwingen
+                      </h2>
+                      <p className="text-gray-700">
+                        De producten zijn afgeboekt, maar er was onvoldoende voorraad voor de volgende items:
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                    <h3 className="font-semibold text-gray-900 mb-3">Producten met onvoldoende voorraad:</h3>
                     <div className="space-y-2">
-                      {negativeStockWarnings.map((warning, index) => (
-                        <div key={index} className="bg-white rounded p-3 text-sm">
-                          <div className="font-medium text-gray-900">{warning.product}</div>
-                          <div className="text-gray-600">Locatie: {warning.location}</div>
-                          <div className="text-yellow-700 mt-1">
-                            Beschikbaar: <span className="font-medium">{warning.available}</span> |
-                            Afgeboekt: <span className="font-medium">{warning.requested}</span> |
-                            Tekort: <span className="font-medium">{warning.requested - warning.available}</span>
+                      {negativeStockWarnings.map((warning, idx) => (
+                        <div key={idx} className="flex items-start gap-2 text-sm">
+                          <span className="text-yellow-600">•</span>
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900">{warning.product}</div>
+                            <div className="text-gray-600">
+                              Locatie: {warning.location} |
+                              Beschikbaar: {warning.available} |
+                              Afgeboekt: {warning.requested}
+                            </div>
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-sm text-blue-800">
-                      <strong>Let op:</strong> Het kantoorpersoneel is automatisch geïnformeerd over deze negatieve voorraad en zal de situatie controleren.
-                    </p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <div className="flex items-start gap-2">
+                      <span className="text-blue-600 text-xl">ℹ️</span>
+                      <div className="flex-1 text-sm">
+                        <p className="font-medium text-blue-900 mb-1">
+                          Er is een melding gemaakt naar het kantoor
+                        </p>
+                        <p className="text-blue-800">
+                          Het kantoorpersoneel is automatisch geïnformeerd om de voorraad te controleren en indien nodig aan te passen.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="text-green-600" size={28} />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-xl font-bold text-gray-900 mb-2">
+                        Afboeking succesvol voltooid!
+                      </h2>
+                      <p className="text-gray-700">
+                        Alle producten zijn succesvol afgeboekt.
+                      </p>
+                    </div>
                   </div>
                 </>
               )}
 
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-700">
-                  {negativeStockWarnings.length > 0
-                    ? 'De afboeking is succesvol verwerkt. Je kunt de afboeking bekijken in het overzicht of een nieuwe afboeking maken.'
-                    : 'De afboeking is succesvol verwerkt en de voorraad is bijgewerkt.'
-                  }
-                </p>
+              <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    setSelectedAction('overview');
+                    setCurrentStep('action');
+                    setShowBookingResultModal(false);
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 font-medium transition-colors"
+                >
+                  Bekijk afboekingen overzicht
+                </button>
+                <button
+                  onClick={() => {
+                    // Reset form
+                    setCurrentStep('action');
+                    setSelectedAction(null);
+                    setSelectedProject('');
+                    setCustomerName('');
+                    setProductLines([{
+                      id: crypto.randomUUID(),
+                      product: null,
+                      quantity: 1,
+                      unit: 'stuks',
+                      location: '',
+                      searchValue: '',
+                      showDropdown: false
+                    }]);
+                    setShowBookingResultModal(false);
+                    setNegativeStockWarnings([]);
+                    setLastBookingIds([]);
+                  }}
+                  className="flex-1 px-4 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium transition-colors"
+                >
+                  Nieuwe afboeking maken
+                </button>
               </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-200 flex gap-3">
-              <button
-                onClick={() => {
-                  setShowBookingResultModal(false);
-                  setShowOverview(true);
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 flex items-center justify-center gap-2"
-              >
-                <FileText size={18} />
-                Bekijk Overzicht
-              </button>
-              <button
-                onClick={() => setShowBookingResultModal(false)}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2"
-              >
-                <Plus size={18} />
-                Nieuwe Afboeking
-              </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Edit Transaction Modal */}
       {showEditModal && editingTransaction && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full">
@@ -1609,7 +1547,7 @@ const VoorraadbeheerAfboeken: React.FC = () => {
                   <option value="">Selecteer product</option>
                   {products.map((product) => (
                     <option key={product.id} value={product.id}>
-                      {product.name} ({product.sku})
+                      {product.name} ({product.gb_article_number})
                     </option>
                   ))}
                 </select>
@@ -1692,6 +1630,7 @@ const VoorraadbeheerAfboeken: React.FC = () => {
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
       {showDeleteSingleConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
@@ -1737,4 +1676,4 @@ const VoorraadbeheerAfboeken: React.FC = () => {
   );
 };
 
-export default VoorraadbeheerAfboeken;
+export default VoorraadbeheerAfboekenNew;

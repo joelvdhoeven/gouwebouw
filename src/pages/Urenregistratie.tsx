@@ -11,6 +11,7 @@ import { formatDate } from '../utils/dateUtils';
 import ProtectedRoute from '../components/ProtectedRoute';
 import Modal from '../components/Modal';
 import DatePickerField from '../components/DatePickerField';
+import MaterialSelectionModal from '../components/MaterialSelectionModal';
 
 const Urenregistratie: React.FC = () => {
   const { t } = useLanguage();
@@ -44,7 +45,7 @@ const Urenregistratie: React.FC = () => {
     };
   }, [refetchProjects]);
   const { data: gebruikers = [] } = useSupabaseQuery<any>('profiles', 'id, naam, email');
-  const { data: products = [] } = useSupabaseQuery<any>('inventory_products', 'id, name, sku, unit');
+  const { data: products = [] } = useSupabaseQuery<any>('inventory_products', 'id, name, gb_article_number, unit');
   const { insert: insertRegistration, update: updateRegistration, remove: deleteRegistration, loading: mutationLoading } = useSupabaseMutation('time_registrations');
   const { insert: insertProject } = useSupabaseMutation('projects');
   const [showModal, setShowModal] = useState(false);
@@ -77,7 +78,9 @@ const Urenregistratie: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  
+  const [showMaterialModal, setShowMaterialModal] = useState(false);
+  const [materialModalWorkLineIndex, setMaterialModalWorkLineIndex] = useState<number | null>(null);
+
   const [formData, setFormData] = useState({
     datum: new Date().toISOString().split('T')[0],
     ordernummer: '',
@@ -172,18 +175,33 @@ const Urenregistratie: React.FC = () => {
   };
 
   const addMaterialToWorkLine = (workLineIndex: number) => {
+    setMaterialModalWorkLineIndex(workLineIndex);
+    setShowMaterialModal(true);
+  };
+
+  const handleMaterialsSave = (materials: Array<{product_id: string, location_id: string, quantity: number, product_name: string, unit: string}>) => {
+    if (materialModalWorkLineIndex === null) return;
+
     const updated = [...workLines];
-    if (!updated[workLineIndex].materials) {
-      updated[workLineIndex].materials = [];
+    if (!updated[materialModalWorkLineIndex].materials) {
+      updated[materialModalWorkLineIndex].materials = [];
     }
-    updated[workLineIndex].materials!.push({
-      type: 'product',
-      product_id: '',
-      product_name: '',
-      quantity: 0,
-      unit: ''
+
+    // Add new materials to the work line
+    materials.forEach(material => {
+      updated[materialModalWorkLineIndex].materials!.push({
+        type: 'product',
+        product_id: material.product_id,
+        product_name: material.product_name,
+        quantity: material.quantity,
+        unit: material.unit,
+        location_id: material.location_id
+      });
     });
+
     setWorkLines(updated);
+    setShowMaterialModal(false);
+    setMaterialModalWorkLineIndex(null);
   };
 
   const removeMaterialFromWorkLine = (workLineIndex: number, materialIndex: number) => {
@@ -263,7 +281,8 @@ const Urenregistratie: React.FC = () => {
         const kilometers = formData.kilometers ? parseFloat(formData.kilometers) : 0;
 
         // Insert each work line as a separate time registration
-        const registrations = workLines.map(line => ({
+        // Only add kilometers to the first work line to avoid duplication
+        const registrations = workLines.map((line, index) => ({
           user_id: user.id,
           project_id: selectedProjectId || null,
           project_naam: projectName,
@@ -271,7 +290,7 @@ const Urenregistratie: React.FC = () => {
           werktype: line.werktype,
           aantal_uren: line.aantal_uren,
           werkomschrijving: line.werkomschrijving,
-          driven_kilometers: kilometers,
+          driven_kilometers: index === 0 ? kilometers : 0,
           status: 'submitted',
           progress_percentage: formData.voortgang ? parseInt(formData.voortgang) : null,
           materials: line.materials && line.materials.length > 0 ? line.materials : []
@@ -287,6 +306,78 @@ const Urenregistratie: React.FC = () => {
         }
 
         console.log('Successfully inserted:', insertedData);
+
+        // Create inventory transactions for materials
+        for (const line of workLines) {
+          if (line.materials && line.materials.length > 0) {
+            for (const material of line.materials) {
+              if (material.type === 'product' && material.product_id && material.location_id) {
+                try {
+                  await supabase.from('inventory_transactions').insert({
+                    product_id: material.product_id,
+                    location_id: material.location_id,
+                    project_id: selectedProjectId,
+                    user_id: user.id,
+                    transaction_type: 'out',
+                    quantity: -Math.abs(material.quantity),
+                    notes: `Materiaal gebruikt bij ${line.werktype}: ${line.werkomschrijving}`
+                  });
+
+                  // Update inventory stock
+                  const { data: stockData } = await supabase
+                    .from('inventory_stock')
+                    .select('quantity')
+                    .eq('product_id', material.product_id)
+                    .eq('location_id', material.location_id)
+                    .maybeSingle();
+
+                  const currentQuantity = stockData?.quantity || 0;
+                  const newQuantity = currentQuantity - material.quantity;
+
+                  if (stockData) {
+                    await supabase
+                      .from('inventory_stock')
+                      .update({ quantity: newQuantity })
+                      .eq('product_id', material.product_id)
+                      .eq('location_id', material.location_id);
+                  } else {
+                    await supabase
+                      .from('inventory_stock')
+                      .insert({
+                        product_id: material.product_id,
+                        location_id: material.location_id,
+                        quantity: newQuantity
+                      });
+                  }
+
+                  // Check if stock went negative and notify office staff
+                  if (newQuantity < 0) {
+                    const { data: officeUsers } = await supabase
+                      .from('profiles')
+                      .select('id')
+                      .in('role', ['admin', 'kantoorpersoneel', 'superuser']);
+
+                    if (officeUsers && officeUsers.length > 0) {
+                      const notifications = officeUsers.map(officeUser => ({
+                        recipient_id: officeUser.id,
+                        sender_id: user.id,
+                        type: 'system_alert' as const,
+                        title: '⚠️ Negatieve voorraad bij urenregistratie',
+                        message: `${material.product_name} is negatief geworden door urenregistratie. Project: ${projectName || 'Onbekend'}. Tekort: ${Math.abs(newQuantity)} ${material.unit}`,
+                        status: 'unread' as const
+                      }));
+
+                      await supabase.from('notifications').insert(notifications);
+                    }
+                  }
+                } catch (matError) {
+                  console.error('Error creating inventory transaction for material:', matError);
+                  // Continue with other materials even if one fails
+                }
+              }
+            }
+          }
+        }
 
         // Update project progress if voortgang provided and project exists
         if (selectedProjectId && formData.voortgang) {
@@ -1006,7 +1097,7 @@ const Urenregistratie: React.FC = () => {
                                             <option value="">Selecteer product</option>
                                             {products.map((product: any) => (
                                               <option key={product.id} value={product.id}>
-                                                {product.name} ({product.sku})
+                                                {product.name} ({product.gb_article_number})
                                               </option>
                                             ))}
                                           </select>
@@ -1922,6 +2013,17 @@ const Urenregistratie: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Material Selection Modal */}
+      <MaterialSelectionModal
+        isOpen={showMaterialModal}
+        onClose={() => {
+          setShowMaterialModal(false);
+          setMaterialModalWorkLineIndex(null);
+        }}
+        onSave={handleMaterialsSave}
+        projectId={selectedProject?.id}
+      />
     </div>
   );
 };

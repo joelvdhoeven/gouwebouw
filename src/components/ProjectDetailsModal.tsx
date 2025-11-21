@@ -62,12 +62,22 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
   const loadProjectMaterials = async () => {
     const { data, error } = await supabase
       .from('inventory_transactions')
-      .select('*, product:inventory_products(*), location:inventory_locations(*), user:profiles(naam)')
+      .select(`
+        *,
+        product:inventory_products!inventory_transactions_product_id_fkey(*),
+        location:inventory_locations!inventory_transactions_location_id_fkey(*),
+        user:profiles!inventory_transactions_user_id_fkey(naam)
+      `)
       .eq('project_id', project.id)
+      .eq('transaction_type', 'out')
       .order('created_at', { ascending: false });
 
     if (data) {
       setProjectMaterials(data);
+    }
+
+    if (error) {
+      console.error('Error loading materials:', error);
     }
   };
 
@@ -149,12 +159,12 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
     // Materials section
     const materialsHeader = ['', '', '', '', '', '', '', '', '', '', ''];
     const materialsSectionHeader = ['MATERIALEN', '', '', '', '', '', '', '', '', '', ''];
-    const materialsColumnHeaders = ['Datum', 'Product', 'SKU', 'Aantal', 'Eenheid', 'Locatie', 'Gebruiker', 'Notities', '', '', ''];
+    const materialsColumnHeaders = ['Datum', 'Product', 'GB-art.nr.', 'Aantal', 'Eenheid', 'Locatie', 'Gebruiker', 'Notities', '', '', ''];
 
     const materialRows = projectMaterials.map(transaction => [
       formatDate(transaction.created_at),
       transaction.product?.name || 'Onbekend',
-      transaction.product?.sku || 'N/A',
+      transaction.product?.gb_article_number || 'N/A',
       transaction.quantity || 0,
       transaction.product?.unit || '',
       transaction.location?.name || 'N/A',
@@ -424,7 +434,7 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                     <div className="flex justify-between items-start mb-1">
                       <div className="flex flex-col">
                         <span className="font-medium text-gray-800">{transaction.product?.name}</span>
-                        <span className="text-xs text-gray-500">{transaction.product?.sku}</span>
+                        <span className="text-xs text-gray-500">{transaction.product?.gb_article_number}</span>
                       </div>
                       <span className={`font-semibold ${transaction.quantity < 0 ? 'text-red-600' : 'text-green-600'}`}>
                         {transaction.quantity > 0 ? '+' : ''}{transaction.quantity} {transaction.product?.unit}
