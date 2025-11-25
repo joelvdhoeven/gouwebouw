@@ -48,6 +48,28 @@ const Urenregistratie: React.FC = () => {
   const { data: products = [] } = useSupabaseQuery<any>('inventory_products', 'id, name, sku, unit');
   const { insert: insertRegistration, update: updateRegistration, remove: deleteRegistration, loading: mutationLoading } = useSupabaseMutation('time_registrations');
   const { insert: insertProject } = useSupabaseMutation('projects');
+
+  // Load work codes
+  const [workCodes, setWorkCodes] = useState<any[]>([]);
+  useEffect(() => {
+    const loadWorkCodes = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('work_codes')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true });
+
+        if (error) throw error;
+        setWorkCodes(data || []);
+      } catch (error) {
+        console.error('Error loading work codes:', error);
+        setWorkCodes([]);
+      }
+    };
+    loadWorkCodes();
+  }, []);
+
   const [showModal, setShowModal] = useState(false);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -1000,17 +1022,19 @@ const Urenregistratie: React.FC = () => {
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">{t('werktype')} *</label>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Bewakingscode *</label>
                           <select
                             value={line.werktype}
                             onChange={(e) => updateWorkLine(index, 'werktype', e.target.value)}
                             required
                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                           >
-                            <option value="">{t('selecteerType')}</option>
-                            <option value="projectbasis">{t('projectbasis')}</option>
-                            <option value="meerwerk">{t('meerwerk')}</option>
-                            <option value="regie">{t('regie')}</option>
+                            <option value="">Selecteer bewakingscode</option>
+                            {workCodes.map((code: any) => (
+                              <option key={code.id} value={code.code}>
+                                {code.code} - {code.name}
+                              </option>
+                            ))}
                           </select>
                         </div>
 
@@ -1795,7 +1819,7 @@ const Urenregistratie: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('werktype')} *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Bewakingscode *</label>
               <select
                 name="werktype"
                 value={editingRegistration.werktype}
@@ -1803,10 +1827,12 @@ const Urenregistratie: React.FC = () => {
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               >
-                <option value="">{t('selecteerType')}</option>
-                <option value="projectbasis">{t('projectbasis')}</option>
-                <option value="meerwerk">{t('meerwerk')}</option>
-                <option value="regie">{t('regie')}</option>
+                <option value="">Selecteer bewakingscode</option>
+                {workCodes.map((code: any) => (
+                  <option key={code.id} value={code.code}>
+                    {code.code} - {code.name}
+                  </option>
+                ))}
               </select>
             </div>
 
