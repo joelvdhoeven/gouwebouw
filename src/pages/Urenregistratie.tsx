@@ -48,7 +48,27 @@ const Urenregistratie: React.FC = () => {
   const { insert: insertRegistration, update: updateRegistration, remove: deleteRegistration, loading: mutationLoading } = useSupabaseMutation('time_registrations');
   const { insert: insertProject } = useSupabaseMutation('projects');
 
-  const [projectWorkCodes, setProjectWorkCodes] = useState<any[]>([]);
+  // Load work codes
+  const [workCodes, setWorkCodes] = useState<any[]>([]);
+  useEffect(() => {
+    const loadWorkCodes = async () => {
+      try {
+        const { data, error} = await supabase
+          .from('work_codes')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true });
+
+        if (error) throw error;
+        setWorkCodes(data || []);
+      } catch (error) {
+        console.error('Error loading work codes:', error);
+        setWorkCodes([]);
+      }
+    };
+    loadWorkCodes();
+  }, []);
+
   const [showModal, setShowModal] = useState(false);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -90,33 +110,6 @@ const Urenregistratie: React.FC = () => {
   const [workLines, setWorkLines] = useState<WorkLine[]>([
     { werktype: '', werkomschrijving: '', aantal_uren: 0, materials: [] }
   ]);
-
-  // Load work codes when project is selected
-  useEffect(() => {
-    const loadProjectWorkCodes = async () => {
-      if (selectedProject?.id) {
-        try {
-          const { data, error } = await supabase
-            .from('project_work_codes')
-            .select('*')
-            .eq('project_id', selectedProject.id)
-            .eq('is_active', true)
-            .order('sort_order', { ascending: true });
-
-          if (error) throw error;
-
-          setProjectWorkCodes(data || []);
-        } catch (error) {
-          console.error('Error loading project work codes:', error);
-          setProjectWorkCodes([]);
-        }
-      } else {
-        setProjectWorkCodes([]);
-      }
-    };
-
-    loadProjectWorkCodes();
-  }, [selectedProject]);
 
   const toggleRowExpansion = (id: string) => {
     setExpandedRows(prev => {
@@ -939,25 +932,19 @@ const Urenregistratie: React.FC = () => {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-1">Bewakingscode *</label>
-                          {projectWorkCodes.length > 0 ? (
-                            <select
-                              value={line.werktype}
-                              onChange={(e) => updateWorkLine(index, 'werktype', e.target.value)}
-                              required
-                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                            >
-                              <option value="">Selecteer bewakingscode</option>
-                              {projectWorkCodes.map((code: any) => (
-                                <option key={code.id} value={code.code}>
-                                  {code.code} - {code.name}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <div className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                              {selectedProject ? 'Geen bewakingscodes beschikbaar' : 'Selecteer eerst een project'}
-                            </div>
-                          )}
+                          <select
+                            value={line.werktype}
+                            onChange={(e) => updateWorkLine(index, 'werktype', e.target.value)}
+                            required
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                          >
+                            <option value="">Selecteer bewakingscode</option>
+                            {workCodes.map((code: any) => (
+                              <option key={code.id} value={code.code}>
+                                {code.code} - {code.name}
+                              </option>
+                            ))}
+                          </select>
                         </div>
 
                         <div>
@@ -1741,7 +1728,7 @@ const Urenregistratie: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('werktype')} *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Bewakingscode *</label>
               <select
                 name="werktype"
                 value={editingRegistration.werktype}
@@ -1749,10 +1736,12 @@ const Urenregistratie: React.FC = () => {
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               >
-                <option value="">{t('selecteerType')}</option>
-                <option value="projectbasis">{t('projectbasis')}</option>
-                <option value="meerwerk">{t('meerwerk')}</option>
-                <option value="regie">{t('regie')}</option>
+                <option value="">Selecteer bewakingscode</option>
+                {workCodes.map((code: any) => (
+                  <option key={code.id} value={code.code}>
+                    {code.code} - {code.name}
+                  </option>
+                ))}
               </select>
             </div>
 
