@@ -40,12 +40,20 @@ const WorkCodesManagement: React.FC = () => {
         .select('*')
         .order('sort_order', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        // Check if table doesn't exist (migration not run yet)
+        if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+          setErrorMessage('De bewakingscodes tabel bestaat nog niet. Voer eerst de database migratie uit.');
+          console.error('Error loading work codes:', error);
+          return;
+        }
+        throw error;
+      }
 
       setWorkCodes(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading work codes:', error);
-      setErrorMessage('Fout bij het laden van bewakingscodes');
+      setErrorMessage('Fout bij het laden van bewakingscodes: ' + (error.message || 'Onbekende fout'));
     } finally {
       setLoading(false);
     }

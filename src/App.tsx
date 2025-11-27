@@ -7,6 +7,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
 import FinancieelDashboard from './pages/FinancieelDashboard';
 import Urenregistratie from './pages/Urenregistratie';
+import UrenregistratieV2 from './pages/UrenregistratieV2';
 import MijnNotificaties from './pages/MijnNotificaties';
 import SpeciaalGereedschap from './pages/SpeciaalGereedschap';
 import Projecten from './pages/Projecten';
@@ -53,7 +54,7 @@ function App() {
       case 'urenregistratie-v2':
         return (
           <ProtectedRoute permission="register_hours">
-            <Urenregistratie />
+            <UrenregistratieV2 />
           </ProtectedRoute>
         );
       case 'mijn-notificaties':
