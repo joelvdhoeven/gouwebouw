@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { User, Lock, Settings as SettingsIcon, Save, Eye, EyeOff, Package, Tag, Clock } from 'lucide-react';
+import { User, Lock, Settings as SettingsIcon, Save, Eye, EyeOff, Package, Clock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
-import CategoryManagement from '../components/CategoryManagement';
 import WorkCodesManagement from '../components/WorkCodesManagement';
 
 const Instellingen: React.FC = () => {
