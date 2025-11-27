@@ -59,6 +59,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection, isOp
     // If no module specified, just check permissions
     if (!item.module) return hasPerms;
 
+    // Special case: Urenregistratie V2 is only visible for admins
+    if (item.id === 'urenregistratie-v2') {
+      const isAdmin = user?.role === 'admin' || user?.role === 'kantoorpersoneel';
+      if (!isAdmin) return false;
+    }
+
     console.log(`[Sidebar] Checking menu item: ${item.label}`);
     console.log(`[Sidebar] Module: ${item.module}, User role: ${user?.role}`);
     console.log(`[Sidebar] Has permissions: ${hasPerms}`);
