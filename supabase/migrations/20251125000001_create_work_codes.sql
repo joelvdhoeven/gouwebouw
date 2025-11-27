@@ -34,7 +34,7 @@ CREATE POLICY "Allow admin to insert work codes"
     EXISTS (
       SELECT 1 FROM profiles
       WHERE profiles.id = auth.uid()
-      AND profiles.role IN ('admin', 'kantoorpersoneel', 'superuser')
+      AND profiles.role IN ('admin', 'kantoorpersoneel')
     )
   );
 
@@ -47,7 +47,7 @@ CREATE POLICY "Allow admin to update work codes"
     EXISTS (
       SELECT 1 FROM profiles
       WHERE profiles.id = auth.uid()
-      AND profiles.role IN ('admin', 'kantoorpersoneel', 'superuser')
+      AND profiles.role IN ('admin', 'kantoorpersoneel')
     )
   );
 
@@ -60,7 +60,7 @@ CREATE POLICY "Allow admin to delete work codes"
     EXISTS (
       SELECT 1 FROM profiles
       WHERE profiles.id = auth.uid()
-      AND profiles.role IN ('admin', 'kantoorpersoneel', 'superuser')
+      AND profiles.role IN ('admin', 'kantoorpersoneel')
     )
   );
 
