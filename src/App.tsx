@@ -50,6 +50,12 @@ function App() {
             <Urenregistratie />
           </ProtectedRoute>
         );
+      case 'urenregistratie-v2':
+        return (
+          <ProtectedRoute permission="register_hours">
+            <Urenregistratie />
+          </ProtectedRoute>
+        );
       case 'mijn-notificaties':
         return (
           <ProtectedRoute permission="register_hours">

@@ -37,6 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection, isOp
     { id: 'dashboard', label: t('dashboard'), icon: Home, permission: 'view_dashboard', module: null },
     { id: 'financieel-dashboard', label: 'Financieel Dashboard', icon: TrendingUp, permission: 'manage_settings', module: 'financial_dashboard' },
     { id: 'urenregistratie', label: t('urenregistratie'), icon: Clock, permission: 'register_hours', module: 'time_registration' },
+    { id: 'urenregistratie-v2', label: 'Urenregistratie V2', icon: Clock, permission: 'register_hours', module: 'time_registration_demo' },
     { id: 'mijn-notificaties', label: 'Notificaties', icon: Bell, permission: 'register_hours', module: 'notifications' },
     { id: 'voorraad-afboeken', label: 'Voorraad Afboeken', icon: Package, permission: 'view_dashboard', module: 'inventory' },
     { id: 'voorraadbeheer', label: 'Voorraadbeheer', icon: Package, permission: 'manage_settings', module: 'inventory' },

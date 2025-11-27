@@ -475,7 +475,7 @@ const Instellingen: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
+                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">V2</span>
                     <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
