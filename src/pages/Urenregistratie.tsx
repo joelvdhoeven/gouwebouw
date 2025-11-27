@@ -1049,7 +1049,7 @@ const Urenregistratie: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => addMaterialToWorkLine(index)}
-                              className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                              className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
                             >
                               <Plus size={14} />
                               Materiaal toevoegen
@@ -1065,14 +1065,14 @@ const Urenregistratie: React.FC = () => {
                                       <button
                                         type="button"
                                         onClick={() => updateMaterial(index, matIdx, 'type', material.type === 'product' ? 'description' : 'product')}
-                                        className={`px-2 py-1 text-xs rounded ${material.type === 'product' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                                        className={`px-2 py-1 text-xs rounded ${material.type === 'product' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'}`}
                                       >
                                         Product
                                       </button>
                                       <button
                                         type="button"
                                         onClick={() => updateMaterial(index, matIdx, 'type', material.type === 'description' ? 'product' : 'description')}
-                                        className={`px-2 py-1 text-xs rounded ${material.type === 'description' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                                        className={`px-2 py-1 text-xs rounded ${material.type === 'description' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'}`}
                                       >
                                         Omschrijving
                                       </button>
@@ -1093,7 +1093,7 @@ const Urenregistratie: React.FC = () => {
                                           <select
                                             value={material.product_id || ''}
                                             onChange={(e) => updateMaterial(index, matIdx, 'product_id', e.target.value)}
-                                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-red-500"
                                           >
                                             <option value="">Selecteer product</option>
                                             {products.map((product: any) => (
@@ -1111,7 +1111,7 @@ const Urenregistratie: React.FC = () => {
                                             placeholder="Aantal"
                                             min="0"
                                             step="0.1"
-                                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-red-500"
                                           />
                                           <span className="text-xs text-gray-600 min-w-[40px]">{material.unit || '-'}</span>
                                         </div>
@@ -1124,7 +1124,7 @@ const Urenregistratie: React.FC = () => {
                                             value={material.description || ''}
                                             onChange={(e) => updateMaterial(index, matIdx, 'description', e.target.value)}
                                             placeholder="Beschrijving materiaal"
-                                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-red-500"
                                           />
                                         </div>
                                         <div className="flex gap-2 items-center">
@@ -1135,7 +1135,7 @@ const Urenregistratie: React.FC = () => {
                                             placeholder="Aantal"
                                             min="0"
                                             step="0.1"
-                                            className="w-20 px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                            className="w-20 px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-red-500"
                                           />
                                           <input
                                             type="text"
