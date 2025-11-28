@@ -432,7 +432,7 @@ const FinancieelDashboard: React.FC = () => {
   if (!hasPermission('manage_settings')) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">Geen toegang tot financieel dashboard</p>
+        <p className="text-gray-500 dark:text-gray-400">Geen toegang tot financieel dashboard</p>
       </div>
     );
   }
@@ -449,8 +449,8 @@ const FinancieelDashboard: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Financieel Dashboard</h1>
-          <p className="text-gray-600">Inzicht in omzet, kosten en winst</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Financieel Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400">Inzicht in omzet, kosten en winst</p>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
@@ -459,7 +459,7 @@ const FinancieelDashboard: React.FC = () => {
             <select
               value={viewMode}
               onChange={(e) => handleViewModeChange(e.target.value as ViewMode)}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
             >
               <option value="total">Totale Omzet</option>
               <option value="project">Per Project</option>
@@ -471,7 +471,7 @@ const FinancieelDashboard: React.FC = () => {
             <select
               value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
             >
               <option value="">Alle Projecten</option>
               {projects.map(project => (
@@ -486,7 +486,7 @@ const FinancieelDashboard: React.FC = () => {
             <select
               value={selectedEmployeeId}
               onChange={(e) => setSelectedEmployeeId(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
             >
               <option value="">Alle Medewerkers</option>
               {employees.map(employee => (
@@ -502,7 +502,7 @@ const FinancieelDashboard: React.FC = () => {
             <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value as TimeRange)}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
             >
               {timeRangeOptions.map(option => (
                 <option key={option.value} value={option.value}>
@@ -516,67 +516,67 @@ const FinancieelDashboard: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Totale Omzet</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-sm text-gray-600 dark:text-gray-400">Totale Omzet</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                 {formatCurrency(financialData.totalRevenue)}
               </p>
             </div>
-            <div className="p-3 bg-red-100 rounded-lg">
+            <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
               <TrendingUp size={24} className="text-red-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Totale Kosten</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-sm text-gray-600 dark:text-gray-400">Totale Kosten</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                 {formatCurrency(financialData.totalCosts)}
               </p>
             </div>
-            <div className="p-3 bg-red-100 rounded-lg">
+            <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
               <TrendingUp size={24} className="text-red-600" style={{ transform: 'rotate(180deg)' }} />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Winst</p>
-              <p className={`text-2xl font-bold mt-1 ${financialData.profit >= 0 ? 'text-red-600' : 'text-gray-600'}`}>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Winst</p>
+              <p className={`text-2xl font-bold mt-1 ${financialData.profit >= 0 ? 'text-red-600' : 'text-gray-600 dark:text-gray-400'}`}>
                 {formatCurrency(financialData.profit)}
               </p>
             </div>
-            <div className={`p-3 rounded-lg ${financialData.profit >= 0 ? 'bg-red-100' : 'bg-gray-100'}`}>
-              <DollarSign size={24} className={financialData.profit >= 0 ? 'text-red-600' : 'text-gray-600'} />
+            <div className={`p-3 rounded-lg ${financialData.profit >= 0 ? 'bg-red-100 dark:bg-red-900/30' : 'bg-gray-100 dark:bg-gray-700'}`}>
+              <DollarSign size={24} className={financialData.profit >= 0 ? 'text-red-600' : 'text-gray-600 dark:text-gray-400'} />
             </div>
           </div>
           <div className="mt-2">
-            <span className={`text-sm font-medium ${financialData.profitMargin >= 0 ? 'text-red-600' : 'text-gray-600'}`}>
+            <span className={`text-sm font-medium ${financialData.profitMargin >= 0 ? 'text-red-600' : 'text-gray-600 dark:text-gray-400'}`}>
               {financialData.profitMargin.toFixed(1)}% marge
             </span>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Gewerkte Uren</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-sm text-gray-600 dark:text-gray-400">Gewerkte Uren</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                 {financialData.hoursWorked.toFixed(1)}
               </p>
             </div>
-            <div className="p-3 bg-red-100 rounded-lg">
+            <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
               <TrendingUp size={24} className="text-red-600" />
             </div>
           </div>
           <div className="mt-2">
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
               {financialData.projectCount} projecten
             </span>
           </div>
@@ -586,8 +586,8 @@ const FinancieelDashboard: React.FC = () => {
       {/* Charts Row 1 - Pie Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Total Costs vs Profit Pie Chart */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Totale Kosten vs Winst</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Totale Kosten vs Winst</h3>
           {financialData.totalCosts > 0 || financialData.profit > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -611,15 +611,15 @@ const FinancieelDashboard: React.FC = () => {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-500">
+            <div className="flex items-center justify-center h-[300px] text-gray-500 dark:text-gray-400">
               Geen data beschikbaar
             </div>
           )}
         </div>
 
         {/* Worked Hours by Employee Pie Chart */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Gewerkte Uren per Medewerker</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Gewerkte Uren per Medewerker</h3>
           {financialData.revenueByItem.length > 0 && viewMode === 'employee' ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -644,7 +644,7 @@ const FinancieelDashboard: React.FC = () => {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-500">
+            <div className="flex items-center justify-center h-[300px] text-gray-500 dark:text-gray-400">
               {viewMode === 'employee' ? 'Geen data beschikbaar' : 'Selecteer "Per Medewerker" om gewerkte uren te zien'}
             </div>
           )}
@@ -654,8 +654,8 @@ const FinancieelDashboard: React.FC = () => {
       {/* Charts Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue/Cost Line Chart */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Omzet vs Kosten per Maand</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Omzet vs Kosten per Maand</h3>
           {financialData.revenueByMonth.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={financialData.revenueByMonth}>
@@ -670,15 +670,15 @@ const FinancieelDashboard: React.FC = () => {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-500">
+            <div className="flex items-center justify-center h-[300px] text-gray-500 dark:text-gray-400">
               Geen data beschikbaar
             </div>
           )}
         </div>
 
         {/* Cost Breakdown Pie Chart */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Kosten Verdeling (Personeel/Materiaal)</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Kosten Verdeling (Personeel/Materiaal)</h3>
           {financialData.costBreakdown.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -700,7 +700,7 @@ const FinancieelDashboard: React.FC = () => {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-[300px] text-gray-500">
+            <div className="flex items-center justify-center h-[300px] text-gray-500 dark:text-gray-400">
               Geen data beschikbaar
             </div>
           )}
@@ -709,8 +709,8 @@ const FinancieelDashboard: React.FC = () => {
 
       {/* Revenue by Project/Employee */}
       {viewMode !== 'total' && financialData.revenueByItem.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             {viewMode === 'project'
               ? (selectedProjectId ? 'Project Details' : 'Omzet per Project (Top 10)')
               : (selectedEmployeeId ? 'Medewerker Details' : 'Omzet per Medewerker (Top 10)')

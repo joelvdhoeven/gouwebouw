@@ -1149,7 +1149,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 dark:border-red-500"></div>
       </div>
     );
   }
@@ -1158,27 +1158,27 @@ const VoorraadbeheerAdmin: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Voorraadbeheer</h1>
-          <p className="text-gray-600">Beheer voorraad en boek materiaal af op projecten</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Voorraadbeheer</h1>
+          <p className="text-gray-600 dark:text-gray-300">Beheer voorraad en boek materiaal af op projecten</p>
         </div>
         <div className="flex gap-2">
         </div>
       </div>
 
       {canManage && lowStockAlerts.length > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
           <div className="flex items-start gap-3">
-            <AlertCircle className="text-yellow-600 mt-0.5" size={20} />
+            <AlertCircle className="text-yellow-600 dark:text-yellow-500 mt-0.5" size={20} />
             <div className="flex-1">
-              <h3 className="font-semibold text-yellow-900 mb-2">Voorraad Waarschuwingen ({lowStockAlerts.length})</h3>
+              <h3 className="font-semibold text-yellow-900 dark:text-yellow-200 mb-2">Voorraad Waarschuwingen ({lowStockAlerts.length})</h3>
               <div className="space-y-1">
                 {lowStockAlerts.slice(0, 5).map((alert, idx) => (
-                  <div key={idx} className="text-sm text-yellow-800">
+                  <div key={idx} className="text-sm text-yellow-800 dark:text-yellow-300">
                     {alert.product_name} bij {alert.location_name}: {alert.current_stock} {products.find(p => p.id === alert.product_id)?.unit} (min: {alert.minimum_stock})
                   </div>
                 ))}
                 {lowStockAlerts.length > 5 && (
-                  <div className="text-sm text-yellow-700 font-medium">+ {lowStockAlerts.length - 5} meer...</div>
+                  <div className="text-sm text-yellow-700 dark:text-yellow-400 font-medium">+ {lowStockAlerts.length - 5} meer...</div>
                 )}
               </div>
             </div>
@@ -1186,8 +1186,8 @@ const VoorraadbeheerAdmin: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow">
-        <div className="border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50">
+        <div className="border-b border-gray-200 dark:border-gray-700">
           <div className="flex space-x-1 p-1">
             {['overzicht', 'producten', 'locaties'].map((tab) => (
               <button
@@ -1196,7 +1196,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                   activeTab === tab
                     ? 'bg-red-600 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -1209,21 +1209,21 @@ const VoorraadbeheerAdmin: React.FC = () => {
           {activeTab === 'overzicht' && (
             <div className="space-y-4">
               {selectedStockIds.size > 0 && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <span className="text-blue-900 font-medium">
+                    <span className="text-blue-900 dark:text-blue-200 font-medium">
                       {selectedStockIds.size} item(s) geselecteerd
                     </span>
                     <div className="flex flex-wrap gap-2">
                       <button
                         onClick={selectAllStock}
-                        className="px-3 py-1.5 text-sm bg-white border border-blue-300 text-blue-700 rounded hover:bg-blue-50"
+                        className="px-3 py-1.5 text-sm bg-white dark:bg-gray-700 border border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30"
                       >
                         Alles Selecteren
                       </button>
                       <button
                         onClick={deselectAllStock}
-                        className="px-3 py-1.5 text-sm bg-white border border-blue-300 text-blue-700 rounded hover:bg-blue-50"
+                        className="px-3 py-1.5 text-sm bg-white dark:bg-gray-700 border border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30"
                       >
                         Alles Deselecteren
                       </button>
@@ -1249,7 +1249,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   </div>
                 </div>
               )}
-              <div className="flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-3 pb-4 border-b border-gray-200">
+              <div className="flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-3 pb-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex flex-wrap gap-2">
                   {canManage && (
                     <>
@@ -1290,7 +1290,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                       </label>
                       <button
                         onClick={downloadImportTemplate}
-                        className="text-xs text-blue-600 hover:text-blue-800 underline"
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
                       >
                         Download import sjabloon
                       </button>
@@ -1300,19 +1300,19 @@ const VoorraadbeheerAdmin: React.FC = () => {
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+                  <Search className="absolute left-3 top-2.5 text-gray-400 dark:text-gray-500" size={20} />
                   <input
                     type="text"
                     placeholder="Zoek op naam of SKU..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
                 <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full sm:w-auto px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="">Alle Materiaal groepen</option>
                   {categories.map(cat => (
@@ -1322,7 +1322,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 <select
                   value={locationFilter}
                   onChange={(e) => setLocationFilter(e.target.value)}
-                  className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full sm:w-auto px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="">Alle Locaties</option>
                   {locations.map(loc => (
@@ -1333,63 +1333,63 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+                  <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                     <tr>
                       <th className="px-4 py-3 w-12">
                         <input
                           type="checkbox"
                           checked={filteredStock.length > 0 && selectedStockIds.size === filteredStock.length}
                           onChange={(e) => e.target.checked ? selectAllStock() : deselectAllStock()}
-                          className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                          className="w-4 h-4 text-red-600 border-gray-300 dark:border-gray-600 rounded focus:ring-red-500"
                         />
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Materiaal groep</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Locatie</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Voorraad</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Min.</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acties</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Product</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">SKU</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Materiaal groep</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Locatie</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Voorraad</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Min.</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Acties</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                     {filteredStock.map((item) => {
                       const isLow = item.quantity < (item.product?.minimum_stock || 0);
                       const stockId = `${item.product_id}|||${item.location_id}`;
                       const isSelected = selectedStockIds.has(stockId);
                       return (
-                        <tr key={stockId} className={isLow ? 'bg-yellow-50' : ''}>
+                        <tr key={stockId} className={isLow ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''}>
                           <td className="px-4 py-3">
                             <input
                               type="checkbox"
                               checked={isSelected}
                               onChange={() => toggleSelectStock(stockId)}
-                              className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                              className="w-4 h-4 text-red-600 border-gray-300 dark:border-gray-600 rounded focus:ring-red-500"
                             />
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{item.product?.name}</td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{item.product?.sku}</td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{item.product?.category}</td>
-                          <td className="px-4 py-3 text-sm text-gray-600">
+                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{item.product?.name}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{item.product?.sku}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{item.product?.category}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                             <div className="flex items-center gap-2">
                               {item.location?.type === 'bus' ? <Truck size={16} /> : <Warehouse size={16} />}
                               {item.location?.name}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-sm text-right font-medium">
+                          <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
                             {item.quantity} {item.product?.unit}
                           </td>
-                          <td className="px-4 py-3 text-sm text-right text-gray-600">
+                          <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-300">
                             {item.product?.minimum_stock}
                           </td>
                           <td className="px-4 py-3 text-sm">
                             {isLow ? (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200">
                                 Laag
                               </span>
                             ) : (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200">
                                 OK
                               </span>
                             )}
@@ -1398,7 +1398,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                             <div className="flex items-center justify-center gap-2">
                               <button
                                 onClick={() => handleEditStock(item)}
-                                className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                                className="p-1 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
                                 title="Bewerk voorraad"
                               >
                                 <Edit size={16} />
@@ -1415,7 +1415,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                                   });
                                   setShowMoveStockModal(true);
                                 }}
-                                className="p-1 text-green-600 hover:bg-green-50 rounded"
+                                className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
                                 title="Verplaats naar andere locatie"
                               >
                                 <ArrowRightLeft size={16} />
@@ -1423,7 +1423,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                               {canManage && (
                                 <button
                                   onClick={() => handleDeleteProduct(item.product_id)}
-                                  className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                  className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                                   title="Verwijder product"
                                 >
                                   <Trash2 size={16} />
@@ -1445,13 +1445,13 @@ const VoorraadbeheerAdmin: React.FC = () => {
               {/* Search and Actions - Mobile Responsive */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+                  <Search className="absolute left-3 top-2.5 text-gray-400 dark:text-gray-500" size={20} />
                   <input
                     type="text"
                     placeholder="Zoek op naam, SKU of materiaal groep..."
                     value={productSearchTerm}
                     onChange={(e) => setProductSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
                 {canManage && (
@@ -1493,23 +1493,23 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   p.sku.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
                   p.category.toLowerCase().includes(productSearchTerm.toLowerCase())
                 ).map((product) => (
-                  <div key={product.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div key={product.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800 hover:shadow-md dark:hover:shadow-gray-900/50 transition-shadow">
                     <div className="flex flex-col sm:flex-row items-start justify-between gap-2 mb-2">
-                      <h3 className="font-semibold text-gray-900 flex-1 break-words">{product.name}</h3>
+                      <h3 className="font-semibold text-gray-900 dark:text-white flex-1 break-words">{product.name}</h3>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-xs bg-gray-100 px-2 py-1 rounded whitespace-nowrap">{product.sku}</span>
+                        <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-300 px-2 py-1 rounded whitespace-nowrap">{product.sku}</span>
                         {canManage && (
                           <>
                             <button
                               onClick={() => handleEditFullProduct(product)}
-                              className="p-1 text-gray-600 hover:bg-gray-50 rounded"
+                              className="p-1 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded"
                               title="Bewerk product"
                             >
                               <Edit size={16} />
                             </button>
                             <button
                               onClick={() => handleDeleteProduct(product.id)}
-                              className="p-1 text-red-600 hover:bg-red-50 rounded"
+                              className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                               title="Verwijder product"
                             >
                               <Trash2 size={16} />
@@ -1518,16 +1518,16 @@ const VoorraadbeheerAdmin: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600 mb-2">{product.category}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{product.category}</p>
                     {product.description && (
-                      <p className="text-sm text-gray-500 mb-2 line-clamp-2">{product.description}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{product.description}</p>
                     )}
                     <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
-                      <span className="text-gray-600">Min. voorraad: {product.minimum_stock}</span>
-                      <span className="text-gray-600">Eenheid: {product.unit}</span>
+                      <span className="text-gray-600 dark:text-gray-300">Min. voorraad: {product.minimum_stock}</span>
+                      <span className="text-gray-600 dark:text-gray-300">Eenheid: {product.unit}</span>
                     </div>
                     {product.ean && (
-                      <div className="mt-2 text-xs text-gray-500 truncate" title={product.ean}>EAN: {product.ean}</div>
+                      <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate" title={product.ean}>EAN: {product.ean}</div>
                     )}
                   </div>
                 ))}
@@ -1552,42 +1552,42 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 {locations.map((location) => (
                   <div
                     key={location.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow cursor-pointer"
+                    className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800 hover:shadow-lg dark:hover:shadow-gray-900/50 transition-shadow cursor-pointer"
                     onClick={() => handleViewLocationDetails(location)}
                   >
                     <div className="flex items-start gap-3 mb-2">
                       {location.type === 'bus' ? (
-                        <Truck className="text-blue-600" size={24} />
+                        <Truck className="text-blue-600 dark:text-blue-400" size={24} />
                       ) : (
-                        <Warehouse className="text-green-600" size={24} />
+                        <Warehouse className="text-green-600 dark:text-green-400" size={24} />
                       )}
                       <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">{location.name}</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">{location.name}</h3>
                         {location.license_plate && (
-                          <p className="text-sm text-gray-600">{location.license_plate}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">{location.license_plate}</p>
                         )}
                       </div>
                     </div>
                     {location.description && (
-                      <p className="text-sm text-gray-500 mt-2">{location.description}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{location.description}</p>
                     )}
-                    <div className="mt-3 pt-3 border-t border-gray-200 space-y-3">
+                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-3">
                       <div className="flex items-center justify-between">
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-gray-600 dark:text-gray-300">
                           {stock.filter(s => s.location_id === location.id).length} producten
                         </div>
                         {canManage && (
                           <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => handleEditLocation(location)}
-                              className="p-1 text-gray-600 hover:bg-gray-50 rounded"
+                              className="p-1 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded"
                               title="Bewerk locatie"
                             >
                               <Edit size={16} />
                             </button>
                             <button
                               onClick={() => handleDeleteLocation(location.id)}
-                              className="p-1 text-red-600 hover:bg-red-50 rounded"
+                              className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                               title="Verwijder locatie"
                             >
                               <Trash2 size={16} />
@@ -1624,10 +1624,10 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
       {showEditModal && editingProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">Bewerk Product: {editingProduct.name}</h2>
-              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Bewerk Product: {editingProduct.name}</h2>
+              <button onClick={() => setShowEditModal(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
                 <X size={24} />
               </button>
             </div>
@@ -1635,65 +1635,65 @@ const VoorraadbeheerAdmin: React.FC = () => {
             <div className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Minimale Voorraad</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Minimale Voorraad</label>
                   <input
                     type="number"
                     min="0"
                     value={editFormData.minimum_stock}
                     onChange={(e) => setEditFormData({ ...editFormData, minimum_stock: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">EAN Code</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">EAN Code</label>
                   <input
                     type="text"
                     value={editFormData.ean}
                     onChange={(e) => setEditFormData({ ...editFormData, ean: e.target.value })}
                     placeholder="EAN barcode"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Inkoopprijs (€)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Inkoopprijs (€)</label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={editFormData.purchase_price}
                     onChange={(e) => setEditFormData({ ...editFormData, purchase_price: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Verkoopprijs (€)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Verkoopprijs (€)</label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={editFormData.sale_price}
                     onChange={(e) => setEditFormData({ ...editFormData, sale_price: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Leverancier</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Leverancier</label>
                   <input
                     type="text"
                     value={editFormData.supplier}
                     onChange={(e) => setEditFormData({ ...editFormData, supplier: e.target.value })}
                     placeholder="Leverancier naam"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Voorraad per Locatie</h3>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Voorraad per Locatie</h3>
                 <div className="space-y-2">
                   {locations.map((location) => {
                     // Find existing stock for this location
@@ -1701,10 +1701,10 @@ const VoorraadbeheerAdmin: React.FC = () => {
                     const currentQuantity = existingStock?.quantity || 0;
 
                     return (
-                      <div key={location.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={location.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <div className="flex items-center gap-2">
                           {location.type === 'bus' ? <Truck size={18} /> : <Warehouse size={18} />}
-                          <span className="font-medium">{location.name}</span>
+                          <span className="font-medium text-gray-900 dark:text-white">{location.name}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -1712,7 +1712,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                               const newQuantity = Math.max(0, currentQuantity - 1);
                               updateStockQuantity(location.id, newQuantity);
                             }}
-                            className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                            className="px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-500"
                           >
                             -
                           </button>
@@ -1721,12 +1721,12 @@ const VoorraadbeheerAdmin: React.FC = () => {
                             min="0"
                             value={currentQuantity}
                             onChange={(e) => updateStockQuantity(location.id, parseInt(e.target.value) || 0)}
-                            className="w-20 px-2 py-1 text-center border border-gray-300 rounded"
+                            className="w-20 px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           />
-                          <span className="text-sm text-gray-600">{editingProduct?.unit || 'stuks'}</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-300">{editingProduct?.unit || 'stuks'}</span>
                           <button
                             onClick={() => updateStockQuantity(location.id, currentQuantity + 1)}
-                            className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                            className="px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-500"
                           >
                             +
                           </button>
@@ -1737,10 +1737,10 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   Annuleren
                 </button>
@@ -1758,88 +1758,88 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
       {showStockEditModal && editingStock && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">Bewerk Voorraad</h2>
-              <button onClick={() => setShowStockEditModal(false)} className="text-gray-400 hover:text-gray-600">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Bewerk Voorraad</h2>
+              <button onClick={() => setShowStockEditModal(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
                 <X size={24} />
               </button>
             </div>
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Productnaam</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Productnaam</label>
                 <input
                   type="text"
                   value={stockEditFormData.product_name}
                   onChange={(e) => setStockEditFormData({ ...stockEditFormData, product_name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Aantal in Voorraad</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Aantal in Voorraad</label>
                 <input
                   type="number"
                   min="0"
                   value={stockEditFormData.quantity}
                   onChange={(e) => setStockEditFormData({ ...stockEditFormData, quantity: parseInt(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Minimale Voorraad</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Minimale Voorraad</label>
                 <input
                   type="number"
                   min="0"
                   value={stockEditFormData.minimum_stock}
                   onChange={(e) => setStockEditFormData({ ...stockEditFormData, minimum_stock: parseInt(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">EAN Code</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">EAN Code</label>
                 <input
                   type="text"
                   value={stockEditFormData.ean}
                   onChange={(e) => setStockEditFormData({ ...stockEditFormData, ean: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Inkoopprijs (€)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Inkoopprijs (€)</label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={stockEditFormData.purchase_price}
                     onChange={(e) => setStockEditFormData({ ...stockEditFormData, purchase_price: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Verkoopprijs (€)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Verkoopprijs (€)</label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={stockEditFormData.sale_price}
                     onChange={(e) => setStockEditFormData({ ...stockEditFormData, sale_price: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Locatie</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Locatie</label>
                 <select
                   value={stockEditFormData.location_id}
                   onChange={(e) => setStockEditFormData({ ...stockEditFormData, location_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   {locations.map(loc => (
                     <option key={loc.id} value={loc.id}>{loc.name}</option>
@@ -1847,10 +1847,10 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 </select>
               </div>
 
-              <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+              <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={() => handleDeleteProductConfirm(editingStock.product_id)}
-                  className="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 flex items-center gap-2"
+                  className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 flex items-center gap-2"
                 >
                   <Trash2 size={18} />
                   Verwijder Product
@@ -1858,7 +1858,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowStockEditModal(false)}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
                     Annuleren
                   </button>
@@ -1877,32 +1877,32 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
       {showAddLocationModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">Nieuwe Locatie Toevoegen</h2>
-              <button onClick={() => setShowAddLocationModal(false)} className="text-gray-400 hover:text-gray-600">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Nieuwe Locatie Toevoegen</h2>
+              <button onClick={() => setShowAddLocationModal(false)} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
                 <X size={24} />
               </button>
             </div>
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Naam *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Naam *</label>
                 <input
                   type="text"
                   value={newLocationData.name}
                   onChange={(e) => setNewLocationData({ ...newLocationData, name: e.target.value })}
                   placeholder="Bijv. Magazijn A, Bus 1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type *</label>
                 <select
                   value={newLocationData.type}
                   onChange={(e) => setNewLocationData({ ...newLocationData, type: e.target.value as 'magazijn' | 'bus' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="magazijn">Magazijn</option>
                   <option value="bus">Bus</option>
@@ -1910,31 +1910,31 @@ const VoorraadbeheerAdmin: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Kenteken (optioneel)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kenteken (optioneel)</label>
                 <input
                   type="text"
                   value={newLocationData.license_plate}
                   onChange={(e) => setNewLocationData({ ...newLocationData, license_plate: e.target.value })}
                   placeholder="Bijv. XX-123-YY"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Beschrijving (optioneel)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Beschrijving (optioneel)</label>
                 <textarea
                   value={newLocationData.description}
                   onChange={(e) => setNewLocationData({ ...newLocationData, description: e.target.value })}
                   rows={3}
                   placeholder="Extra informatie over deze locatie"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={() => setShowAddLocationModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   Annuleren
                 </button>
@@ -1953,10 +1953,10 @@ const VoorraadbeheerAdmin: React.FC = () => {
       {showLocationDetailsModal && selectedLocationForDetails && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
               <div className="flex items-center gap-3">
                 {selectedLocationForDetails.type === 'bus' ? <Truck size={24} className="text-blue-600" /> : <Warehouse size={24} className="text-green-600" />}
-                <h2 className="text-xl font-bold text-gray-900">{selectedLocationForDetails.name}</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{selectedLocationForDetails.name}</h2>
               </div>
               <button onClick={() => setShowLocationDetailsModal(false)} className="text-gray-400 hover:text-gray-600">
                 <X size={24} />
@@ -1985,7 +1985,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
               )}
 
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Voorraad op deze locatie</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Voorraad op deze locatie</h3>
                 {stock.filter(s => s.location_id === selectedLocationForDetails.id).length === 0 ? (
                   <p className="text-gray-500 text-center py-8">Geen voorraad op deze locatie</p>
                 ) : (
@@ -2048,7 +2048,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
               <div className="flex justify-end pt-4 border-t border-gray-200">
                 <button
                   onClick={() => setShowLocationDetailsModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   Sluiten
                 </button>
@@ -2060,9 +2060,9 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
       {showEditLocationModal && editingLocation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">Bewerk Locatie</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Bewerk Locatie</h2>
               <button onClick={() => setShowEditLocationModal(false)} className="text-gray-400 hover:text-gray-600">
                 <X size={24} />
               </button>
@@ -2070,22 +2070,22 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Naam *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Naam *</label>
                 <input
                   type="text"
                   value={editLocationData.name}
                   onChange={(e) => setEditLocationData({ ...editLocationData, name: e.target.value })}
                   placeholder="Bijv. Magazijn A, Bus 1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type *</label>
                 <select
                   value={editLocationData.type}
                   onChange={(e) => setEditLocationData({ ...editLocationData, type: e.target.value as 'magazijn' | 'bus' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="magazijn">Magazijn</option>
                   <option value="bus">Bus</option>
@@ -2093,31 +2093,31 @@ const VoorraadbeheerAdmin: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Kenteken (optioneel)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kenteken (optioneel)</label>
                 <input
                   type="text"
                   value={editLocationData.license_plate}
                   onChange={(e) => setEditLocationData({ ...editLocationData, license_plate: e.target.value })}
                   placeholder="Bijv. XX-123-YY"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Beschrijving (optioneel)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Beschrijving (optioneel)</label>
                 <textarea
                   value={editLocationData.description}
                   onChange={(e) => setEditLocationData({ ...editLocationData, description: e.target.value })}
                   rows={3}
                   placeholder="Extra informatie over deze locatie"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={() => setShowEditLocationModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   Annuleren
                 </button>
@@ -2135,9 +2135,9 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
       {showImportLocationModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">Importeer Producten</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Importeer Producten</h2>
               <button onClick={() => setShowImportLocationModal(false)} className="text-gray-400 hover:text-gray-600">
                 <X size={24} />
               </button>
@@ -2164,7 +2164,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   type="file"
                   accept=".csv"
                   onChange={handleImportCSV}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
@@ -2177,7 +2177,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
               <div className="flex justify-end pt-4 border-t border-gray-200">
                 <button
                   onClick={() => setShowImportLocationModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   Sluiten
                 </button>
@@ -2189,17 +2189,17 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
       {showAddProductModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
-              <h2 className="text-xl font-bold text-gray-900">Product Toevoegen</h2>
-              <button onClick={closeAddProductModal} className="text-gray-400 hover:text-gray-600">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-800">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Product Toevoegen</h2>
+              <button onClick={closeAddProductModal} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
                 <X size={24} />
               </button>
             </div>
 
             <div className="p-6 space-y-4">
               {/* Photo Upload Section */}
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4">
                 <input
                   type="file"
                   id="product-photo"
@@ -2267,8 +2267,8 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 ) : (
                   /* Upload Options */
                   <div className="text-center space-y-4">
-                    <ImageIcon size={48} className="mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-600 mb-4">Product Foto Toevoegen</p>
+                    <ImageIcon size={48} className="mx-auto text-gray-400 dark:text-gray-500 mb-2" />
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">Product Foto Toevoegen</p>
                     <div className="flex flex-col sm:flex-row gap-3 justify-center">
                       <label htmlFor="product-photo" className="cursor-pointer px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2">
                         <Upload size={18} />
@@ -2289,44 +2289,44 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Materiaalomschrijving *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Materiaalomschrijving *</label>
                   <input
                     type="text"
                     value={newProductData.name}
                     onChange={(e) => setNewProductData({ ...newProductData, name: e.target.value })}
                     placeholder="Bijv. Vuren C geschaafd 44x70 FSC"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">GB-art.nr. *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">GB-art.nr. *</label>
                   <input
                     type="text"
                     value={newProductData.gb_article_number}
                     onChange={(e) => setNewProductData({ ...newProductData, gb_article_number: e.target.value })}
                     placeholder="Bijv. 45x70-300"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">EAN-code</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">EAN-code</label>
                   <input
                     type="text"
                     value={newProductData.ean}
                     onChange={(e) => setNewProductData({ ...newProductData, ean: e.target.value })}
                     placeholder="37215133001"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Materiaal groep</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Materiaal groep</label>
                   <select
                     value={newProductData.category}
                     onChange={(e) => setNewProductData({ ...newProductData, category: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
                     <option value="">Selecteer materiaal groep</option>
                     {categories.map((cat) => (
@@ -2338,51 +2338,51 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Eenheid</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Eenheid</label>
                   <input
                     type="text"
                     value={newProductData.unit}
                     onChange={(e) => setNewProductData({ ...newProductData, unit: e.target.value })}
                     placeholder="Bijv. stuk, doosje, kg, m"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Min. voorraad</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Min. voorraad</label>
                   <input
                     type="number"
                     min="0"
                     value={newProductData.minimum_stock}
                     onChange={(e) => setNewProductData({ ...newProductData, minimum_stock: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Leverancier</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Leverancier</label>
                   <input
                     type="text"
                     value={newProductData.supplier}
                     onChange={(e) => setNewProductData({ ...newProductData, supplier: e.target.value })}
                     placeholder="Bijv. Stiho, Berner"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Lev.art.nr.</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lev.art.nr.</label>
                   <input
                     type="text"
                     value={newProductData.supplier_article_number}
                     onChange={(e) => setNewProductData({ ...newProductData, supplier_article_number: e.target.value })}
                     placeholder="Bijv. 160740"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">€/eenh (prijs per eenheid)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">€/eenh (prijs per eenheid)</label>
                   <input
                     type="number"
                     min="0"
@@ -2390,59 +2390,59 @@ const VoorraadbeheerAdmin: React.FC = () => {
                     value={newProductData.price_per_unit}
                     onChange={(e) => setNewProductData({ ...newProductData, price_per_unit: parseFloat(e.target.value) || 0 })}
                     placeholder="5.13"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Inkoopprijs (€)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Inkoopprijs (€)</label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={newProductData.purchase_price}
                     onChange={(e) => setNewProductData({ ...newProductData, purchase_price: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Verkoopprijs (€)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Verkoopprijs (€)</label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={newProductData.sale_price}
                     onChange={(e) => setNewProductData({ ...newProductData, sale_price: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Beschrijving</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Beschrijving</label>
                 <textarea
                   value={newProductData.description}
                   onChange={(e) => setNewProductData({ ...newProductData, description: e.target.value })}
                   rows={3}
                   placeholder="Extra informatie over dit product"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
               {/* Initial Stock Section */}
               <div className="border-t border-gray-200 pt-4">
                 <h3 className="text-md font-semibold text-gray-900 mb-3">Initiële Voorraad (optioneel)</h3>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
                   Voeg direct voorraad toe zodat het product in het overzicht verschijnt. Je kunt dit ook later doen.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Locatie</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Locatie</label>
                     <select
                       value={initialStockLocation}
                       onChange={(e) => setInitialStockLocation(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     >
                       <option value="">Geen (later toevoegen)</option>
                       {locations.map((location) => (
@@ -2453,7 +2453,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Aantal</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Aantal</label>
                     <input
                       type="number"
                       min="0"
@@ -2474,10 +2474,10 @@ const VoorraadbeheerAdmin: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={closeAddProductModal}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   Annuleren
                 </button>
@@ -2495,9 +2495,9 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
       {showDeleteConfirm && productToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full">
             <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">Product Verwijderen</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Product Verwijderen</h2>
             </div>
             <div className="p-6">
               <p className="text-gray-700 mb-4">
@@ -2528,9 +2528,9 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
       {showMoveStockModal && moveStockData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">Voorraad Verplaatsen</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Voorraad Verplaatsen</h2>
               <button onClick={() => {
                 setShowMoveStockModal(false);
                 setMoveStockData(null);
@@ -2555,13 +2555,13 @@ const VoorraadbeheerAdmin: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Naar Locatie *
                 </label>
                 <select
                   value={moveStockData.toLocationId}
                   onChange={(e) => setMoveStockData({ ...moveStockData, toLocationId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="">Selecteer locatie</option>
                   {locations
@@ -2575,7 +2575,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Hoeveelheid *
                 </label>
                 <div className="flex items-center gap-2">

@@ -85,7 +85,7 @@ const FactuurInstellingen: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 dark:border-red-500"></div>
       </div>
     );
   }
@@ -93,7 +93,7 @@ const FactuurInstellingen: React.FC = () => {
   if (!canManage) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">Je hebt geen toegang tot deze pagina.</p>
+        <p className="text-gray-600 dark:text-gray-400">Je hebt geen toegang tot deze pagina.</p>
       </div>
     );
   }
@@ -101,7 +101,7 @@ const FactuurInstellingen: React.FC = () => {
   if (!settings) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">Geen instellingen gevonden.</p>
+        <p className="text-gray-600 dark:text-gray-400">Geen instellingen gevonden.</p>
       </div>
     );
   }
@@ -110,16 +110,16 @@ const FactuurInstellingen: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <FileText size={28} className="text-red-600" />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <FileText size={28} className="text-red-600 dark:text-red-500" />
             Factuur Instellingen
           </h1>
-          <p className="text-gray-600">Beheer bedrijfsgegevens en factuur opmaak</p>
+          <p className="text-gray-600 dark:text-gray-400">Beheer bedrijfsgegevens en factuur opmaak</p>
         </div>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2 disabled:opacity-50"
+          className="px-6 py-2 bg-red-600 dark:bg-red-700 text-white rounded-md hover:bg-red-700 dark:hover:bg-red-800 flex items-center gap-2 disabled:opacity-50"
         >
           <Save size={18} />
           {saving ? 'Opslaan...' : 'Opslaan'}
@@ -127,34 +127,34 @@ const FactuurInstellingen: React.FC = () => {
       </div>
 
       {successMessage && (
-        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 px-4 py-3 rounded-lg">
           {successMessage}
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Bedrijfsgegevens */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Building2 size={20} className="text-red-600" />
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Building2 size={20} className="text-red-600 dark:text-red-500" />
             Bedrijfsgegevens
           </h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Bedrijfsnaam *
               </label>
               <input
                 type="text"
                 value={settings.company_name}
                 onChange={(e) => handleChange('company_name', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   KVK Nummer
                 </label>
                 <input
@@ -162,12 +162,12 @@ const FactuurInstellingen: React.FC = () => {
                   value={settings.kvk_number}
                   onChange={(e) => handleChange('kvk_number', e.target.value)}
                   placeholder="12345678"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   BTW Nummer
                 </label>
                 <input
@@ -175,13 +175,13 @@ const FactuurInstellingen: React.FC = () => {
                   value={settings.btw_number}
                   onChange={(e) => handleChange('btw_number', e.target.value)}
                   placeholder="NL123456789B01"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 <CreditCard className="inline mr-1" size={14} />
                 IBAN
               </label>
@@ -190,12 +190,12 @@ const FactuurInstellingen: React.FC = () => {
                 value={settings.iban}
                 onChange={(e) => handleChange('iban', e.target.value)}
                 placeholder="NL00ABCD0123456789"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Straat en huisnummer
               </label>
               <input
@@ -203,13 +203,13 @@ const FactuurInstellingen: React.FC = () => {
                 value={settings.address_street}
                 onChange={(e) => handleChange('address_street', e.target.value)}
                 placeholder="Straatnaam 123"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Postcode
                 </label>
                 <input
@@ -217,12 +217,12 @@ const FactuurInstellingen: React.FC = () => {
                   value={settings.address_zip}
                   onChange={(e) => handleChange('address_zip', e.target.value)}
                   placeholder="1234 AB"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Plaats
                 </label>
                 <input
@@ -230,7 +230,7 @@ const FactuurInstellingen: React.FC = () => {
                   value={settings.address_city}
                   onChange={(e) => handleChange('address_city', e.target.value)}
                   placeholder="Amsterdam"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400"
                 />
               </div>
             </div>
@@ -238,13 +238,13 @@ const FactuurInstellingen: React.FC = () => {
         </div>
 
         {/* Contactgegevens */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Contactgegevens
           </h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 <Phone className="inline mr-1" size={14} />
                 Telefoonnummer
               </label>
@@ -253,12 +253,12 @@ const FactuurInstellingen: React.FC = () => {
                 value={settings.phone}
                 onChange={(e) => handleChange('phone', e.target.value)}
                 placeholder="+31 6 12345678"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 <Mail className="inline mr-1" size={14} />
                 E-mailadres
               </label>
@@ -267,12 +267,12 @@ const FactuurInstellingen: React.FC = () => {
                 value={settings.email}
                 onChange={(e) => handleChange('email', e.target.value)}
                 placeholder="info@gouwebouw.nl"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 <Globe className="inline mr-1" size={14} />
                 Website
               </label>
@@ -281,12 +281,12 @@ const FactuurInstellingen: React.FC = () => {
                 value={settings.website}
                 onChange={(e) => handleChange('website', e.target.value)}
                 placeholder="www.gouwebouw.nl"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Logo URL
               </label>
               <input
@@ -294,9 +294,9 @@ const FactuurInstellingen: React.FC = () => {
                 value={settings.logo_url}
                 onChange={(e) => handleChange('logo_url', e.target.value)}
                 placeholder="/gouwebouw-logo.svg"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Relatief pad naar logo bestand (bijv. /gouwebouw-logo.svg)
               </p>
             </div>
@@ -304,13 +304,13 @@ const FactuurInstellingen: React.FC = () => {
         </div>
 
         {/* Factuur Opmaak */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Factuur Opmaak
           </h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Factuur Prefix
               </label>
               <input
@@ -318,15 +318,15 @@ const FactuurInstellingen: React.FC = () => {
                 value={settings.invoice_prefix}
                 onChange={(e) => handleChange('invoice_prefix', e.target.value)}
                 placeholder="FACT"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Prefix voor factuurnummers (bijv. FACT-2025-001)
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Betalingstermijn (dagen)
               </label>
               <input
@@ -334,12 +334,12 @@ const FactuurInstellingen: React.FC = () => {
                 value={settings.payment_terms_days}
                 onChange={(e) => handleChange('payment_terms_days', parseInt(e.target.value) || 30)}
                 min="1"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Footer Tekst
               </label>
               <textarea
@@ -347,25 +347,25 @@ const FactuurInstellingen: React.FC = () => {
                 onChange={(e) => handleChange('invoice_footer', e.target.value)}
                 rows={3}
                 placeholder="Betaling binnen 30 dagen..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400"
               />
             </div>
           </div>
         </div>
 
         {/* Preview */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Voorbeeld Factuur
           </h2>
-          <div className="border border-gray-200 rounded-lg p-4 space-y-3 text-sm">
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3 text-sm bg-white dark:bg-gray-900">
             <div className="flex justify-between items-start">
               <div>
                 {settings.logo_url && (
-                  <div className="text-xs text-gray-500 mb-2">[Logo]</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">[Logo]</div>
                 )}
-                <div className="font-bold text-lg">{settings.company_name}</div>
-                <div className="text-gray-600 text-xs space-y-1 mt-2">
+                <div className="font-bold text-lg text-gray-900 dark:text-white">{settings.company_name}</div>
+                <div className="text-gray-600 dark:text-gray-400 text-xs space-y-1 mt-2">
                   {settings.address_street && <div>{settings.address_street}</div>}
                   {(settings.address_zip || settings.address_city) && (
                     <div>{settings.address_zip} {settings.address_city}</div>
@@ -375,23 +375,23 @@ const FactuurInstellingen: React.FC = () => {
                 </div>
               </div>
               <div className="text-right text-xs">
-                <div className="font-bold text-base">FACTUUR</div>
-                <div className="mt-2 space-y-1">
+                <div className="font-bold text-base text-gray-900 dark:text-white">FACTUUR</div>
+                <div className="mt-2 space-y-1 text-gray-600 dark:text-gray-400">
                   <div>Nr: {settings.invoice_prefix}-2025-001</div>
                   <div>Datum: {new Date().toLocaleDateString('nl-NL')}</div>
                 </div>
               </div>
             </div>
 
-            <div className="border-t pt-3 mt-3">
-              <div className="text-xs text-gray-600 space-y-1">
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
+              <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                 {settings.kvk_number && <div>KVK: {settings.kvk_number}</div>}
                 {settings.btw_number && <div>BTW: {settings.btw_number}</div>}
                 {settings.iban && <div>IBAN: {settings.iban}</div>}
               </div>
             </div>
 
-            <div className="border-t pt-3 mt-3 text-xs text-gray-500">
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3 text-xs text-gray-500 dark:text-gray-400">
               {settings.invoice_footer}
             </div>
           </div>

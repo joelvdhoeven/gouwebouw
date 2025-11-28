@@ -26,14 +26,14 @@ const MijnNotificaties: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">Mijn Notificaties</h1>
-        <p className="text-gray-600">Bekijk alle e-mails die aan jou zijn verzonden</p>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Mijn Notificaties</h1>
+        <p className="text-gray-600 dark:text-gray-400">Bekijk alle e-mails die aan jou zijn verzonden</p>
       </div>
 
       {notifications.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-8 text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
           <Mail className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <p className="text-gray-500">Je hebt nog geen notificaties ontvangen</p>
+          <p className="text-gray-500 dark:text-gray-400">Je hebt nog geen notificaties ontvangen</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
@@ -41,14 +41,14 @@ const MijnNotificaties: React.FC = () => {
             <div
               key={notification.id}
               onClick={() => setSelectedNotification(notification)}
-              className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow cursor-pointer"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-md transition-shadow cursor-pointer"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center space-x-3">
                   <Mail className="h-5 w-5 text-red-600" />
                   <div>
-                    <h3 className="font-semibold text-gray-800">{notification.subject}</h3>
-                    <p className="text-sm text-gray-500">{formatDate(notification.created_at)}</p>
+                    <h3 className="font-semibold text-gray-800 dark:text-white">{notification.subject}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{formatDate(notification.created_at)}</p>
                   </div>
                 </div>
                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -74,7 +74,7 @@ const MijnNotificaties: React.FC = () => {
                   )}
                 </span>
               </div>
-              <div className="text-gray-600 text-sm line-clamp-2" dangerouslySetInnerHTML={{ __html: notification.body_html || '' }} />
+              <div className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2" dangerouslySetInnerHTML={{ __html: notification.body_html || '' }} />
               <button className="mt-3 text-sm text-red-600 hover:text-red-700 font-medium">
                 Lees meer →
               </button>
@@ -86,18 +86,18 @@ const MijnNotificaties: React.FC = () => {
       {/* Notification Detail Modal */}
       {selectedNotification && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-start justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">{selectedNotification.subject}</h2>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-white">{selectedNotification.subject}</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     {formatDate(selectedNotification.created_at)}
                   </p>
                 </div>
                 <button
                   onClick={() => setSelectedNotification(null)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -106,11 +106,11 @@ const MijnNotificaties: React.FC = () => {
               </div>
             </div>
             <div className="p-6">
-              <div className="prose max-w-none">
-                <div className="text-gray-700" dangerouslySetInnerHTML={{ __html: selectedNotification.body_html || '' }} />
+              <div className="prose max-w-none dark:prose-invert">
+                <div className="text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: selectedNotification.body_html || '' }} />
               </div>
             </div>
-            <div className="p-6 border-t border-gray-200 flex justify-end">
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end">
               <button
                 onClick={() => setSelectedNotification(null)}
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"

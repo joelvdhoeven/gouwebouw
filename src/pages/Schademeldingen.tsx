@@ -179,7 +179,7 @@ const Schademeldingen: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 dark:border-red-500"></div>
       </div>
     );
   }
@@ -187,15 +187,15 @@ const Schademeldingen: React.FC = () => {
   return (
     <div>
       {showSuccessMessage && (
-        <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-md">
+        <div className="mb-4 p-4 bg-green-100 dark:bg-green-900 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-300 rounded-md">
           {t('schademeldingOpgeslagen')}
         </div>
       )}
 
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">{t('schademeldingen')}</h1>
-          <p className="text-gray-600">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('schademeldingen')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">
             {canManageAll
               ? showArchive ? 'Archief - Verwerkte schademeldingen' : 'Overzicht van alle schademeldingen'
               : 'Mijn schademeldingen'}
@@ -205,7 +205,7 @@ const Schademeldingen: React.FC = () => {
           {canManageAll && (
             <button
               onClick={() => setShowArchive(!showArchive)}
-              className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              className="flex items-center space-x-2 px-4 py-2 bg-gray-600 dark:bg-gray-700 text-white rounded-md hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
             >
               <Archive size={18} />
               <span>{showArchive ? 'Toon Actieve' : 'Archief'}</span>
@@ -223,7 +223,7 @@ const Schademeldingen: React.FC = () => {
               setUploadedPhotos([]);
               setShowModal(true);
             }}
-            className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 bg-red-600 dark:bg-red-700 text-white rounded-md hover:bg-red-700 dark:hover:bg-red-600 transition-colors"
           >
             <Plus size={18} />
             <span>{t('nieuweSchademelding')}</span>
@@ -233,33 +233,33 @@ const Schademeldingen: React.FC = () => {
 
       {/* Damage Reports List */}
       {schademeldingen.filter((m: any) => showArchive ? m.status === 'opgelost' : m.status !== 'opgelost').length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-8 text-center">
-          <AlertTriangle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <p className="text-gray-500">Geen schademeldingen gevonden</p>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-8 text-center">
+          <AlertTriangle className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" />
+          <p className="text-gray-500 dark:text-gray-400">Geen schademeldingen gevonden</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {schademeldingen.filter((m: any) => showArchive ? m.status === 'opgelost' : m.status !== 'opgelost').map((melding: any) => {
             const creator = profiles.find((p: any) => p.id === melding.created_by);
             return (
-              <div key={melding.id} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+              <div key={melding.id} className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900 p-6 hover:shadow-lg dark:hover:shadow-gray-900 transition-shadow">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                       {melding.type_item === 'bus' ? 'Bus' : melding.type_item === 'materiaal' ? 'Materiaal' : 'Gereedschap'}
                     </h3>
-                    <p className="text-sm text-gray-500">{formatDate(melding.datum)}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{formatDate(melding.datum)}</p>
                     {canManageAll && creator && (
-                      <div className="flex items-center text-xs text-gray-600 mt-1">
+                      <div className="flex items-center text-xs text-gray-600 dark:text-gray-400 mt-1">
                         <User size={12} className="mr-1" />
                         <span>{creator.naam}</span>
                       </div>
                     )}
                   </div>
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    melding.status === 'gemeld' ? 'bg-red-100 text-red-800' :
-                    melding.status === 'in-behandeling' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-green-100 text-green-800'
+                    melding.status === 'gemeld' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
+                    melding.status === 'in-behandeling' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' :
+                    'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
                   }`}>
                     {melding.status === 'gemeld' ? 'Gemeld' :
                      melding.status === 'in-behandeling' ? 'In behandeling' :
@@ -269,23 +269,23 @@ const Schademeldingen: React.FC = () => {
 
                 <div className="space-y-2 mb-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-700">{t('omschrijving')}:</p>
-                    <p className="text-sm text-gray-600">{melding.omschrijving}</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('omschrijving')}:</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{melding.omschrijving}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700">{t('beschrijvingSchade')}:</p>
-                    <p className="text-sm text-gray-600">{melding.beschrijving_schade}</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('beschrijvingSchade')}:</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{melding.beschrijving_schade}</p>
                   </div>
                 </div>
 
                 {melding.foto_urls && melding.foto_urls.length > 0 && (
                   <div className="mt-4">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-medium text-gray-700">{t('fotoS')} ({melding.foto_urls.length}):</p>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('fotoS')} ({melding.foto_urls.length}):</p>
                       {canManageAll && (
                         <button
                           onClick={() => handleDownloadPhotos(melding.foto_urls, melding.id)}
-                          className="flex items-center space-x-1 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors"
+                          className="flex items-center space-x-1 px-2 py-1 bg-blue-600 dark:bg-blue-700 text-white rounded text-xs hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
                         >
                           <Download size={12} />
                           <span>Download</span>
@@ -306,34 +306,34 @@ const Schademeldingen: React.FC = () => {
                 )}
 
                 {canManageAll && !showArchive && (
-                  <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+                  <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => handleEditMelding(melding)}
-                        className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
+                        className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded text-sm hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
                       >
                         <Edit size={14} />
                         <span>Bewerk</span>
                       </button>
                       <button
                         onClick={() => handleDeleteMelding(melding.id)}
-                        className="flex items-center justify-center px-3 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
+                        className="flex items-center justify-center px-3 py-2 bg-red-600 dark:bg-red-700 text-white rounded text-sm hover:bg-red-700 dark:hover:bg-red-600 transition-colors"
                       >
                         <Trash2 size={14} />
                       </button>
                     </div>
                     <div className="flex flex-col space-y-1">
-                      <p className="text-xs font-medium text-gray-700 mb-1">Status wijzigen:</p>
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Status wijzigen:</p>
                       <button
                         onClick={() => handleStatusChange(melding.id, 'in-behandeling')}
                         disabled={melding.status === 'in-behandeling'}
-                        className="w-full px-3 py-1.5 bg-yellow-100 text-yellow-800 rounded text-xs hover:bg-yellow-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full px-3 py-1.5 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded text-xs hover:bg-yellow-200 dark:hover:bg-yellow-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Mee Bezig
                       </button>
                       <button
                         onClick={() => handleStatusChange(melding.id, 'opgelost')}
-                        className="w-full px-3 py-1.5 bg-green-100 text-green-800 rounded text-xs hover:bg-green-200 transition-colors"
+                        className="w-full px-3 py-1.5 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded text-xs hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
                       >
                         Verwerkt (→ Archief)
                       </button>
@@ -363,15 +363,15 @@ const Schademeldingen: React.FC = () => {
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('typeItem')} <span className="text-red-600">*</span>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t('typeItem')} <span className="text-red-600 dark:text-red-500">*</span>
             </label>
             <select
               name="typeItem"
               value={formData.typeItem}
               onChange={handleInputChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-600 focus:border-red-500 dark:focus:border-red-600"
             >
               <option value="">{t('selecteerType')}</option>
               <option value="gereedschap">{t('gereedschap')}</option>
@@ -381,8 +381,8 @@ const Schademeldingen: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('omschrijving')} <span className="text-red-600">*</span>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t('omschrijving')} <span className="text-red-600 dark:text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -391,7 +391,7 @@ const Schademeldingen: React.FC = () => {
               onChange={handleInputChange}
               placeholder="Bijv. Boormachine, Bedrijfsbus, Hout planken"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-600 focus:border-red-500 dark:focus:border-red-600"
             />
           </div>
 
@@ -404,8 +404,8 @@ const Schademeldingen: React.FC = () => {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('beschrijvingSchade')} <span className="text-red-600">*</span>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t('beschrijvingSchade')} <span className="text-red-600 dark:text-red-500">*</span>
             </label>
             <textarea
               name="beschrijvingSchade"
@@ -414,19 +414,19 @@ const Schademeldingen: React.FC = () => {
               rows={4}
               placeholder={t('beschrijfSchade')}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-600 focus:border-red-500 dark:focus:border-red-600"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('fotoS')} <span className="text-gray-500">({t('optioneel')})</span>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t('fotoS')} <span className="text-gray-500 dark:text-gray-400">({t('optioneel')})</span>
             </label>
             <div className="mt-1">
-              <label className="flex items-center justify-center w-full px-4 py-6 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-red-500 transition-colors">
+              <label className="flex items-center justify-center w-full px-4 py-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md cursor-pointer hover:border-red-500 dark:hover:border-red-500 transition-colors">
                 <div className="space-y-1 text-center">
-                  <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                  <div className="text-sm text-gray-600">
+                  <Upload className="mx-auto h-8 w-8 text-gray-400 dark:text-gray-500" />
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
                     {uploading ? t('uploaden') : t('klikOmFotoSTeUploaden')}
                   </div>
                 </div>
@@ -453,7 +453,7 @@ const Schademeldingen: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => removePhoto(index)}
-                      className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+                      className="absolute top-1 right-1 bg-red-600 dark:bg-red-700 text-white rounded-full p-1 hover:bg-red-700 dark:hover:bg-red-600"
                     >
                       <X size={12} />
                     </button>
@@ -476,14 +476,14 @@ const Schademeldingen: React.FC = () => {
                 });
                 setUploadedPhotos([]);
               }}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Annuleren
             </button>
             <button
               type="submit"
               disabled={uploading}
-              className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:bg-gray-400"
+              className="px-6 py-2 bg-red-600 dark:bg-red-700 text-white rounded-md hover:bg-red-700 dark:hover:bg-red-600 transition-colors disabled:bg-gray-400 dark:disabled:bg-gray-600"
             >
               {editingMelding ? 'Bijwerken' : 'Opslaan'}
             </button>

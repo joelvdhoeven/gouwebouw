@@ -331,7 +331,7 @@ const EmailNotifications: React.FC = () => {
   if (!user) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">Je hebt geen toegang tot deze pagina.</p>
+        <p className="text-gray-500 dark:text-gray-400">Je hebt geen toegang tot deze pagina.</p>
       </div>
     );
   }
@@ -339,22 +339,22 @@ const EmailNotifications: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800 flex items-center space-x-3">
-          <Mail className="text-red-600" />
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center space-x-3">
+          <Mail className="text-red-600 dark:text-red-500" />
           <span>E-mail Notificaties</span>
         </h1>
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900">
+        <div className="border-b border-gray-200 dark:border-gray-700">
           <nav className="flex space-x-8 px-6">
             <button
               onClick={() => setActiveTab('templates')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'templates'
-                  ? 'border-red-500 text-red-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-red-500 text-red-600 dark:border-red-400 dark:text-red-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600'
               }`}
             >
               <div className="flex items-center space-x-2">
@@ -366,8 +366,8 @@ const EmailNotifications: React.FC = () => {
               onClick={() => setActiveTab('schedules')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'schedules'
-                  ? 'border-red-500 text-red-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-red-500 text-red-600 dark:border-red-400 dark:text-red-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600'
               }`}
             >
               <div className="flex items-center space-x-2">
@@ -379,8 +379,8 @@ const EmailNotifications: React.FC = () => {
               onClick={() => setActiveTab('logs')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'logs'
-                  ? 'border-red-500 text-red-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-red-500 text-red-600 dark:border-red-400 dark:text-red-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600'
               }`}
             >
               <div className="flex items-center space-x-2">
@@ -396,14 +396,14 @@ const EmailNotifications: React.FC = () => {
           {activeTab === 'templates' && (
             <div>
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-semibold text-gray-800">E-mail Templates</h2>
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">E-mail Templates</h2>
                 <button
                   onClick={() => {
                     resetTemplateForm();
                     setEditingTemplate(null);
                     setShowTemplateModal(true);
                   }}
-                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 transition-colors"
                 >
                   <Plus size={16} />
                   <span>Nieuwe Template</span>
@@ -412,46 +412,46 @@ const EmailNotifications: React.FC = () => {
 
               {templatesLoading ? (
                 <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 dark:border-red-500"></div>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {templates.map((template) => (
-                    <div key={template.id} className="border border-gray-200 rounded-lg p-4">
+                    <div key={template.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 dark:bg-gray-700/50">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="text-lg font-medium text-gray-900">{template.name}</h3>
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">{template.name}</h3>
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              template.type === 'missing_hours' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'
+                              template.type === 'missing_hours' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'
                             }`}>
                               {template.type === 'missing_hours' ? 'Ontbrekende Uren' : 'Week Overzicht'}
                             </span>
                             <button
                               onClick={() => toggleTemplateEnabled(template)}
                               className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-                                template.enabled 
-                                  ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                template.enabled
+                                  ? 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300 dark:hover:bg-green-900/70'
+                                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                               }`}
                             >
                               {template.enabled ? <Play size={12} className="mr-1" /> : <Pause size={12} className="mr-1" />}
                               {template.enabled ? 'Actief' : 'Inactief'}
                             </button>
                           </div>
-                          <p className="text-sm text-gray-600 mb-2"><strong>Onderwerp:</strong> {template.subject}</p>
-                          <p className="text-sm text-gray-600 line-clamp-3">{template.body}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2"><strong>Onderwerp:</strong> {template.subject}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3">{template.body}</p>
                         </div>
                         <div className="flex space-x-2 ml-4">
                           <button
                             onClick={() => handleEditTemplate(template)}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                           >
                             <Edit size={16} />
                           </button>
                           <button
                             onClick={() => handleDeleteTemplate(template.id)}
-                            className="text-red-600 hover:text-red-900"
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -468,14 +468,14 @@ const EmailNotifications: React.FC = () => {
           {activeTab === 'schedules' && (
             <div>
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-semibold text-gray-800">E-mail Schema's</h2>
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">E-mail Schema's</h2>
                 <button
                   onClick={() => {
                     resetScheduleForm();
                     setEditingSchedule(null);
                     setShowScheduleModal(true);
                   }}
-                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                  className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 transition-colors"
                 >
                   <Plus size={16} />
                   <span>Nieuw Schema</span>
@@ -484,31 +484,31 @@ const EmailNotifications: React.FC = () => {
 
               {schedulesLoading ? (
                 <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 dark:border-red-500"></div>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {schedules.map((schedule) => (
-                    <div key={schedule.id} className="border border-gray-200 rounded-lg p-4">
+                    <div key={schedule.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 dark:bg-gray-700/50">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="text-lg font-medium text-gray-900">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
                               {schedule.template?.name || 'Onbekende Template'}
                             </h3>
                             <button
                               onClick={() => toggleScheduleEnabled(schedule)}
                               className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-                                schedule.enabled 
-                                  ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                schedule.enabled
+                                  ? 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300 dark:hover:bg-green-900/70'
+                                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                               }`}
                             >
                               {schedule.enabled ? <Play size={12} className="mr-1" /> : <Pause size={12} className="mr-1" />}
                               {schedule.enabled ? 'Actief' : 'Inactief'}
                             </button>
                           </div>
-                          <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                          <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 dark:text-gray-300">
                             <p><strong>Schema:</strong> {schedule.schedule_type === 'weekly' ? 'Wekelijks' : 'Dagelijks'}</p>
                             {schedule.schedule_type === 'weekly' && schedule.day_of_week !== null && (
                               <p><strong>Dag:</strong> {dayNames[schedule.day_of_week]}</p>
@@ -535,7 +535,7 @@ const EmailNotifications: React.FC = () => {
                           <button
                             onClick={() => handleSendTestEmail(schedule)}
                             disabled={sendingTestEmail === schedule.id}
-                            className="flex items-center space-x-1 px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                            className="flex items-center space-x-1 px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                             title="Verstuur test email nu"
                           >
                             {sendingTestEmail === schedule.id ? (
@@ -547,13 +547,13 @@ const EmailNotifications: React.FC = () => {
                           </button>
                           <button
                             onClick={() => handleEditSchedule(schedule)}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                           >
                             <Edit size={16} />
                           </button>
                           <button
                             onClick={() => handleDeleteSchedule(schedule.id)}
-                            className="text-red-600 hover:text-red-900"
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -569,63 +569,63 @@ const EmailNotifications: React.FC = () => {
           {/* Logs Tab */}
           {activeTab === 'logs' && (
             <div>
-              <h2 className="text-lg font-semibold text-gray-800 mb-6">E-mail Logs</h2>
-              
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-6">E-mail Logs</h2>
+
               {logsLoading ? (
                 <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 dark:border-red-500"></div>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ontvanger</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Template</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Onderwerp</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verzonden</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ontvanger</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Template</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Onderwerp</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Verzonden</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                       {logs.map((log) => (
                         <tr key={log.id}>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div>
-                              <div className="text-sm font-medium text-gray-900">
+                              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                 {log.profiles?.naam || log.to_email.split('@')[0] || 'Onbekend'}
                               </div>
-                              <div className="text-sm text-gray-500">{log.to_email}</div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">{log.to_email}</div>
                               {log.meta?.test_mode && (
-                                <div className="text-xs text-blue-600 font-medium">TEST</div>
+                                <div className="text-xs text-blue-600 dark:text-blue-400 font-medium">TEST</div>
                               )}
                               {log.meta?.dry_run && (
-                                <div className="text-xs text-orange-600 font-medium">DRY RUN</div>
+                                <div className="text-xs text-orange-600 dark:text-orange-400 font-medium">DRY RUN</div>
                               )}
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                             {log.template?.name || 'Onbekend'}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                          <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate">
                             {log.subject}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              log.status === 'sent' ? 'bg-green-100 text-green-800' :
-                              log.status === 'failed' ? 'bg-red-100 text-red-800' :
-                              'bg-yellow-100 text-yellow-800'
+                              log.status === 'sent' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' :
+                              log.status === 'failed' ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300' :
+                              'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300'
                             }`}>
                               {log.status === 'sent' ? 'Verzonden' :
                                log.status === 'failed' ? 'Mislukt' : 'In behandeling'}
                             </span>
                             {log.error && (
-                              <div className="text-xs text-red-600 mt-1" title={log.error}>
+                              <div className="text-xs text-red-600 dark:text-red-400 mt-1" title={log.error}>
                                 Fout: {log.error.substring(0, 50)}...
                               </div>
                             )}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                             {new Date(log.created_at).toLocaleString('nl-NL')}
                           </td>
                         </tr>
@@ -648,22 +648,22 @@ const EmailNotifications: React.FC = () => {
         <form onSubmit={handleTemplateSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Naam *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Naam *</label>
               <input
                 type="text"
                 value={templateForm.name}
                 onChange={(e) => setTemplateForm(prev => ({ ...prev, name: e.target.value }))}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-gray-100"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type *</label>
               <select
                 value={templateForm.type}
                 onChange={(e) => setTemplateForm(prev => ({ ...prev, type: e.target.value as 'missing_hours' | 'weekly_overview' }))}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-gray-100"
               >
                 <option value="missing_hours">Ontbrekende Uren</option>
                 <option value="weekly_overview">Week Overzicht</option>
@@ -672,28 +672,28 @@ const EmailNotifications: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Onderwerp *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Onderwerp *</label>
             <input
               type="text"
               value={templateForm.subject}
               onChange={(e) => setTemplateForm(prev => ({ ...prev, subject: e.target.value }))}
               required
               placeholder="Bijv: Ben je vergeten je uren in te vullen?"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">E-mail Inhoud *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-mail Inhoud *</label>
             <textarea
               value={templateForm.body}
               onChange={(e) => setTemplateForm(prev => ({ ...prev, body: e.target.value }))}
               rows={8}
               required
               placeholder={`Gebruik {{user_name}}, {{hours_filled}}, {{total_hours}}, etc. voor dynamische waarden`}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
             />
-            <div className="mt-2 text-xs text-gray-500">
+            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
               <p><strong>Beschikbare placeholders:</strong></p>
               <p>{`{{user_name}}, {{hours_filled}}, {{total_hours}}, {{week_number}}, {{app_url}}`}</p>
               <p>Voor projecten: {`{{#if projects}}...{{#each projects}}{{project_name}}: {{hours}}{{/each}}...{{/if}}`}</p>
@@ -706,9 +706,9 @@ const EmailNotifications: React.FC = () => {
               id="enabled"
               checked={templateForm.enabled}
               onChange={(e) => setTemplateForm(prev => ({ ...prev, enabled: e.target.checked }))}
-              className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+              className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700"
             />
-            <label htmlFor="enabled" className="ml-2 block text-sm text-gray-900">
+            <label htmlFor="enabled" className="ml-2 block text-sm text-gray-900 dark:text-gray-100">
               Template actief
             </label>
           </div>
@@ -717,13 +717,13 @@ const EmailNotifications: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowTemplateModal(false)}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Annuleren
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 transition-colors"
             >
               <Save size={16} className="inline mr-2" />
               {editingTemplate ? 'Bijwerken' : 'Aanmaken'}
@@ -740,12 +740,12 @@ const EmailNotifications: React.FC = () => {
       >
         <form onSubmit={handleScheduleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Template *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Template *</label>
             <select
               value={scheduleForm.template_id}
               onChange={(e) => setScheduleForm(prev => ({ ...prev, template_id: e.target.value }))}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="">Selecteer template</option>
               {templates.filter(t => t.enabled).map(template => (
@@ -756,12 +756,12 @@ const EmailNotifications: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Schema Type *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Schema Type *</label>
               <select
                 value={scheduleForm.schedule_type}
                 onChange={(e) => setScheduleForm(prev => ({ ...prev, schedule_type: e.target.value as 'weekly' | 'daily' }))}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-gray-100"
               >
                 <option value="daily">Dagelijks</option>
                 <option value="weekly">Wekelijks</option>
@@ -770,12 +770,12 @@ const EmailNotifications: React.FC = () => {
 
             {scheduleForm.schedule_type === 'weekly' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Dag van de Week *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dag van de Week *</label>
                 <select
                   value={scheduleForm.day_of_week}
                   onChange={(e) => setScheduleForm(prev => ({ ...prev, day_of_week: parseInt(e.target.value) }))}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-gray-100"
                 >
                   {dayNames.map((day, index) => (
                     <option key={index} value={index}>{day}</option>
@@ -785,12 +785,12 @@ const EmailNotifications: React.FC = () => {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tijdstip *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tijdstip *</label>
               <select
                 value={scheduleForm.hour}
                 onChange={(e) => setScheduleForm(prev => ({ ...prev, hour: parseInt(e.target.value) }))}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-gray-100"
               >
                 {Array.from({ length: 24 }, (_, i) => (
                   <option key={i} value={i}>{i}:00</option>
@@ -800,7 +800,7 @@ const EmailNotifications: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Selectie Type *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Selectie Type *</label>
             <div className="flex gap-4 mb-3">
               <label className="flex items-center">
                 <input
@@ -808,9 +808,9 @@ const EmailNotifications: React.FC = () => {
                   value="roles"
                   checked={scheduleForm.target_type === 'roles'}
                   onChange={(e) => setScheduleForm(prev => ({ ...prev, target_type: e.target.value as 'roles' | 'users' }))}
-                  className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300"
+                  className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700"
                 />
-                <span className="ml-2 text-sm text-gray-900">Doelgroep (Rollen)</span>
+                <span className="ml-2 text-sm text-gray-900 dark:text-gray-100">Doelgroep (Rollen)</span>
               </label>
               <label className="flex items-center">
                 <input
@@ -818,9 +818,9 @@ const EmailNotifications: React.FC = () => {
                   value="users"
                   checked={scheduleForm.target_type === 'users'}
                   onChange={(e) => setScheduleForm(prev => ({ ...prev, target_type: e.target.value as 'roles' | 'users' }))}
-                  className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300"
+                  className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700"
                 />
-                <span className="ml-2 text-sm text-gray-900">Specifieke Medewerkers</span>
+                <span className="ml-2 text-sm text-gray-900 dark:text-gray-100">Specifieke Medewerkers</span>
               </label>
             </div>
 
@@ -844,14 +844,14 @@ const EmailNotifications: React.FC = () => {
                           }));
                         }
                       }}
-                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700"
                     />
-                    <span className="ml-2 text-sm text-gray-900">{name}</span>
+                    <span className="ml-2 text-sm text-gray-900 dark:text-gray-100">{name}</span>
                   </label>
                 ))}
               </div>
             ) : (
-              <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 rounded-md p-3">
+              <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md p-3 dark:bg-gray-700/50">
                 {allUsers.map((user: any) => (
                   <label key={user.id} className="flex items-center">
                     <input
@@ -870,9 +870,9 @@ const EmailNotifications: React.FC = () => {
                           }));
                         }
                       }}
-                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700"
                     />
-                    <span className="ml-2 text-sm text-gray-900">{user.naam} ({user.email})</span>
+                    <span className="ml-2 text-sm text-gray-900 dark:text-gray-100">{user.naam} ({user.email})</span>
                   </label>
                 ))}
               </div>
@@ -880,7 +880,7 @@ const EmailNotifications: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Uren Controle Type</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Uren Controle Type</label>
             <div className="flex gap-4 mb-3">
               <label className="flex items-center">
                 <input
@@ -888,9 +888,9 @@ const EmailNotifications: React.FC = () => {
                   value="weekly"
                   checked={scheduleForm.hours_check_type === 'weekly'}
                   onChange={(e) => setScheduleForm(prev => ({ ...prev, hours_check_type: e.target.value as 'weekly' | 'daily' }))}
-                  className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300"
+                  className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700"
                 />
-                <span className="ml-2 text-sm text-gray-900">Wekelijkse Uren</span>
+                <span className="ml-2 text-sm text-gray-900 dark:text-gray-100">Wekelijkse Uren</span>
               </label>
               <label className="flex items-center">
                 <input
@@ -898,33 +898,33 @@ const EmailNotifications: React.FC = () => {
                   value="daily"
                   checked={scheduleForm.hours_check_type === 'daily'}
                   onChange={(e) => setScheduleForm(prev => ({ ...prev, hours_check_type: e.target.value as 'weekly' | 'daily' }))}
-                  className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300"
+                  className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700"
                 />
-                <span className="ml-2 text-sm text-gray-900">Dagelijkse Uren</span>
+                <span className="ml-2 text-sm text-gray-900 dark:text-gray-100">Dagelijkse Uren</span>
               </label>
             </div>
 
             {scheduleForm.hours_check_type === 'weekly' ? (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Wekelijkse uren onder</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Wekelijkse uren onder</label>
                 <input
                   type="number"
                   value={scheduleForm.minimum_weekly_hours}
                   onChange={(e) => setScheduleForm(prev => ({ ...prev, minimum_weekly_hours: parseInt(e.target.value) || 0 }))}
                   min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                   placeholder="Bijv. 40"
                 />
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Dagelijkse uren onder</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dagelijkse uren onder</label>
                 <input
                   type="number"
                   value={scheduleForm.minimum_daily_hours}
                   onChange={(e) => setScheduleForm(prev => ({ ...prev, minimum_daily_hours: parseInt(e.target.value) || 0 }))}
                   min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400"
                   placeholder="Bijv. 8"
                 />
               </div>
@@ -937,9 +937,9 @@ const EmailNotifications: React.FC = () => {
               id="schedule-enabled"
               checked={scheduleForm.enabled}
               onChange={(e) => setScheduleForm(prev => ({ ...prev, enabled: e.target.checked }))}
-              className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+              className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700"
             />
-            <label htmlFor="schedule-enabled" className="ml-2 block text-sm text-gray-900">
+            <label htmlFor="schedule-enabled" className="ml-2 block text-sm text-gray-900 dark:text-gray-100">
               Schema actief
             </label>
           </div>
@@ -948,13 +948,13 @@ const EmailNotifications: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowScheduleModal(false)}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Annuleren
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 transition-colors"
             >
               <Save size={16} className="inline mr-2" />
               {editingSchedule ? 'Bijwerken' : 'Aanmaken'}
