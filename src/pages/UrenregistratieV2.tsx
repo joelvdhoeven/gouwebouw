@@ -49,8 +49,12 @@ const Urenregistratie: React.FC = () => {
   const { insert: insertRegistration, update: updateRegistration, remove: deleteRegistration, loading: mutationLoading } = useSupabaseMutation('time_registrations');
   const { insert: insertProject } = useSupabaseMutation('projects');
 
-  // Load work codes
-  const [workCodes, setWorkCodes] = useState<any[]>([]);
+  // Load all work codes
+  const [allWorkCodes, setAllWorkCodes] = useState<any[]>([]);
+  const [projectWorkCodes, setProjectWorkCodes] = useState<any[]>([]);
+  const [availableWorkCodes, setAvailableWorkCodes] = useState<any[]>([]);
+
+  // Load all active work codes on mount
   useEffect(() => {
     const loadWorkCodes = async () => {
       try {
@@ -61,14 +65,98 @@ const Urenregistratie: React.FC = () => {
           .order('sort_order', { ascending: true });
 
         if (error) throw error;
-        setWorkCodes(data || []);
+        setAllWorkCodes(data || []);
       } catch (error) {
         console.error('Error loading work codes:', error);
-        setWorkCodes([]);
+        setAllWorkCodes([]);
       }
     };
     loadWorkCodes();
   }, []);
+
+  // Load project-specific work codes when project changes
+  useEffect(() => {
+    const loadProjectWorkCodes = async () => {
+      if (!selectedProject?.id) {
+        setProjectWorkCodes([]);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('project_work_codes')
+          .select(`
+            id,
+            work_code_id,
+            custom_code,
+            custom_name,
+            custom_description,
+            work_codes (id, code, name, description)
+          `)
+          .eq('project_id', selectedProject.id);
+
+        if (error) {
+          // Table might not exist yet
+          if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+            setProjectWorkCodes([]);
+            return;
+          }
+          throw error;
+        }
+
+        setProjectWorkCodes(data || []);
+      } catch (error) {
+        console.error('Error loading project work codes:', error);
+        setProjectWorkCodes([]);
+      }
+    };
+
+    loadProjectWorkCodes();
+  }, [selectedProject?.id]);
+
+  // Calculate available work codes based on project selection
+  useEffect(() => {
+    if (projectWorkCodes.length === 0) {
+      // No specific codes assigned - use all work codes
+      setAvailableWorkCodes(allWorkCodes);
+    } else {
+      // Build list of available codes from project-specific selection
+      const codes: any[] = [];
+
+      // Add standard work codes that are linked to this project
+      projectWorkCodes.forEach(pwc => {
+        if (pwc.work_code_id && pwc.work_codes) {
+          codes.push(pwc.work_codes);
+        } else if (pwc.custom_code) {
+          // Add custom project-specific codes
+          codes.push({
+            id: pwc.id,
+            code: pwc.custom_code,
+            name: pwc.custom_name,
+            description: pwc.custom_description,
+            is_custom: true
+          });
+        }
+      });
+
+      // Always ensure "999" (or fallback code) is available
+      const has999 = codes.some(c => c.code === '999');
+      if (!has999) {
+        const fallbackCode = allWorkCodes.find(c => c.code === '999');
+        if (fallbackCode) {
+          codes.push(fallbackCode);
+        }
+      }
+
+      // Sort by code
+      codes.sort((a, b) => a.code.localeCompare(b.code));
+
+      setAvailableWorkCodes(codes);
+    }
+  }, [projectWorkCodes, allWorkCodes]);
+
+  // For backward compatibility, keep workCodes as alias
+  const workCodes = availableWorkCodes;
 
   const [showModal, setShowModal] = useState(false);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
@@ -682,12 +770,26 @@ const Urenregistratie: React.FC = () => {
     setCurrentPage(1);
   }, [searchTerm, startDateFilter, endDateFilter, typeFilter, userFilter]);
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (filteredRegistraties.length === 0) {
       alert('Geen registraties om te exporteren');
       return;
     }
     const separator = settings.csv_separator || ';';
+
+    // Load all work codes (including inactive) for export
+    let exportWorkCodes = allWorkCodes;
+    try {
+      const { data } = await supabase
+        .from('work_codes')
+        .select('*')
+        .order('sort_order', { ascending: true });
+      if (data) {
+        exportWorkCodes = data;
+      }
+    } catch (error) {
+      console.error('Error loading work codes for export:', error);
+    }
 
     // Enrich registrations with user names
     const enrichedRegistraties = filteredRegistraties.map(reg => {
@@ -698,7 +800,7 @@ const Urenregistratie: React.FC = () => {
       };
     });
 
-    exportUrenRegistraties(enrichedRegistraties, separator);
+    exportUrenRegistraties(enrichedRegistraties, separator, exportWorkCodes);
   };
 
   const handleDeleteRegistration = (id: string) => {
@@ -993,7 +1095,14 @@ const Urenregistratie: React.FC = () => {
 
               <div className="border-t border-gray-200 pt-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-900">Werkregels</h3>
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">Werkregels</h3>
+                    {selectedProject && projectWorkCodes.length > 0 && (
+                      <p className="text-xs text-blue-600 mt-1">
+                        Bewakingscodes zijn gefilterd voor dit project ({workCodes.length} beschikbaar)
+                      </p>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={addWorkLine}

@@ -30,8 +30,8 @@ export const exportToCSV = (data: any[], filename: string, headers: string[], se
   }
 };
 
-export const exportUrenRegistraties = (registraties: any[], separator: string = ';') => {
-  const headers = ['Datum', 'Gebruiker', 'Project', 'Werktype', 'Uren', 'Omschrijving', 'Kilometers', 'Materiaal (tekst)', 'Materiaal (afgeboekt)'];
+export const exportUrenRegistraties = (registraties: any[], separator: string = ';', workCodes: any[] = []) => {
+  const headers = ['Datum', 'Gebruiker', 'Project', 'Bewakingscode', 'Uren', 'Omschrijving', 'Kilometers', 'Materiaal (tekst)', 'Materiaal (afgeboekt)'];
   const data = registraties.map(reg => {
     // Format afgeboekte materialen
     let afgeboektMateriaal = '';
@@ -42,11 +42,20 @@ export const exportUrenRegistraties = (registraties: any[], separator: string = 
       }).join('; ');
     }
 
+    // Format bewakingscode with name
+    let bewakingscodeDisplay = reg.werktype || '';
+    if (workCodes && workCodes.length > 0) {
+      const workCode = workCodes.find((wc: any) => wc.code === reg.werktype);
+      if (workCode) {
+        bewakingscodeDisplay = `${workCode.code} - ${workCode.name}`;
+      }
+    }
+
     return {
       datum: formatDate(reg.datum),
       gebruiker: reg.user_naam || '',
       project: reg.project_naam || '',
-      werktype: reg.werktype,
+      bewakingscode: bewakingscodeDisplay,
       uren: String(reg.aantal_uren).replace('.', ','),
       omschrijving: reg.werkomschrijving || '',
       kilometers: reg.driven_kilometers ? String(reg.driven_kilometers).replace('.', ',') : '0',

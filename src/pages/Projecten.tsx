@@ -12,6 +12,7 @@ import Modal from '../components/Modal';
 import SupabaseErrorHelper from '../components/SupabaseErrorHelper';
 import ProtectedRoute from '../components/ProtectedRoute';
 import ProjectDetailsModal from '../components/ProjectDetailsModal';
+import ProjectWorkCodesSelector from '../components/ProjectWorkCodesSelector';
 
 const Projecten: React.FC = () => {
   const { t } = useLanguage();
@@ -605,6 +606,18 @@ const Projecten: React.FC = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
           </div>
+
+          {/* Bewakingscodes per Project - only show when editing existing project */}
+          {editingProject && (
+            <div className="border-t pt-4">
+              <h3 className="text-md font-semibold text-gray-800 mb-3">Bewakingscodes voor dit Project</h3>
+              <ProjectWorkCodesSelector
+                projectId={editingProject.id}
+                readOnly={!hasPermission('manage_projects')}
+              />
+            </div>
+          )}
+
           <div className="flex flex-col space-y-3 pt-4">
             {editingProject && editingProject.status === 'actief' && hasPermission('manage_projects') && (
               <button
