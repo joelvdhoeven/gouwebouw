@@ -226,30 +226,30 @@ const Instellingen: React.FC = () => {
   return (
     <div className="space-y-6">
       {successMessage && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+        <div className="bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-400 px-4 py-3 rounded">
           {successMessage}
         </div>
       )}
 
       {errorMessage && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-400 px-4 py-3 rounded">
           {errorMessage}
         </div>
       )}
 
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">{t('instellingen')}</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{t('instellingen')}</h1>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab('profiel')}
             className={`${
               activeTab === 'profiel'
                 ? 'border-red-600 text-red-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
             } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
           >
             <User size={18} />
@@ -260,7 +260,7 @@ const Instellingen: React.FC = () => {
             className={`${
               activeTab === 'beveiliging'
                 ? 'border-red-600 text-red-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
             } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
           >
             <Lock size={18} />
@@ -273,7 +273,7 @@ const Instellingen: React.FC = () => {
                 className={`${
                   activeTab === 'systeem'
                     ? 'border-red-600 text-red-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
               >
                 <SettingsIcon size={18} />
@@ -284,7 +284,7 @@ const Instellingen: React.FC = () => {
                 className={`${
                   activeTab === 'workcodes'
                     ? 'border-red-600 text-red-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
               >
                 <Clock size={18} />
@@ -295,7 +295,7 @@ const Instellingen: React.FC = () => {
                 className={`${
                   activeTab === 'materialgroups'
                     ? 'border-red-600 text-red-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
               >
                 <Layers size={18} />
@@ -308,28 +308,28 @@ const Instellingen: React.FC = () => {
 
       {/* Profile Tab */}
       {activeTab === 'profiel' && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">{t('profielInformatie')}</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">{t('profielInformatie')}</h2>
           <form onSubmit={handleProfileUpdate} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('naam')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('naam')}</label>
               <input
                 type="text"
                 value={profileData.naam}
                 onChange={(e) => setProfileData({ ...profileData, naam: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
               <input
                 type="email"
                 value={profileData.email}
                 disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-gray-600 cursor-not-allowed text-gray-900 dark:text-gray-300"
               />
-              <p className="text-sm text-gray-500 mt-1">{t('emailKanNietWordenGewijzigd')}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('emailKanNietWordenGewijzigd')}</p>
             </div>
 
             <div className="flex justify-end">
@@ -347,8 +347,8 @@ const Instellingen: React.FC = () => {
 
       {/* Security Tab */}
       {activeTab === 'beveiliging' && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">{t('wachtwoordWijzigen')}</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">{t('wachtwoordWijzigen')}</h2>
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t('huidigWachtwoord')}</label>

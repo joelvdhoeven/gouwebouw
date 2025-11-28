@@ -6,6 +6,7 @@ import App from './App.tsx';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { SystemSettingsProvider } from './contexts/SystemSettingsContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { checkAndUpdateVersion } from './utils/versionCheck';
 import './index.css';
 
@@ -17,12 +18,14 @@ registerLocale('nl', nl);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <LanguageProvider>
-      <AuthProvider>
-        <SystemSettingsProvider>
-          <App />
-        </SystemSettingsProvider>
-      </AuthProvider>
-    </LanguageProvider>
+    <ThemeProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <SystemSettingsProvider>
+            <App />
+          </SystemSettingsProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </ThemeProvider>
   </StrictMode>
 );

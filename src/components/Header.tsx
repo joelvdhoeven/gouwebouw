@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Language, Notification } from '../types';
 import { useSupabaseQuery } from '../hooks/useSupabase';
+import { ThemeToggle } from './ui/ThemeToggle';
 
 interface HeaderProps {
   onNotificationClick: () => void;
@@ -48,30 +49,33 @@ const Header: React.FC<HeaderProps> = ({ onNotificationClick, onMenuClick }) => 
     logout();
   };
   return (
-    <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-4">
+    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 md:px-6 py-4">
       <div className="flex justify-between items-center">
         <button
           onClick={onMenuClick}
-          className="lg:hidden p-2 hover:bg-gray-100 rounded-md transition-colors"
+          className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
           aria-label="Open menu"
         >
-          <Menu size={24} className="text-gray-600" />
+          <Menu size={24} className="text-gray-600 dark:text-gray-300" />
         </button>
         <div className="flex-1 lg:flex-none"></div>
         <div className="flex items-center space-x-2 md:space-x-4">
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
           <div className="relative group">
-            <button className="flex items-center space-x-1 md:space-x-2 text-sm text-gray-600 hover:text-gray-800 transition-colors">
+            <button className="flex items-center space-x-1 md:space-x-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors">
               <span>{currentLanguage.flag}</span>
               <span className="hidden md:inline">{currentLanguage.name}</span>
               <ChevronDown size={16} className="hidden md:inline" />
             </button>
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
               {languages.map((lang) => (
                 <button
                   key={lang.code}
                   onClick={() => setLanguage(lang.code)}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center space-x-2 ${
-                    language === lang.code ? 'bg-red-50 text-red-600' : 'text-gray-700'
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-2 ${
+                    language === lang.code ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'
                   }`}
                 >
                   <span>{lang.flag}</span>
@@ -84,7 +88,7 @@ const Header: React.FC<HeaderProps> = ({ onNotificationClick, onMenuClick }) => 
             {/* Notification Bell */}
             <button
               onClick={onNotificationClick}
-              className="relative p-2 text-gray-600 hover:text-gray-800 transition-colors"
+              className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors"
             >
               <Bell size={20} />
               {unreadNotifications.length > 0 && (
@@ -103,14 +107,14 @@ const Header: React.FC<HeaderProps> = ({ onNotificationClick, onMenuClick }) => 
                 />
               )}
               <div className="flex flex-col">
-                <span className="text-sm font-medium text-gray-800">{user?.naam}</span>
-                <span className="text-xs text-gray-500">{user ? getRoleDisplayName(user.role) : ''}</span>
+                <span className="text-sm font-medium text-gray-800 dark:text-gray-100">{user?.naam}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{user ? getRoleDisplayName(user.role) : ''}</span>
               </div>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center space-x-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+            className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-colors"
           >
             <LogOut size={16} />
             <span className="hidden md:inline">{t('uitloggen')}</span>

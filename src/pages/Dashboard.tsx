@@ -199,17 +199,17 @@ const Dashboard: React.FC = () => {
     <div className="space-y-8">
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
             {t('dashboard')}
           </h1>
-          <p className="text-gray-600 mt-1 flex items-center gap-2">
+          <p className="text-gray-600 dark:text-gray-400 mt-1 flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-red-500" />
             {t('welkomTerug')}, {user?.naam}
           </p>
         </div>
-        <div className="text-right bg-gradient-to-br from-red-50 to-orange-50 px-6 py-3 rounded-xl border border-red-100">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{t('vandaag')}</p>
-          <p className="text-lg font-bold text-gray-800 mt-1">
+        <div className="text-right bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-800 dark:to-gray-700 px-6 py-3 rounded-xl border border-red-100 dark:border-gray-600">
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('vandaag')}</p>
+          <p className="text-lg font-bold text-gray-800 dark:text-white mt-1">
             {new Date().toLocaleDateString('nl-NL', {
               weekday: 'long',
               day: 'numeric',
@@ -220,40 +220,40 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-red-600 transform hover:scale-105 transition-transform">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border-2 border-red-600 transform hover:scale-105 transition-transform">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">{t('urenVandaag')}</p>
-              <p className="text-4xl font-bold text-gray-900">{hoursToday.toFixed(1)}</p>
-              <p className="text-gray-500 text-xs mt-1">uur gewerkt</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">{t('urenVandaag')}</p>
+              <p className="text-4xl font-bold text-gray-900 dark:text-white">{hoursToday.toFixed(1)}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">uur gewerkt</p>
             </div>
-            <div className="bg-red-50 p-4 rounded-xl">
+            <div className="bg-red-50 dark:bg-red-900/30 p-4 rounded-xl">
               <Clock className="h-10 w-10 text-red-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-red-600 transform hover:scale-105 transition-transform">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border-2 border-red-600 transform hover:scale-105 transition-transform">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">{t('urenDezeWeek')}</p>
-              <p className="text-4xl font-bold text-gray-900">{hoursThisWeek.toFixed(1)}</p>
-              <p className="text-gray-500 text-xs mt-1">uur deze week</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">{t('urenDezeWeek')}</p>
+              <p className="text-4xl font-bold text-gray-900 dark:text-white">{hoursThisWeek.toFixed(1)}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">uur deze week</p>
             </div>
-            <div className="bg-red-50 p-4 rounded-xl">
+            <div className="bg-red-50 dark:bg-red-900/30 p-4 rounded-xl">
               <Calendar className="h-10 w-10 text-red-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-red-600 transform hover:scale-105 transition-transform">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border-2 border-red-600 transform hover:scale-105 transition-transform">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">{t('urenDezeMaand')}</p>
-              <p className="text-4xl font-bold text-gray-900">{hoursThisMonth.toFixed(1)}</p>
-              <p className="text-gray-500 text-xs mt-1">uur deze maand</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">{t('urenDezeMaand')}</p>
+              <p className="text-4xl font-bold text-gray-900 dark:text-white">{hoursThisMonth.toFixed(1)}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">uur deze maand</p>
             </div>
-            <div className="bg-red-50 p-4 rounded-xl">
+            <div className="bg-red-50 dark:bg-red-900/30 p-4 rounded-xl">
               <BarChart3 className="h-10 w-10 text-red-600" />
             </div>
           </div>
@@ -261,62 +261,62 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-4">
-            <div className="bg-red-50 p-3 rounded-lg">
+            <div className="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg">
               <FolderOpen className="h-6 w-6 text-red-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
                 {isAdminOrOffice ? t('actieveProjecten') : t('projectenGewerkt')}
               </p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {isAdminOrOffice ? activeProjects.length : workedProjects.length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-4">
-            <div className="bg-red-50 p-3 rounded-lg">
+            <div className="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg">
               <CheckCircle className="h-6 w-6 text-red-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
                 {isAdminOrOffice ? t('voltooideProjecten') : t('totaalUren')}
               </p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {isAdminOrOffice ? completedProjects.length : timeRegistrations.length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-4">
-            <div className="bg-red-50 p-3 rounded-lg">
+            <div className="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg">
               <Activity className="h-6 w-6 text-red-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
                 {isAdminOrOffice ? t('totaalRegistraties') : t('mijnRegistraties')}
               </p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {timeRegistrations.length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-4">
-            <div className="bg-red-50 p-3 rounded-lg">
+            <div className="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg">
               <TrendingUp className="h-6 w-6 text-red-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">{t('gemiddeldPerDag')}</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{t('gemiddeldPerDag')}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {timeRegistrations.length > 0
                   ? (timeRegistrations.reduce((sum, reg) => sum + reg.aantal_uren, 0) /
                      [...new Set(timeRegistrations.map(reg => reg.datum))].length).toFixed(1)
@@ -329,35 +329,35 @@ const Dashboard: React.FC = () => {
       </div>
 
       {isAdminOrOffice && (
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100">
-          <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
+          <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-800">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <div className="bg-red-100 p-2 rounded-lg">
+                <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-lg">
                   <Users className="h-5 w-5 text-red-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-800">{t('medewerkerActiviteitOverzicht')}</h3>
-                  <p className="text-sm text-gray-600">Activiteit van de afgelopen 7 dagen</p>
+                  <h3 className="text-lg font-bold text-gray-800 dark:text-white">{t('medewerkerActiviteitOverzicht')}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Activiteit van de afgelopen 7 dagen</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-4 text-sm border-r pr-4">
+                <div className="flex items-center gap-4 text-sm border-r dark:border-gray-600 pr-4">
                   <div className="flex items-center gap-2">
                     <Zap className="h-4 w-4 text-red-500" />
-                    <span className="text-gray-700 font-medium">Actief: {employeeActivity.length - inactiveEmployees.length}</span>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">Actief: {employeeActivity.length - inactiveEmployees.length}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-red-500" />
-                    <span className="text-gray-700 font-medium">Inactief: {inactiveEmployees.length}</span>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">Inactief: {inactiveEmployees.length}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2">
-                  <Filter className="h-4 w-4 text-gray-500" />
+                <div className="flex items-center gap-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2">
+                  <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   <select
                     value={roleFilter}
                     onChange={(e) => setRoleFilter(e.target.value)}
-                    className="text-sm font-medium text-gray-700 bg-transparent border-none outline-none cursor-pointer"
+                    className="text-sm font-medium text-gray-700 dark:text-gray-300 bg-transparent border-none outline-none cursor-pointer"
                   >
                     <option value="medewerker">Medewerkers</option>
                     <option value="zzper">ZZP'ers</option>

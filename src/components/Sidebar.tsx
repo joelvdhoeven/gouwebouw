@@ -92,22 +92,22 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection, isOp
       {/* Sidebar */}
       <div className={`
         fixed lg:static inset-y-0 left-0 z-50
-        w-64 bg-white shadow-lg border-r border-gray-200 h-screen flex flex-col
+        w-64 bg-white dark:bg-gray-800 shadow-lg border-r border-gray-200 dark:border-gray-700 h-screen flex flex-col
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <img src="/image copy copy.png" alt="GouweBouw" className="w-12 h-12 object-contain" />
-              <h1 className="text-xl font-bold text-gray-800">GouweBouw</h1>
+              <h1 className="text-xl font-bold text-gray-800 dark:text-white">GouweBouw</h1>
             </div>
             <button
               onClick={onClose}
-              className="lg:hidden p-2 hover:bg-gray-100 rounded-md transition-colors"
+              className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
               aria-label="Close menu"
             >
-              <X size={20} className="text-gray-600" />
+              <X size={20} className="text-gray-600 dark:text-gray-300" />
             </button>
           </div>
         </div>
@@ -123,7 +123,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection, isOp
                     className={`w-full text-left px-3 py-2.5 rounded-md flex items-center space-x-3 transition-colors ${
                       isActive
                         ? 'bg-red-600 text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
                     <Icon
