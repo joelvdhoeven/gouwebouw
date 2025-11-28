@@ -54,12 +54,7 @@ const Login: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4 relative">
-      {/* Theme Toggle in top-right corner */}
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
@@ -163,7 +158,7 @@ const Login: React.FC = () => {
             </div>
           </form>
 
-          {/* Language Selection */}
+          {/* Language Selection & Theme Toggle */}
           <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
             <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-3">{t('selectLanguage')}</p>
             <div className="flex justify-center space-x-2">
@@ -181,6 +176,12 @@ const Login: React.FC = () => {
                   <span>{lang.name}</span>
                 </button>
               ))}
+            </div>
+
+            {/* Theme Toggle */}
+            <div className="flex justify-center items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <span className="text-sm text-gray-600 dark:text-gray-400 mr-3">Thema:</span>
+              <ThemeToggle />
             </div>
           </div>
         </div>
