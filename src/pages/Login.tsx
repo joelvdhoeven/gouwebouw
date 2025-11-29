@@ -193,7 +193,7 @@ const Login: React.FC = () => {
             © 2025 GouweBouw. {t('allRightsReserved')}
           </p>
           <div className="mt-2 text-xs text-gray-400 dark:text-gray-600">
-            <span>{t('version')} 1.0.0</span>
+            <span>{t('version')} 1.1</span>
           </div>
         </div>
       </div>
