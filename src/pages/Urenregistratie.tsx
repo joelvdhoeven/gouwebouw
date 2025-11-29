@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Plus, Calendar, X, Trash2, Pencil, Minus, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { Download, Plus, Calendar, X, Trash2, Pencil, Minus, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystemSettings } from '../contexts/SystemSettingsContext';
@@ -81,6 +81,21 @@ const Urenregistratie: React.FC = () => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [showMaterialModal, setShowMaterialModal] = useState(false);
   const [materialModalWorkLineIndex, setMaterialModalWorkLineIndex] = useState<number | null>(null);
+  const [showProjectSearchModal, setShowProjectSearchModal] = useState(false);
+  const [projectSearchTerm, setProjectSearchTerm] = useState('');
+
+  // Multiple project blocks support
+  const [projectBlocks, setProjectBlocks] = useState<Array<{
+    project: any;
+    workLines: WorkLine[];
+    voortgang: string;
+    kilometers: string;
+  }>>([{
+    project: null,
+    workLines: [{ werktype: '', werkomschrijving: '', aantal_uren: 0, materials: [] }],
+    voortgang: '',
+    kilometers: ''
+  }]);
 
   const [formData, setFormData] = useState({
     datum: new Date().toISOString().split('T')[0],
@@ -229,6 +244,72 @@ const Urenregistratie: React.FC = () => {
     }
     setWorkLines(updated);
   };
+
+  // Project block management functions
+  const addProjectBlock = () => {
+    setProjectBlocks([...projectBlocks, {
+      project: null,
+      workLines: [{ werktype: '', werkomschrijving: '', aantal_uren: 0, materials: [] }],
+      voortgang: '',
+      kilometers: ''
+    }]);
+  };
+
+  const removeProjectBlock = (blockIndex: number) => {
+    if (projectBlocks.length > 1) {
+      setProjectBlocks(projectBlocks.filter((_, i) => i !== blockIndex));
+    }
+  };
+
+  const updateProjectBlock = (blockIndex: number, field: string, value: any) => {
+    const updated = [...projectBlocks];
+    updated[blockIndex] = { ...updated[blockIndex], [field]: value };
+    setProjectBlocks(updated);
+  };
+
+  const addWorkLineToBlock = (blockIndex: number) => {
+    const updated = [...projectBlocks];
+    updated[blockIndex].workLines.push({ werktype: '', werkomschrijving: '', aantal_uren: 0, materials: [] });
+    setProjectBlocks(updated);
+  };
+
+  const removeWorkLineFromBlock = (blockIndex: number, lineIndex: number) => {
+    const updated = [...projectBlocks];
+    if (updated[blockIndex].workLines.length > 1) {
+      updated[blockIndex].workLines = updated[blockIndex].workLines.filter((_, i) => i !== lineIndex);
+      setProjectBlocks(updated);
+    }
+  };
+
+  const updateWorkLineInBlock = (blockIndex: number, lineIndex: number, field: keyof WorkLine, value: string | number) => {
+    const updated = [...projectBlocks];
+    updated[blockIndex].workLines[lineIndex] = { ...updated[blockIndex].workLines[lineIndex], [field]: value };
+    setProjectBlocks(updated);
+    if (formError) {
+      setFormError('');
+    }
+  };
+
+  // Filter projects for search modal
+  const filteredProjectsForSearch = projecten.filter((project: any) => {
+    if (!projectSearchTerm.trim()) return true;
+    const searchLower = projectSearchTerm.toLowerCase();
+    return (
+      project.naam.toLowerCase().includes(searchLower) ||
+      (project.project_nummer && project.project_nummer.toLowerCase().includes(searchLower)) ||
+      (project.locatie && project.locatie.toLowerCase().includes(searchLower))
+    );
+  });
+
+  const handleProjectSelect = (project: any, blockIndex: number) => {
+    const updated = [...projectBlocks];
+    updated[blockIndex].project = project;
+    setProjectBlocks(updated);
+    setShowProjectSearchModal(false);
+    setProjectSearchTerm('');
+  };
+
+  const [currentSearchBlockIndex, setCurrentSearchBlockIndex] = useState(0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -915,6 +996,18 @@ const Urenregistratie: React.FC = () => {
                       </select>
                       <button
                         type="button"
+                        onClick={() => {
+                          setCurrentSearchBlockIndex(0);
+                          setShowProjectSearchModal(true);
+                        }}
+                        className="w-full sm:w-auto px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors flex items-center justify-center"
+                        title="Zoek project"
+                      >
+                        <Search size={20} />
+                        <span className="ml-2 sm:hidden">Zoeken</span>
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => setShowConfirmProjectModal(true)}
                         className="w-full sm:w-auto px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center justify-center"
                         title="Snel nieuw project aanmaken"
@@ -1158,11 +1251,26 @@ const Urenregistratie: React.FC = () => {
                   ))}
                 </div>
 
-                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-sm text-blue-800">
+                <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-md">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
                     <strong>Totaal uren:</strong> {workLines.reduce((sum, line) => sum + (line.aantal_uren || 0), 0).toFixed(1)} uur
                   </p>
                 </div>
+              </div>
+
+              {/* Project toevoegen knop */}
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={addProjectBlock}
+                  className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-500 rounded-lg text-gray-600 dark:text-gray-300 hover:border-red-500 hover:text-red-600 dark:hover:border-red-400 dark:hover:text-red-400 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Plus size={20} />
+                  <span className="font-medium">Project toevoegen</span>
+                </button>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                  Klik hier om nog een project met werkregels toe te voegen aan deze registratie
+                </p>
               </div>
 
               <div className="flex justify-end space-x-3 pt-4">
@@ -2011,6 +2119,81 @@ const Urenregistratie: React.FC = () => {
               <p className="text-sm text-gray-600 dark:text-gray-400">Even geduld, we maken het project aan en slaan je urenregistratie op.</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">De pagina wordt automatisch ververst...</p>
             </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Project Search Modal */}
+      <Modal
+        isOpen={showProjectSearchModal}
+        onClose={() => {
+          setShowProjectSearchModal(false);
+          setProjectSearchTerm('');
+        }}
+        title="Project Zoeken"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Zoek project</label>
+            <div className="relative">
+              <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={projectSearchTerm}
+                onChange={(e) => setProjectSearchTerm(e.target.value)}
+                placeholder="Zoek op naam, nummer of locatie..."
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <div className="max-h-80 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-md">
+            {filteredProjectsForSearch.length === 0 ? (
+              <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                Geen projecten gevonden
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-200 dark:divide-gray-600">
+                {filteredProjectsForSearch.map((project: any) => (
+                  <button
+                    key={project.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedProject(project);
+                      setShowProjectSearchModal(false);
+                      setProjectSearchTerm('');
+                    }}
+                    className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {project.naam}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400 flex gap-4">
+                      {project.project_nummer && (
+                        <span>#{project.project_nummer}</span>
+                      )}
+                      {project.locatie && (
+                        <span>{project.locatie}</span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                setShowProjectSearchModal(false);
+                setProjectSearchTerm('');
+              }}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Sluiten
+            </button>
           </div>
         </div>
       </Modal>

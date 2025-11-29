@@ -48,7 +48,7 @@ function App() {
       case 'urenregistratie':
         return (
           <ProtectedRoute permission="register_hours">
-            <UrenregistratieV2 />
+            <Urenregistratie />
           </ProtectedRoute>
         );
       case 'urenregistratie-v2':
