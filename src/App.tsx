@@ -1,4 +1,4 @@
-import React, { useState, Suspense, lazy } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Sidebar from './components/Sidebar';
@@ -7,9 +7,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
 import FinancieelDashboard from './pages/FinancieelDashboard';
 import Urenregistratie from './pages/Urenregistratie';
-
-// Lazy load UrenregistratieV2 to prevent bundler conflicts
-const UrenregistratieV2 = lazy(() => import('./pages/UrenregistratieV2'));
+import UrenregistratieV2 from './pages/UrenregistratieV2';
 import MijnNotificaties from './pages/MijnNotificaties';
 import SpeciaalGereedschap from './pages/SpeciaalGereedschap';
 import Projecten from './pages/Projecten';
@@ -56,9 +54,7 @@ function App() {
       case 'urenregistratie-v2':
         return (
           <ProtectedRoute permission="register_hours">
-            <Suspense fallback={<div className="flex items-center justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div></div>}>
-              <UrenregistratieV2 />
-            </Suspense>
+            <UrenregistratieV2 />
           </ProtectedRoute>
         );
       case 'mijn-notificaties':

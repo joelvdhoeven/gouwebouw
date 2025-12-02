@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Download, Plus, Calendar, X, Trash2, Pencil, Minus, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystemSettings } from '../contexts/SystemSettingsContext';
 import { useSupabaseQuery, useSupabaseMutation } from '../hooks/useSupabase';
 import { supabase } from '../lib/supabase';
-import { UrenRegistratie, Project, WorkLine, MaterialLine } from '../types';
+import type { UrenRegistratie, Project, WorkLine, MaterialLine } from '../types';
 import { exportUrenRegistraties } from '../utils/exportUtils';
 import { formatDate } from '../utils/dateUtils';
 import Modal from '../components/Modal';
 import DatePickerField from '../components/DatePickerField';
 import MaterialSelectionModal from '../components/MaterialSelectionModal';
 
-const UrenregistratieV2: React.FC = () => {
+function UrenregistratieV2() {
   const { t } = useLanguage();
   const { hasPermission, user, profile } = useAuth();
   const { settings } = useSystemSettings();
