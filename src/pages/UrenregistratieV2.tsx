@@ -18,6 +18,16 @@ interface WorkCode {
   sort_order: number;
 }
 
+interface ProjectWorkCode {
+  id: string;
+  project_id: string;
+  work_code_id: string | null;
+  custom_code: string | null;
+  custom_name: string | null;
+  custom_description: string | null;
+  work_codes?: WorkCode;
+}
+
 interface MaterialLine {
   type: 'product' | 'description';
   product_id?: string;
@@ -42,6 +52,8 @@ interface ProjectBlock {
   kilometers: string;
   workLines: WorkLine[];
   isCollapsed: boolean;
+  availableWorkCodes: WorkCode[]; // Project-specific work codes (or all if none configured)
+  hasProjectSpecificCodes: boolean; // Whether this project has specific codes configured
 }
 
 const UrenregistratieV2: React.FC = () => {
@@ -90,7 +102,9 @@ const UrenregistratieV2: React.FC = () => {
       voortgang: '',
       kilometers: '',
       workLines: [{ work_code_id: '', work_code_name: '', werkomschrijving: '', aantal_uren: 0, materials: [] }],
-      isCollapsed: false
+      isCollapsed: false,
+      availableWorkCodes: [],
+      hasProjectSpecificCodes: false
     }
   ]);
 
@@ -179,6 +193,66 @@ const UrenregistratieV2: React.FC = () => {
   };
 
   // Project Block functions
+  // Load project-specific work codes for a project
+  const loadProjectWorkCodes = async (projectId: string): Promise<{ codes: WorkCode[], hasSpecificCodes: boolean }> => {
+    try {
+      const { data, error } = await supabase
+        .from('project_work_codes')
+        .select(`
+          id,
+          project_id,
+          work_code_id,
+          custom_code,
+          custom_name,
+          custom_description,
+          work_codes (id, code, name, description, is_active, sort_order)
+        `)
+        .eq('project_id', projectId);
+
+      if (error) {
+        // Table might not exist yet
+        if (error.code === 'PGRST205' || error.message?.includes('does not exist')) {
+          console.log('project_work_codes table does not exist - using all work codes');
+          return { codes: workCodes, hasSpecificCodes: false };
+        }
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        // No specific codes configured for this project - use all
+        return { codes: workCodes, hasSpecificCodes: false };
+      }
+
+      // Build the list of available codes
+      const availableCodes: WorkCode[] = [];
+
+      data.forEach((pwc: any) => {
+        if (pwc.work_code_id && pwc.work_codes) {
+          // Standard work code
+          availableCodes.push(pwc.work_codes);
+        } else if (pwc.custom_code) {
+          // Custom work code - create a synthetic WorkCode object
+          availableCodes.push({
+            id: pwc.id, // Use project_work_codes id as the identifier
+            code: pwc.custom_code,
+            name: pwc.custom_name || pwc.custom_code,
+            description: pwc.custom_description || '',
+            is_active: true,
+            sort_order: 999 // Put custom codes at the end
+          });
+        }
+      });
+
+      // Sort by sort_order
+      availableCodes.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+      return { codes: availableCodes, hasSpecificCodes: true };
+    } catch (err) {
+      console.error('Error loading project work codes:', err);
+      return { codes: workCodes, hasSpecificCodes: false };
+    }
+  };
+
   const addProjectBlock = () => {
     setProjectBlocks([...projectBlocks, {
       id: crypto.randomUUID(),
@@ -186,7 +260,9 @@ const UrenregistratieV2: React.FC = () => {
       voortgang: '',
       kilometers: '',
       workLines: [{ work_code_id: '', work_code_name: '', werkomschrijving: '', aantal_uren: 0, materials: [] }],
-      isCollapsed: false
+      isCollapsed: false,
+      availableWorkCodes: workCodes, // Default to all work codes
+      hasProjectSpecificCodes: false
     }]);
   };
 
@@ -202,10 +278,29 @@ const UrenregistratieV2: React.FC = () => {
     ));
   };
 
-  const updateProjectBlock = (blockId: string, field: keyof ProjectBlock, value: any) => {
-    setProjectBlocks(projectBlocks.map(b =>
-      b.id === blockId ? { ...b, [field]: value } : b
-    ));
+  const updateProjectBlock = async (blockId: string, field: keyof ProjectBlock, value: any) => {
+    if (field === 'project' && value?.id) {
+      // When project changes, load project-specific work codes
+      const { codes, hasSpecificCodes } = await loadProjectWorkCodes(value.id);
+
+      setProjectBlocks(projectBlocks.map(b => {
+        if (b.id === blockId) {
+          return {
+            ...b,
+            project: value,
+            availableWorkCodes: codes,
+            hasProjectSpecificCodes: hasSpecificCodes,
+            // Reset work lines when project changes (since available codes may differ)
+            workLines: [{ work_code_id: '', work_code_name: '', werkomschrijving: '', aantal_uren: 0, materials: [] }]
+          };
+        }
+        return b;
+      }));
+    } else {
+      setProjectBlocks(projectBlocks.map(b =>
+        b.id === blockId ? { ...b, [field]: value } : b
+      ));
+    }
     if (formError) setFormError('');
   };
 
@@ -232,7 +327,9 @@ const UrenregistratieV2: React.FC = () => {
       if (b.id === blockId) {
         const updated = [...b.workLines];
         if (field === 'work_code_id') {
-          const workCode = workCodes.find(wc => wc.id === value);
+          // Look up the work code from block's available codes first, then global
+          const codesToSearch = b.availableWorkCodes.length > 0 ? b.availableWorkCodes : workCodes;
+          const workCode = codesToSearch.find(wc => wc.id === value);
           updated[lineIndex] = {
             ...updated[lineIndex],
             work_code_id: value as string,
@@ -409,7 +506,9 @@ const UrenregistratieV2: React.FC = () => {
         voortgang: '',
         kilometers: '',
         workLines: [{ work_code_id: '', work_code_name: '', werkomschrijving: '', aantal_uren: 0, materials: [] }],
-        isCollapsed: false
+        isCollapsed: false,
+        availableWorkCodes: workCodes,
+        hasProjectSpecificCodes: false
       }]);
 
       setSuccessMessage(t('registratieOpgeslagen'));
@@ -904,7 +1003,12 @@ const UrenregistratieV2: React.FC = () => {
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                               <div>
-                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Bewakingscode *</label>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                  Bewakingscode *
+                                  {block.hasProjectSpecificCodes && (
+                                    <span className="ml-1 text-xs text-blue-600 dark:text-blue-400">(project-specifiek)</span>
+                                  )}
+                                </label>
                                 <select
                                   value={line.work_code_id}
                                   onChange={(e) => updateWorkLineInBlock(block.id, lineIndex, 'work_code_id', e.target.value)}
@@ -912,7 +1016,7 @@ const UrenregistratieV2: React.FC = () => {
                                   className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                                 >
                                   <option value="">Selecteer code</option>
-                                  {workCodes.map((wc) => (
+                                  {(block.availableWorkCodes.length > 0 ? block.availableWorkCodes : workCodes).map((wc) => (
                                     <option key={wc.id} value={wc.id}>
                                       {wc.code} - {wc.name}
                                     </option>
