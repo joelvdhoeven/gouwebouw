@@ -49,6 +49,115 @@ const Urenregistratie: React.FC = () => {
   const { insert: insertRegistration, update: updateRegistration, remove: deleteRegistration, loading: mutationLoading } = useSupabaseMutation('time_registrations');
   const { insert: insertProject } = useSupabaseMutation('projects');
 
+  // Load all work codes
+  const [allWorkCodes, setAllWorkCodes] = useState<any[]>([]);
+  const [projectWorkCodes, setProjectWorkCodes] = useState<any[]>([]);
+  const [availableWorkCodes, setAvailableWorkCodes] = useState<any[]>([]);
+
+  // Load all active work codes on mount
+  useEffect(() => {
+    const loadWorkCodes = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('work_codes')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true });
+
+        if (error) throw error;
+        setAllWorkCodes(data || []);
+      } catch (error) {
+        console.error('Error loading work codes:', error);
+        setAllWorkCodes([]);
+      }
+    };
+    loadWorkCodes();
+  }, []);
+
+  // Load project-specific work codes when project changes
+  useEffect(() => {
+    const loadProjectWorkCodes = async () => {
+      if (!selectedProject?.id) {
+        setProjectWorkCodes([]);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('project_work_codes')
+          .select(`
+            id,
+            work_code_id,
+            custom_code,
+            custom_name,
+            custom_description,
+            work_codes (id, code, name, description)
+          `)
+          .eq('project_id', selectedProject.id);
+
+        if (error) {
+          // Table might not exist yet
+          if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+            setProjectWorkCodes([]);
+            return;
+          }
+          throw error;
+        }
+
+        setProjectWorkCodes(data || []);
+      } catch (error) {
+        console.error('Error loading project work codes:', error);
+        setProjectWorkCodes([]);
+      }
+    };
+
+    loadProjectWorkCodes();
+  }, [selectedProject?.id]);
+
+  // Calculate available work codes based on project selection
+  useEffect(() => {
+    if (projectWorkCodes.length === 0) {
+      // No specific codes assigned - use all work codes
+      setAvailableWorkCodes(allWorkCodes);
+    } else {
+      // Build list of available codes from project-specific selection
+      const codes: any[] = [];
+
+      // Add standard work codes that are linked to this project
+      projectWorkCodes.forEach(pwc => {
+        if (pwc.work_code_id && pwc.work_codes) {
+          codes.push(pwc.work_codes);
+        } else if (pwc.custom_code) {
+          // Add custom project-specific codes
+          codes.push({
+            id: pwc.id,
+            code: pwc.custom_code,
+            name: pwc.custom_name,
+            description: pwc.custom_description,
+            is_custom: true
+          });
+        }
+      });
+
+      // Always ensure "999" (or fallback code) is available
+      const has999 = codes.some(c => c.code === '999');
+      if (!has999) {
+        const fallbackCode = allWorkCodes.find(c => c.code === '999');
+        if (fallbackCode) {
+          codes.push(fallbackCode);
+        }
+      }
+
+      // Sort by code
+      codes.sort((a, b) => a.code.localeCompare(b.code));
+
+      setAvailableWorkCodes(codes);
+    }
+  }, [projectWorkCodes, allWorkCodes]);
+
+  // For backward compatibility, keep workCodes as alias
+  const workCodes = availableWorkCodes;
+
   const [showModal, setShowModal] = useState(false);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -83,6 +192,7 @@ const Urenregistratie: React.FC = () => {
   const [materialModalWorkLineIndex, setMaterialModalWorkLineIndex] = useState<number | null>(null);
   const [showProjectSearchModal, setShowProjectSearchModal] = useState(false);
   const [projectSearchTerm, setProjectSearchTerm] = useState('');
+  const [projectSearchForBlock, setProjectSearchForBlock] = useState<number>(0);
 
   // Multiple project blocks support
   const [projectBlocks, setProjectBlocks] = useState<Array<{
@@ -290,6 +400,62 @@ const Urenregistratie: React.FC = () => {
     }
   };
 
+  const addMaterialToBlockWorkLine = (blockIndex: number, lineIndex: number) => {
+    setMaterialModalWorkLineIndex(lineIndex);
+    setProjectSearchForBlock(blockIndex);
+    setShowMaterialModal(true);
+  };
+
+  const handleMaterialsSaveForBlock = (materials: Array<{product_id: string, location_id: string, quantity: number, product_name: string, unit: string}>) => {
+    if (materialModalWorkLineIndex === null) return;
+
+    const updated = [...projectBlocks];
+    const blockIndex = projectSearchForBlock;
+    if (!updated[blockIndex].workLines[materialModalWorkLineIndex].materials) {
+      updated[blockIndex].workLines[materialModalWorkLineIndex].materials = [];
+    }
+
+    materials.forEach(material => {
+      updated[blockIndex].workLines[materialModalWorkLineIndex].materials!.push({
+        type: 'product',
+        product_id: material.product_id,
+        product_name: material.product_name,
+        quantity: material.quantity,
+        unit: material.unit,
+        location_id: material.location_id
+      });
+    });
+
+    setProjectBlocks(updated);
+    setShowMaterialModal(false);
+    setMaterialModalWorkLineIndex(null);
+  };
+
+  const removeMaterialFromBlockWorkLine = (blockIndex: number, lineIndex: number, materialIndex: number) => {
+    const updated = [...projectBlocks];
+    updated[blockIndex].workLines[lineIndex].materials = updated[blockIndex].workLines[lineIndex].materials?.filter((_, i) => i !== materialIndex);
+    setProjectBlocks(updated);
+  };
+
+  const updateMaterialInBlock = (blockIndex: number, lineIndex: number, materialIndex: number, field: keyof MaterialLine, value: string | number) => {
+    const updated = [...projectBlocks];
+    if (updated[blockIndex].workLines[lineIndex].materials) {
+      updated[blockIndex].workLines[lineIndex].materials![materialIndex] = {
+        ...updated[blockIndex].workLines[lineIndex].materials![materialIndex],
+        [field]: value
+      };
+
+      if (field === 'product_id' && typeof value === 'string') {
+        const product = products.find((p: any) => p.id === value);
+        if (product) {
+          updated[blockIndex].workLines[lineIndex].materials![materialIndex].product_name = product.name;
+          updated[blockIndex].workLines[lineIndex].materials![materialIndex].unit = product.unit;
+        }
+      }
+    }
+    setProjectBlocks(updated);
+  };
+
   // Filter projects for search modal
   const filteredProjectsForSearch = projecten.filter((project: any) => {
     if (!projectSearchTerm.trim()) return true;
@@ -301,15 +467,13 @@ const Urenregistratie: React.FC = () => {
     );
   });
 
-  const handleProjectSelect = (project: any, blockIndex: number) => {
+  const handleProjectSelect = (project: any) => {
     const updated = [...projectBlocks];
-    updated[blockIndex].project = project;
+    updated[projectSearchForBlock].project = project;
     setProjectBlocks(updated);
     setShowProjectSearchModal(false);
     setProjectSearchTerm('');
   };
-
-  const [currentSearchBlockIndex, setCurrentSearchBlockIndex] = useState(0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -399,8 +563,81 @@ const Urenregistratie: React.FC = () => {
 
           console.log('Successfully inserted:', insertedData);
 
+          // Create inventory transactions for materials
+          for (const line of block.workLines) {
+            if (line.materials && line.materials.length > 0) {
+              for (const material of line.materials) {
+                if (material.type === 'product' && material.product_id && material.location_id) {
+                  try {
+                    await supabase.from('inventory_transactions').insert({
+                      product_id: material.product_id,
+                      location_id: material.location_id,
+                      project_id: selectedProjectId,
+                      user_id: user.id,
+                      transaction_type: 'out',
+                      quantity: -Math.abs(material.quantity),
+                      notes: `Materiaal gebruikt bij ${line.werktype}: ${line.werkomschrijving}`
+                    });
+
+                    // Update inventory stock
+                    const { data: stockData } = await supabase
+                      .from('inventory_stock')
+                      .select('quantity')
+                      .eq('product_id', material.product_id)
+                      .eq('location_id', material.location_id)
+                      .maybeSingle();
+
+                    const currentQuantity = stockData?.quantity || 0;
+                    const newQuantity = currentQuantity - material.quantity;
+
+                    if (stockData) {
+                      await supabase
+                        .from('inventory_stock')
+                        .update({ quantity: newQuantity })
+                        .eq('product_id', material.product_id)
+                        .eq('location_id', material.location_id);
+                    } else {
+                      await supabase
+                        .from('inventory_stock')
+                        .insert({
+                          product_id: material.product_id,
+                          location_id: material.location_id,
+                          quantity: newQuantity
+                        });
+                    }
+
+                    // Check if stock went negative and notify office staff
+                    if (newQuantity < 0) {
+                      const { data: officeUsers } = await supabase
+                        .from('profiles')
+                        .select('id')
+                        .in('role', ['admin', 'kantoorpersoneel', 'superuser']);
+
+                      if (officeUsers && officeUsers.length > 0) {
+                        const notifications = officeUsers.map(officeUser => ({
+                          recipient_id: officeUser.id,
+                          sender_id: user.id,
+                          type: 'system_alert' as const,
+                          title: '⚠️ Negatieve voorraad bij urenregistratie',
+                          message: `${material.product_name} is negatief geworden door urenregistratie. Project: ${projectName || 'Onbekend'}. Tekort: ${Math.abs(newQuantity)} ${material.unit}`,
+                          status: 'unread' as const
+                        }));
+
+                        await supabase.from('notifications').insert(notifications);
+                      }
+                    }
+                  } catch (matError) {
+                    console.error('Error creating inventory transaction for material:', matError);
+                    // Continue with other materials even if one fails
+                  }
+                }
+              }
+            }
+          }
+
           // Update project progress if voortgang provided and project exists
           if (selectedProjectId && block.voortgang) {
+            // Get current project progress
             const { data: currentProject } = await supabase
               .from('projects')
               .select('progress_percentage')
@@ -410,6 +647,7 @@ const Urenregistratie: React.FC = () => {
             const newPercentage = parseInt(block.voortgang);
             const currentPercentage = currentProject?.progress_percentage || 0;
 
+            // Only update if new percentage is higher
             if (newPercentage > currentPercentage) {
               await supabase
                 .from('projects')
@@ -596,15 +834,25 @@ const Urenregistratie: React.FC = () => {
         return;
       }
 
+      // Update the project block with the new project (stay on page)
+      const updated = [...projectBlocks];
+      updated[projectSearchForBlock].project = newProject;
+      setProjectBlocks(updated);
+
       setQuickProjectName('');
       setSelectedProject(newProject);
 
-      // Trigger event to notify other components
+      // Trigger event to notify other components and refetch projects
       window.dispatchEvent(new CustomEvent('projectsUpdated'));
+      refetchProjects();
 
-      // Wait 3 seconds then reload page
+      // Hide loading modal and show success
+      setShowProjectCreatingModal(false);
+      setSuccessMessage('Project aangemaakt en geselecteerd!');
+      setShowSuccessMessage(true);
       setTimeout(() => {
-        window.location.reload();
+        setShowSuccessMessage(false);
+        setSuccessMessage('');
       }, 3000);
     } catch (error) {
       console.error('Error:', error);
@@ -685,12 +933,26 @@ const Urenregistratie: React.FC = () => {
     setCurrentPage(1);
   }, [searchTerm, startDateFilter, endDateFilter, typeFilter, userFilter]);
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (filteredRegistraties.length === 0) {
       alert('Geen registraties om te exporteren');
       return;
     }
     const separator = settings.csv_separator || ';';
+
+    // Load all work codes (including inactive) for export
+    let exportWorkCodes = allWorkCodes;
+    try {
+      const { data } = await supabase
+        .from('work_codes')
+        .select('*')
+        .order('sort_order', { ascending: true });
+      if (data) {
+        exportWorkCodes = data;
+      }
+    } catch (error) {
+      console.error('Error loading work codes for export:', error);
+    }
 
     // Enrich registrations with user names
     const enrichedRegistraties = filteredRegistraties.map(reg => {
@@ -701,7 +963,7 @@ const Urenregistratie: React.FC = () => {
       };
     });
 
-    exportUrenRegistraties(enrichedRegistraties, separator);
+    exportUrenRegistraties(enrichedRegistraties, separator, exportWorkCodes);
   };
 
   const handleDeleteRegistration = (id: string) => {
@@ -735,6 +997,12 @@ const Urenregistratie: React.FC = () => {
       kilometers: '',
     });
     setSelectedProject(null);
+    setProjectBlocks([{
+      project: null,
+      workLines: [{ werktype: '', werkomschrijving: '', aantal_uren: 0, materials: [] }],
+      voortgang: '',
+      kilometers: ''
+    }]);
     setFormError('');
     setShowNewRegistration(true);
     setShowOverview(false);
@@ -866,13 +1134,13 @@ const Urenregistratie: React.FC = () => {
   return (
     <div>
       {showSuccessMessage && (
-        <div className="mb-4 p-4 bg-green-100 dark:bg-green-900/30 border border-green-400 text-green-700 dark:text-green-400 rounded-md">
+        <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-md">
           {successMessage}
         </div>
       )}
       
       {formError && (
-        <div className="mb-4 p-4 bg-red-100 dark:bg-red-900/30 border border-red-400 text-red-700 dark:text-red-400 rounded-md">
+        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -889,7 +1157,7 @@ const Urenregistratie: React.FC = () => {
       {showNewRegistration && (
         <div>
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{t('nieuweRegistratie')}</h1>
+            <h1 className="text-2xl font-bold text-gray-800">{t('nieuweRegistratie')}</h1>
             <button 
               onClick={() => {
                 setShowNewRegistration(false);
@@ -903,19 +1171,21 @@ const Urenregistratie: React.FC = () => {
 
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Datum sectie - geldt voor alle projecten */}
+              {/* Datum sectie */}
               <div>
                 <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-4">{t('basisInformatie')}</h3>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('datum')} *</label>
-                  <input
-                    type="date"
-                    name="datum"
-                    value={formData.datum}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('datum')} *</label>
+                    <input
+                      type="date"
+                      name="datum"
+                      value={formData.datum}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -931,10 +1201,10 @@ const Urenregistratie: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => removeProjectBlock(blockIndex)}
-                          className="text-red-600 hover:text-red-800 dark:text-red-400 flex items-center gap-1"
+                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 flex items-center gap-1"
                         >
                           <Trash2 size={16} />
-                          <span className="text-sm">Verwijder</span>
+                          <span className="text-sm">Verwijder project</span>
                         </button>
                       )}
                     </div>
@@ -946,7 +1216,7 @@ const Urenregistratie: React.FC = () => {
                         <select
                           value={block.project?.id || ''}
                           onChange={(e) => {
-                            const project = projecten.find((p: any) => p.id === e.target.value);
+                            const project = projecten.find(p => p.id === e.target.value);
                             updateProjectBlock(blockIndex, 'project', project || null);
                           }}
                           required
@@ -962,7 +1232,7 @@ const Urenregistratie: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => {
-                            setCurrentSearchBlockIndex(blockIndex);
+                            setProjectSearchForBlock(blockIndex);
                             setShowProjectSearchModal(true);
                           }}
                           className="w-full sm:w-auto px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors flex items-center justify-center"
@@ -973,20 +1243,28 @@ const Urenregistratie: React.FC = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setShowConfirmProjectModal(true)}
+                          onClick={() => {
+                            setProjectSearchForBlock(blockIndex);
+                            setShowConfirmProjectModal(true);
+                          }}
                           className="w-full sm:w-auto px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center justify-center"
                           title="Snel nieuw project aanmaken"
                         >
                           <Plus size={20} />
-                          <span className="ml-2 sm:hidden">Nieuw</span>
+                          <span className="ml-2 sm:hidden">Nieuw Project</span>
                         </button>
                       </div>
+                      {block.project && block.project.calculated_hours && (
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                          Gecalculeerde uren: {block.project.calculated_hours} uur
+                        </p>
+                      )}
                     </div>
 
                     {/* Voortgang en kilometers */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Voortgang (%)</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Voortgang project (%)</label>
                         <input
                           type="number"
                           value={block.voortgang}
@@ -996,9 +1274,19 @@ const Urenregistratie: React.FC = () => {
                           placeholder="0-100"
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-600 dark:text-white"
                         />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('optioneelGeefAanHoeveelProcent')}</p>
                       </div>
+
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kilometers</label>
+                        <div className="flex items-center gap-2 mb-1">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Gereden kilometers</label>
+                          <div className="group relative">
+                            <Info size={16} className="text-gray-400 cursor-help" />
+                            <div className="invisible group-hover:visible absolute z-10 w-64 p-2 bg-gray-900 text-white text-xs rounded-md shadow-lg -top-2 left-6">
+                              Dit zijn kilometers die niet met een zakelijke auto gereden worden en ook geen woon-werk kilometers zijn.
+                            </div>
+                          </div>
+                        </div>
                         <input
                           type="number"
                           value={block.kilometers}
@@ -1008,13 +1296,16 @@ const Urenregistratie: React.FC = () => {
                           placeholder="0"
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-600 dark:text-white"
                         />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Optioneel - vul alleen in indien van toepassing</p>
                       </div>
                     </div>
 
                     {/* Werkregels voor dit project */}
                     <div className="border-t border-gray-300 dark:border-gray-500 pt-4">
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Werkregels</h4>
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Werkregels</h4>
+                        </div>
                         <button
                           type="button"
                           onClick={() => addWorkLineToBlock(blockIndex)}
@@ -1043,19 +1334,22 @@ const Urenregistratie: React.FC = () => {
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                               <div>
-                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('werktype')} *</label>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Bewakingscode *</label>
                                 <select
                                   value={line.werktype}
                                   onChange={(e) => updateWorkLineInBlock(blockIndex, lineIndex, 'werktype', e.target.value)}
                                   required
-                                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 dark:bg-gray-500 dark:text-white"
+                                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-500 dark:text-white"
                                 >
-                                  <option value="">{t('selecteerType')}</option>
-                                  <option value="projectbasis">{t('projectbasis')}</option>
-                                  <option value="meerwerk">{t('meerwerk')}</option>
-                                  <option value="regie">{t('regie')}</option>
+                                  <option value="">Selecteer bewakingscode</option>
+                                  {workCodes.map((code: any) => (
+                                    <option key={code.id} value={code.code}>
+                                      {code.code} - {code.name}
+                                    </option>
+                                  ))}
                                 </select>
                               </div>
+
                               <div>
                                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('aantalUren')} *</label>
                                 <input
@@ -1066,20 +1360,133 @@ const Urenregistratie: React.FC = () => {
                                   min="0"
                                   required
                                   placeholder="bv. 8 of 4.5"
-                                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 dark:bg-gray-500 dark:text-white"
+                                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-500 dark:text-white"
                                 />
                               </div>
-                              <div>
+
+                              <div className="md:col-span-1">
                                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('werkomschrijving')} *</label>
                                 <input
                                   type="text"
                                   value={line.werkomschrijving}
                                   onChange={(e) => updateWorkLineInBlock(blockIndex, lineIndex, 'werkomschrijving', e.target.value)}
                                   required
-                                  placeholder="Beschrijf het werk"
-                                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 dark:bg-gray-500 dark:text-white"
+                                  placeholder="Beschrijf het uitgevoerde werk"
+                                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-500 dark:text-white"
                                 />
                               </div>
+                            </div>
+
+                            {/* Materialen sectie */}
+                            <div className="mt-4 pt-4 border-t border-gray-300 dark:border-gray-500">
+                              <div className="flex items-center justify-between mb-2">
+                                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Materialen</label>
+                                <button
+                                  type="button"
+                                  onClick={() => addMaterialToBlockWorkLine(blockIndex, lineIndex)}
+                                  className="flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                                >
+                                  <Plus size={14} />
+                                  Materiaal toevoegen
+                                </button>
+                              </div>
+
+                              {line.materials && line.materials.length > 0 && (
+                                <div className="space-y-2">
+                                  {line.materials.map((material, matIdx) => (
+                                    <div key={matIdx} className="border border-gray-200 dark:border-gray-500 rounded bg-white dark:bg-gray-500">
+                                      <div className="p-2 bg-gray-100 dark:bg-gray-600 border-b border-gray-200 dark:border-gray-500 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                          <button
+                                            type="button"
+                                            onClick={() => updateMaterialInBlock(blockIndex, lineIndex, matIdx, 'type', material.type === 'product' ? 'description' : 'product')}
+                                            className={`px-2 py-1 text-xs rounded ${material.type === 'product' ? 'bg-red-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
+                                          >
+                                            Product
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => updateMaterialInBlock(blockIndex, lineIndex, matIdx, 'type', material.type === 'description' ? 'product' : 'description')}
+                                            className={`px-2 py-1 text-xs rounded ${material.type === 'description' ? 'bg-red-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
+                                          >
+                                            Omschrijving
+                                          </button>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => removeMaterialFromBlockWorkLine(blockIndex, lineIndex, matIdx)}
+                                          className="text-red-600 hover:text-red-800 dark:text-red-400"
+                                        >
+                                          <X size={16} />
+                                        </button>
+                                      </div>
+
+                                      <div className="p-2">
+                                        {material.type === 'product' ? (
+                                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                            <div className="md:col-span-2">
+                                              <select
+                                                value={material.product_id || ''}
+                                                onChange={(e) => updateMaterialInBlock(blockIndex, lineIndex, matIdx, 'product_id', e.target.value)}
+                                                className="w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-500 rounded focus:outline-none focus:ring-1 focus:ring-red-500 dark:bg-gray-600 dark:text-white"
+                                              >
+                                                <option value="">Selecteer product</option>
+                                                {products.map((product: any) => (
+                                                  <option key={product.id} value={product.id}>
+                                                    {product.name} ({product.sku})
+                                                  </option>
+                                                ))}
+                                              </select>
+                                            </div>
+                                            <div className="flex gap-2 items-center">
+                                              <input
+                                                type="number"
+                                                value={material.quantity || ''}
+                                                onChange={(e) => updateMaterialInBlock(blockIndex, lineIndex, matIdx, 'quantity', parseFloat(e.target.value) || 0)}
+                                                placeholder="Aantal"
+                                                min="0"
+                                                step="0.1"
+                                                className="w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-500 rounded focus:outline-none focus:ring-1 focus:ring-red-500 dark:bg-gray-600 dark:text-white"
+                                              />
+                                              <span className="text-xs text-gray-600 dark:text-gray-300 min-w-[40px]">{material.unit || '-'}</span>
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                            <div className="md:col-span-2">
+                                              <input
+                                                type="text"
+                                                value={material.description || ''}
+                                                onChange={(e) => updateMaterialInBlock(blockIndex, lineIndex, matIdx, 'description', e.target.value)}
+                                                placeholder="Beschrijving materiaal"
+                                                className="w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-500 rounded focus:outline-none focus:ring-1 focus:ring-red-500 dark:bg-gray-600 dark:text-white"
+                                              />
+                                            </div>
+                                            <div className="flex gap-2 items-center">
+                                              <input
+                                                type="number"
+                                                value={material.quantity || ''}
+                                                onChange={(e) => updateMaterialInBlock(blockIndex, lineIndex, matIdx, 'quantity', parseFloat(e.target.value) || 0)}
+                                                placeholder="Aantal"
+                                                min="0"
+                                                step="0.1"
+                                                className="w-20 px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-500 rounded focus:outline-none focus:ring-1 focus:ring-red-500 dark:bg-gray-600 dark:text-white"
+                                              />
+                                              <input
+                                                type="text"
+                                                value={material.unit || ''}
+                                                onChange={(e) => updateMaterialInBlock(blockIndex, lineIndex, matIdx, 'unit', e.target.value)}
+                                                placeholder="Eenheid"
+                                                className="w-20 px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-500 rounded focus:outline-none focus:ring-1 focus:ring-red-500 dark:bg-gray-600 dark:text-white"
+                                              />
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -1088,14 +1495,14 @@ const Urenregistratie: React.FC = () => {
                       {/* Subtotaal uren voor dit project */}
                       <div className="mt-3 p-2 bg-gray-100 dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-md">
                         <p className="text-sm text-gray-700 dark:text-gray-200">
-                          <strong>Subtotaal:</strong> {block.workLines.reduce((sum, line) => sum + (line.aantal_uren || 0), 0).toFixed(1)} uur
+                          <strong>Subtotaal project:</strong> {block.workLines.reduce((sum, line) => sum + (line.aantal_uren || 0), 0).toFixed(1)} uur
                         </p>
                       </div>
                     </div>
                   </div>
                 ))}
 
-                {/* Project toevoegen knop */}
+                {/* Knop om nieuw project blok toe te voegen */}
                 <button
                   type="button"
                   onClick={addProjectBlock}
@@ -1115,13 +1522,13 @@ const Urenregistratie: React.FC = () => {
               </div>
 
               <div className="flex justify-end space-x-3 pt-4">
-                <button
+                <button 
                   type="button"
                   onClick={() => {
                     setShowNewRegistration(false);
                     setShowOverview(true);
                   }}
-                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
                 >
                   {t('annuleren')}
                 </button>
@@ -1141,12 +1548,12 @@ const Urenregistratie: React.FC = () => {
       {showOverview && (
         <div>
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{t('urenregistratie')}</h1>
+            <h1 className="text-2xl font-bold text-gray-800">{t('urenregistratie')}</h1>
             <div className="flex space-x-3">
-              <ProtectedRoute permission="export_data">
+<ProtectedRoute permission="export_data">
                 <button
                   onClick={handleExport}
-                  className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
                 >
                   <Download size={16} />
                   <span>{t('exporteren')}</span>
@@ -1163,15 +1570,15 @@ const Urenregistratie: React.FC = () => {
           </div>
 
           {/* Filters */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
+          <div className="bg-white rounded-lg shadow mb-6 p-4">
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               {hasPermission('view_reports') && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gebruiker</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Gebruiker</label>
                   <select
                     value={userFilter}
                     onChange={(e) => setUserFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
                     <option value="">Alle gebruikers</option>
                     {gebruikers.map((gebruiker: any) => (
@@ -1183,11 +1590,11 @@ const Urenregistratie: React.FC = () => {
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Periode</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Periode</label>
                 <select
                   value={dateRangeFilter}
                   onChange={(e) => handleDateRangeChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="custom">Aangepast</option>
                   <option value="deze-week">Deze week</option>
@@ -1214,11 +1621,11 @@ const Urenregistratie: React.FC = () => {
                 placeholder={t('dateInputPlaceholder')}
               />
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('type')}</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('type')}</label>
                 <select
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="alleTypes">{t('alleTypes')}</option>
                   <option value="projectbasis">{t('projectbasis')}</option>
@@ -1233,35 +1640,35 @@ const Urenregistratie: React.FC = () => {
                 placeholder={t('zoekProjectOfOrdernummer')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full md:w-80 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                className="w-full md:w-80 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
             </div>
           </div>
 
           {/* Registraties overzicht */}
           {filteredRegistraties.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow mt-6">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+            <div className="bg-white rounded-lg shadow mt-6">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-800">
                   {searchTerm ? `Zoekresultaten (${filteredRegistraties.length})` : `Registraties (${filteredRegistraties.length})`}
                 </h2>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('datum')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('datum')}</th>
                       {hasPermission('view_reports') && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Gebruiker</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gebruiker</th>
                       )}
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Project</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('werktype')}</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('aantalUren')}</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('werkomschrijving')}</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('acties')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('werktype')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('aantalUren')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('werkomschrijving')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('acties')}</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="bg-white divide-y divide-gray-200">
                     {paginatedRegistraties.map((registratie) => {
                       const hasExtraInfo = (registratie.driven_kilometers && registratie.driven_kilometers > 0) ||
                                           (registratie.materials && registratie.materials.length > 0) ||
@@ -1270,28 +1677,28 @@ const Urenregistratie: React.FC = () => {
 
                       return (
                         <React.Fragment key={registratie.id}>
-                          <tr className={isExpanded ? 'bg-gray-50 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                          <tr className={isExpanded ? 'bg-gray-50' : 'hover:bg-gray-50'}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {formatDate(registratie.datum)}
                             </td>
                             {hasPermission('view_reports') && (
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {gebruikers.find((g: any) => g.id === registratie.user_id)?.naam || 'Onbekend'}
                               </td>
                             )}
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {registratie.project_id ?
                                 projecten.find(p => p.id === registratie.project_id)?.naam || 'Onbekend project' :
                                 '-'
                               }
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {registratie.werktype}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {registratie.aantal_uren.toString().replace('.', ',')}
                             </td>
-                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-300 max-w-xs">
+                            <td className="px-6 py-4 text-sm text-gray-900 max-w-xs">
                               <div className="break-words">{registratie.werkomschrijving}</div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -1329,28 +1736,28 @@ const Urenregistratie: React.FC = () => {
                             </td>
                           </tr>
                           {isExpanded && hasExtraInfo && (
-                            <tr className="bg-gray-50 dark:bg-gray-700">
+                            <tr className="bg-gray-50">
                               <td colSpan={hasPermission('view_reports') ? 7 : 6} className="px-6 py-4">
-                                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-600">
+                                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {registratie.driven_kilometers && registratie.driven_kilometers > 0 && (
-                                      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 p-4 rounded-lg shadow-sm">
-                                        <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">Kilometers</div>
-                                        <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                                      <div className="bg-white border border-gray-200 p-4 rounded-lg shadow-sm">
+                                        <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Kilometers</div>
+                                        <div className="text-2xl font-bold text-gray-900">
                                           {registratie.driven_kilometers.toString().replace('.', ',')} km
                                         </div>
                                       </div>
                                     )}
                                     {registratie.materials && registratie.materials.length > 0 && (
-                                      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 p-4 rounded-lg shadow-sm">
-                                        <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-3">Materialen</div>
+                                      <div className="bg-white border border-gray-200 p-4 rounded-lg shadow-sm">
+                                        <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3">Materialen</div>
                                         <div className="space-y-2">
                                           {registratie.materials.map((mat: any, idx: number) => (
-                                            <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                                              <span className="font-medium text-gray-900 dark:text-white">
+                                            <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-gray-100 last:border-0">
+                                              <span className="font-medium text-gray-900">
                                                 {mat.type === 'product' ? mat.product_name : mat.description}
                                               </span>
-                                              <span className="text-gray-600 dark:text-gray-400 font-semibold">{mat.quantity} {mat.unit}</span>
+                                              <span className="text-gray-600 font-semibold">{mat.quantity} {mat.unit}</span>
                                             </div>
                                           ))}
                                         </div>
@@ -1377,29 +1784,29 @@ const Urenregistratie: React.FC = () => {
               </div>
 
               {/* Pagination Controls */}
-              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <label className="text-sm text-gray-700 dark:text-gray-300">Toon:</label>
+                  <label className="text-sm text-gray-700">Toon:</label>
                   <select
                     value={itemsPerPage}
                     onChange={(e) => {
                       setItemsPerPage(Number(e.target.value));
                       setCurrentPage(1);
                     }}
-                    className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                    className="px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
                     <option value={10}>10</option>
                     <option value={25}>25</option>
                     <option value={50}>50</option>
                     <option value={100}>100</option>
                   </select>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="text-sm text-gray-700">
                     resultaten per pagina
                   </span>
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="text-sm text-gray-700">
                     Pagina {currentPage} van {totalPages} ({totalItems} resultaten)
                   </span>
 
@@ -1407,7 +1814,7 @@ const Urenregistratie: React.FC = () => {
                     <button
                       onClick={() => setCurrentPage(1)}
                       disabled={currentPage === 1}
-                      className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed dark:text-gray-300"
+                      className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Eerste pagina"
                     >
                       «
@@ -1415,7 +1822,7 @@ const Urenregistratie: React.FC = () => {
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
-                      className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center dark:text-gray-300"
+                      className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                       title="Vorige pagina"
                     >
                       <ChevronLeft size={16} />
@@ -1441,7 +1848,7 @@ const Urenregistratie: React.FC = () => {
                           className={`px-3 py-1 border rounded-md ${
                             currentPage === pageNumber
                               ? 'bg-red-600 text-white border-red-600'
-                              : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300'
+                              : 'border-gray-300 hover:bg-gray-50'
                           }`}
                         >
                           {pageNumber}
@@ -1452,7 +1859,7 @@ const Urenregistratie: React.FC = () => {
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages}
-                      className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center dark:text-gray-300"
+                      className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                       title="Volgende pagina"
                     >
                       <ChevronRight size={16} />
@@ -1460,7 +1867,7 @@ const Urenregistratie: React.FC = () => {
                     <button
                       onClick={() => setCurrentPage(totalPages)}
                       disabled={currentPage === totalPages}
-                      className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed dark:text-gray-300"
+                      className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Laatste pagina"
                     >
                       »
@@ -1643,7 +2050,7 @@ const Urenregistratie: React.FC = () => {
         
         <form onSubmit={handleNewProjectAndRegister} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('projectNaam')} *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('projectNaam')} *</label>
             <input
               type="text"
               name="naam"
@@ -1651,12 +2058,12 @@ const Urenregistratie: React.FC = () => {
               onChange={handleNewProjectDetailsChange}
               required
               placeholder="Bijv. Renovatie kantoorpand"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
           </div>
-
+          
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('projectLocatie')} *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('projectLocatie')} *</label>
             <input
               type="text"
               name="locatie"
@@ -1664,12 +2071,12 @@ const Urenregistratie: React.FC = () => {
               onChange={handleNewProjectDetailsChange}
               required
               placeholder="Bijv. Amsterdam, Damrak 1"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
           </div>
-
+          
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('projectBeschrijving')} *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('projectBeschrijving')} *</label>
             <textarea
               name="beschrijving"
               value={newProjectDetails.beschrijving}
@@ -1677,19 +2084,19 @@ const Urenregistratie: React.FC = () => {
               rows={3}
               required
               placeholder={t('beschrijfProject')}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
           </div>
-
+          
           <div className="flex justify-end space-x-3 pt-4">
-            <button
+            <button 
               type="button"
               onClick={() => {
                 setShowNewProjectModal(false);
                 setPendingTimeRegistration(null);
                 setNewProjectDetails({ naam: '', locatie: '', beschrijving: '' });
               }}
-              className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
             >
               {t('annuleren')}
             </button>
@@ -1715,25 +2122,25 @@ const Urenregistratie: React.FC = () => {
         {editingRegistration && (
           <form onSubmit={handleUpdateRegistration} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('datum')} *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('datum')} *</label>
               <input
                 type="date"
                 name="datum"
                 value={editingRegistration.datum}
                 onChange={handleEditInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('project')} *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('project')} *</label>
               <select
                 name="project_id"
                 value={editingRegistration.project_id || ''}
                 onChange={handleEditInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               >
                 <option value="">Selecteer een project</option>
                 {projecten.map((project: any) => (
@@ -1745,23 +2152,25 @@ const Urenregistratie: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('werktype')} *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Bewakingscode *</label>
               <select
                 name="werktype"
                 value={editingRegistration.werktype}
                 onChange={handleEditInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               >
-                <option value="">{t('selecteerType')}</option>
-                <option value="projectbasis">{t('projectbasis')}</option>
-                <option value="meerwerk">{t('meerwerk')}</option>
-                <option value="regie">{t('regie')}</option>
+                <option value="">Selecteer bewakingscode</option>
+                {workCodes.map((code: any) => (
+                  <option key={code.id} value={code.code}>
+                    {code.code} - {code.name}
+                  </option>
+                ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('aantalUren')} *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('aantalUren')} *</label>
               <input
                 type="number"
                 step="0.5"
@@ -1772,26 +2181,26 @@ const Urenregistratie: React.FC = () => {
                 min="0.5"
                 max="24"
                 placeholder={t('aantalUrenPlaceholder')}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
             </div>
 
             {(editingRegistration.werktype === 'meerwerk' || editingRegistration.werktype === 'regie') && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('locatie')}</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('locatie')}</label>
                 <input
                   type="text"
                   name="locatie"
                   value={editingRegistration.locatie}
                   onChange={handleEditInputChange}
                   placeholder={t('locatiePlaceholder')}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('voortgang')} (%)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('voortgang')} (%)</label>
               <input
                 type="number"
                 name="voortgang"
@@ -1800,14 +2209,14 @@ const Urenregistratie: React.FC = () => {
                 min="0"
                 max="100"
                 placeholder="0-100"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('optioneelGeefAanHoeveelProcent')}</p>
+              <p className="text-xs text-gray-500 mt-1">{t('optioneelGeefAanHoeveelProcent')}</p>
             </div>
 
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Gereden kilometers</label>
+                <label className="block text-sm font-medium text-gray-700">Gereden kilometers</label>
                 <div className="group relative">
                   <Info size={16} className="text-gray-400 cursor-help" />
                   <div className="invisible group-hover:visible absolute z-10 w-64 p-2 bg-gray-900 text-white text-xs rounded-md shadow-lg -top-2 left-6">
@@ -1823,13 +2232,13 @@ const Urenregistratie: React.FC = () => {
                 min="0"
                 step="0.1"
                 placeholder="0"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Optioneel - vul alleen in indien van toepassing</p>
+              <p className="text-xs text-gray-500 mt-1">Optioneel - vul alleen in indien van toepassing</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('werkomschrijving')} *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('werkomschrijving')} *</label>
               <textarea
                 name="werkomschrijving"
                 value={editingRegistration.werkomschrijving}
@@ -1837,7 +2246,7 @@ const Urenregistratie: React.FC = () => {
                 rows={4}
                 required
                 placeholder={t('werkomschrijvingPlaceholder')}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
             </div>
 
@@ -1848,7 +2257,7 @@ const Urenregistratie: React.FC = () => {
                   setShowEditModal(false);
                   setEditingRegistration(null);
                 }}
-                className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
               >
                 {t('annuleren')}
               </button>
@@ -1870,14 +2279,14 @@ const Urenregistratie: React.FC = () => {
         title="Project Niet Gevonden?"
       >
         <div className="space-y-6">
-          <p className="text-gray-700 dark:text-gray-300">
+          <p className="text-gray-700">
             Weet je zeker dat het project niet in het keuzemenu staat?
           </p>
           <div className="flex justify-end space-x-3">
             <button
               type="button"
               onClick={() => setShowConfirmProjectModal(false)}
-              className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
             >
               Nee
             </button>
@@ -1904,17 +2313,17 @@ const Urenregistratie: React.FC = () => {
         title="Snel Project Aanmaken"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-gray-600">
             Maak snel een nieuw project aan. Kantoorpersoneel zal later de details aanvullen.
           </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Projectnaam *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Projectnaam *</label>
             <input
               type="text"
               value={quickProjectName}
               onChange={(e) => setQuickProjectName(e.target.value)}
               placeholder="Bijv: Renovatie Hoofdstraat 123"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
                   handleQuickProjectCreate();
@@ -1929,7 +2338,7 @@ const Urenregistratie: React.FC = () => {
                 setShowQuickProjectModal(false);
                 setQuickProjectName('');
               }}
-              className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
             >
               Annuleren
             </button>
@@ -1957,8 +2366,7 @@ const Urenregistratie: React.FC = () => {
             </div>
             <div className="text-center space-y-2">
               <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Project wordt aangemaakt...</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Even geduld, we maken het project aan en slaan je urenregistratie op.</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">De pagina wordt automatisch ververst...</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Even geduld, we maken het project aan.</p>
             </div>
           </div>
         </div>
@@ -2000,13 +2408,7 @@ const Urenregistratie: React.FC = () => {
                   <button
                     key={project.id}
                     type="button"
-                    onClick={() => {
-                      const updated = [...projectBlocks];
-                      updated[currentSearchBlockIndex].project = project;
-                      setProjectBlocks(updated);
-                      setShowProjectSearchModal(false);
-                      setProjectSearchTerm('');
-                    }}
+                    onClick={() => handleProjectSelect(project)}
                     className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
                     <div className="font-medium text-gray-900 dark:text-white">
@@ -2048,8 +2450,8 @@ const Urenregistratie: React.FC = () => {
           setShowMaterialModal(false);
           setMaterialModalWorkLineIndex(null);
         }}
-        onSave={handleMaterialsSave}
-        projectId={selectedProject?.id}
+        onSave={handleMaterialsSaveForBlock}
+        projectId={projectBlocks[projectSearchForBlock]?.project?.id}
       />
     </div>
   );
