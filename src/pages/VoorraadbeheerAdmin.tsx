@@ -949,6 +949,17 @@ const VoorraadbeheerAdmin: React.FC = () => {
   };
 
 
+  // Helper function to properly escape CSV values
+  const escapeCSV = (value: string | number | null | undefined, separator: string): string => {
+    if (value === null || value === undefined) return '';
+    const str = String(value);
+    // Quote the value if it contains the separator, quotes, or newlines
+    if (str.includes(separator) || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
   const exportToCSV = () => {
     if (filteredStock.length === 0) {
       alert('Geen voorraad om te exporteren');
@@ -956,16 +967,17 @@ const VoorraadbeheerAdmin: React.FC = () => {
     }
 
     const separator = getCsvSeparator();
+    const headers = ['SKU', 'Naam', 'Materiaal groep', 'Locatie', 'Voorraad', 'Eenheid', 'Min. Voorraad'];
     const csv = [
-      ['SKU', 'Naam', 'Materiaal groep', 'Locatie', 'Voorraad', 'Eenheid', 'Min. Voorraad'].join(separator),
+      headers.map(h => escapeCSV(h, separator)).join(separator),
       ...filteredStock.map(s => [
-        s.product?.sku || '',
-        s.product?.name || '',
-        s.product?.category || '',
-        s.location?.name || '',
-        s.quantity,
-        s.product?.unit || '',
-        s.product?.minimum_stock || 0
+        escapeCSV(s.product?.sku, separator),
+        escapeCSV(s.product?.name, separator),
+        escapeCSV(s.product?.category, separator),
+        escapeCSV(s.location?.name, separator),
+        escapeCSV(s.quantity, separator),
+        escapeCSV(s.product?.unit, separator),
+        escapeCSV(s.product?.minimum_stock || 0, separator)
       ].join(separator))
     ].join('\n');
 
@@ -984,36 +996,37 @@ const VoorraadbeheerAdmin: React.FC = () => {
     }
 
     const separator = getCsvSeparator();
+    const headers = [
+      'SKU',
+      'GB-art.nr.',
+      'Materiaalomschrijving',
+      'Materiaal groep',
+      'Eenheid',
+      'Min. Voorraad',
+      'EAN-code',
+      'Leverancier',
+      'Lev.art.nr.',
+      '€/eenh',
+      'Inkoopprijs',
+      'Verkoopprijs',
+      'Beschrijving'
+    ];
     const csv = [
-      [
-        'SKU',
-        'GB-art.nr.',
-        'Materiaalomschrijving',
-        'Materiaal groep',
-        'Eenheid',
-        'Min. Voorraad',
-        'EAN-code',
-        'Leverancier',
-        'Lev.art.nr.',
-        '€/eenh',
-        'Inkoopprijs',
-        'Verkoopprijs',
-        'Beschrijving'
-      ].join(separator),
+      headers.map(h => escapeCSV(h, separator)).join(separator),
       ...products.map(p => [
-        p.sku || '',
-        p.gb_article_number || '',
-        p.name || '',
-        p.category || '',
-        p.unit || '',
-        p.minimum_stock || 0,
-        p.ean || '',
-        p.supplier || '',
-        p.supplier_article_number || '',
-        p.price_per_unit || 0,
-        p.purchase_price || 0,
-        p.sale_price || 0,
-        p.description || ''
+        escapeCSV(p.sku, separator),
+        escapeCSV(p.gb_article_number, separator),
+        escapeCSV(p.name, separator),
+        escapeCSV(p.category, separator),
+        escapeCSV(p.unit, separator),
+        escapeCSV(p.minimum_stock || 0, separator),
+        escapeCSV(p.ean, separator),
+        escapeCSV(p.supplier, separator),
+        escapeCSV(p.supplier_article_number, separator),
+        escapeCSV(p.price_per_unit || 0, separator),
+        escapeCSV(p.purchase_price || 0, separator),
+        escapeCSV(p.sale_price || 0, separator),
+        escapeCSV(p.description, separator)
       ].join(separator))
     ].join('\n');
 
@@ -1028,24 +1041,24 @@ const VoorraadbeheerAdmin: React.FC = () => {
   const downloadImportTemplate = () => {
     const separator = getCsvSeparator();
     const headers = [
-      'sku',
-      'gb_article_number',
-      'name',
-      'category',
-      'unit',
-      'minimum_stock',
-      'ean',
-      'supplier',
-      'supplier_article_number',
-      'price_per_unit',
-      'purchase_price',
-      'sale_price',
-      'description'
+      'SKU',
+      'GB-art.nr.',
+      'Materiaalomschrijving',
+      'Materiaal groep',
+      'Eenheid',
+      'Min. Voorraad',
+      'EAN-code',
+      'Leverancier',
+      'Lev.art.nr.',
+      '€/eenh',
+      'Inkoopprijs',
+      'Verkoopprijs',
+      'Beschrijving'
     ];
     const exampleRows = [
-      ['PROD001', '45x70-300', 'Vuren C geschaafd 44x70 FSC, lengte 300 cm', '06', 'Hout', 'stuk', '10', '37215133001', 'Stiho', '160740', '5.13', '4.50', '6.00', 'Houten balk voor constructie'],
-      ['PROD002', 'SVD04040-500', 'Schroef 4.0x40 Voldraad, 500 per doosje', '03', 'Montage', 'doosje', '10', '', 'Berner', '410148-500', '8.85', '7.50', '10.00', 'Doos met 500 schroeven'],
-      ['PROD003', 'KIT-PUR-001', 'PUR Schuim 750ml', '02', 'Pur & Kit', 'bus', '5', '8712345678901', 'Soudal', 'PUR750', '4.25', '3.50', '5.50', 'Expansie PUR schuim 750ml']
+      ['PROD001', '45x70-300', 'Vuren C geschaafd 44x70 FSC, lengte 300 cm', 'Hout', 'stuk', '10', '37215133001', 'Stiho', '160740', '5.13', '4.50', '6.00', 'Houten balk voor constructie'],
+      ['PROD002', 'SVD04040-500', 'Schroef 4.0x40 Voldraad, 500 per doosje', 'Montage', 'doosje', '10', '', 'Berner', '410148-500', '8.85', '7.50', '10.00', 'Doos met 500 schroeven'],
+      ['PROD003', 'KIT-PUR-001', 'PUR Schuim 750ml', 'Pur & Kit', 'bus', '5', '8712345678901', 'Soudal', 'PUR750', '4.25', '3.50', '5.50', 'Expansie PUR schuim 750ml']
     ];
 
     const csvContent = [
@@ -1071,7 +1084,19 @@ const VoorraadbeheerAdmin: React.FC = () => {
     reader.onload = async (e) => {
       try {
         const text = e.target?.result as string;
-        const rows = text.split('\n').slice(1);
+        const lines = text.split('\n');
+        const headerLine = lines[0]?.trim();
+        const rows = lines.slice(1);
+
+        // Detect separator from header if it contains the expected columns
+        let detectedSeparator = separator;
+        if (headerLine) {
+          if (headerLine.includes(';') && headerLine.split(';').length > 3) {
+            detectedSeparator = ';';
+          } else if (headerLine.includes(',') && headerLine.split(',').length > 3) {
+            detectedSeparator = ',';
+          }
+        }
 
         let successCount = 0;
         let errorCount = 0;
@@ -1079,6 +1104,28 @@ const VoorraadbeheerAdmin: React.FC = () => {
         for (const row of rows) {
           if (!row.trim()) continue;
 
+          // Parse CSV row properly (handle quoted values with separators inside)
+          const parseCSVRow = (rowText: string, sep: string): string[] => {
+            const result: string[] = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < rowText.length; i++) {
+              const char = rowText[i];
+              if (char === '"') {
+                inQuotes = !inQuotes;
+              } else if (char === sep && !inQuotes) {
+                result.push(current.trim().replace(/^"|"$/g, ''));
+                current = '';
+              } else {
+                current += char;
+              }
+            }
+            result.push(current.trim().replace(/^"|"$/g, ''));
+            return result;
+          };
+
+          const values = parseCSVRow(row, detectedSeparator);
           const [
             sku,
             gb_article_number,
@@ -1093,7 +1140,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
             purchase_price,
             sale_price,
             description
-          ] = row.split(separator);
+          ] = values;
 
           if (!sku || !name || !category || !unit) {
             errorCount++;
@@ -1112,9 +1159,9 @@ const VoorraadbeheerAdmin: React.FC = () => {
               ean: ean?.trim() || null,
               supplier: supplier?.trim() || null,
               supplier_article_number: supplier_article_number?.trim() || null,
-              price_per_unit: parseFloat(price_per_unit) || null,
-              purchase_price: parseFloat(purchase_price) || null,
-              sale_price: parseFloat(sale_price) || null,
+              price_per_unit: parseFloat(price_per_unit?.replace(',', '.')) || null,
+              purchase_price: parseFloat(purchase_price?.replace(',', '.')) || null,
+              sale_price: parseFloat(sale_price?.replace(',', '.')) || null,
               description: description?.trim() || null
             }, { onConflict: 'sku' });
 
