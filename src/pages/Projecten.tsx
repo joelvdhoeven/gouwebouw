@@ -10,7 +10,6 @@ import { Project, UrenRegistratie } from '../types';
 import { formatDate } from '../utils/dateUtils';
 import Modal from '../components/Modal';
 import SupabaseErrorHelper from '../components/SupabaseErrorHelper';
-import ProtectedRoute from '../components/ProtectedRoute';
 import ProjectDetailsModal from '../components/ProjectDetailsModal';
 import ProjectWorkCodesSelector from '../components/ProjectWorkCodesSelector';
 
@@ -461,12 +460,12 @@ const Projecten: React.FC = () => {
                         <Clock size={14} className="mr-2" />
                         <span>{t('totalLoggedHours')}: {totalHours.toFixed(1)}h</span>
                       </div>
-                      <ProtectedRoute permission="view_reports">
+                      {hasPermission('view_reports') && (
                         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                           <Users size={14} className="mr-2" />
                           <span>{projectUsers.length} {projectUsers.length === 1 ? 'gebruiker' : 'gebruikers'}</span>
                         </div>
-                      </ProtectedRoute>
+                      )}
                       {project.progress_percentage > 0 && (
                         <div className="mt-3">
                           <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 mb-1">
@@ -809,7 +808,7 @@ const Projecten: React.FC = () => {
                           </div>
                         </div>
                       )}
-                      <ProtectedRoute permission="view_reports">
+                      {hasPermission('view_reports') && (
                         <div className="flex items-center space-x-2">
                           <Users size={16} className="text-gray-500 dark:text-gray-400" />
                           <div>
@@ -817,7 +816,7 @@ const Projecten: React.FC = () => {
                             <p className="text-sm font-medium text-gray-900 dark:text-white">{projectUsers.length}</p>
                           </div>
                         </div>
-                      </ProtectedRoute>
+                      )}
                     </div>
 
                     {/* Materials Used */}
@@ -850,7 +849,7 @@ const Projecten: React.FC = () => {
                         <Eye size={16} />
                         <span>Details</span>
                       </button>
-                      <ProtectedRoute permission="manage_projects">
+                      {hasPermission('manage_projects') && (
                         <button
                           onClick={() => {
                             if (window.confirm('Weet je zeker dat je dit project wilt terugzetten naar actief?')) {
@@ -862,7 +861,7 @@ const Projecten: React.FC = () => {
                           <Archive size={16} />
                           <span>Heractiveren</span>
                         </button>
-                      </ProtectedRoute>
+                      )}
                     </div>
                   </div>
                 );
