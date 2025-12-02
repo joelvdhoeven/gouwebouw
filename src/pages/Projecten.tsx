@@ -420,76 +420,138 @@ const Projecten: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-3">
               {filteredProjecten.map((project) => {
                 const projectUsers = getProjectUsers(project.id);
                 const totalHours = getTotalLoggedHours(project.id);
                 const incomplete = isProjectIncomplete(project);
+                const calculatedHours = project.calculated_hours || 0;
+                const hoursPercentage = calculatedHours > 0 ? Math.min((totalHours / calculatedHours) * 100, 100) : 0;
+                const isOverBudget = calculatedHours > 0 && totalHours > calculatedHours;
 
                 return (
-                  <div key={project.id} className={`rounded-lg p-6 hover:shadow-md transition-shadow ${
-                    incomplete ? 'bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800' : 'bg-gray-50 dark:bg-gray-700'
-                  }`}>
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-800 dark:text-white">{project.naam}</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">#{project.project_nummer || 'Geen nummer'}</p>
-                      </div>
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        project.status === 'actief' ? 'bg-green-100 text-green-800' :
-                        project.status === 'voltooid' ? 'bg-blue-100 text-blue-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {t(project.status)}
-                      </span>
-                    </div>
+                  <div
+                    key={project.id}
+                    className={`rounded-xl border-2 overflow-hidden transition-all hover:shadow-lg cursor-pointer ${
+                      incomplete
+                        ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700'
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-red-300 dark:hover:border-red-600'
+                    }`}
+                    onClick={() => setSelectedProjectForDetails(project)}
+                  >
+                    {/* Main Content Row */}
+                    <div className="p-4 sm:p-5">
+                      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                        {/* Left: Project Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start gap-3">
+                            {/* Status Indicator */}
+                            <div className={`flex-shrink-0 w-2 h-14 rounded-full ${
+                              project.status === 'actief' ? 'bg-green-500' :
+                              project.status === 'voltooid' ? 'bg-blue-500' :
+                              'bg-yellow-500'
+                            }`} />
 
-                    {incomplete && hasPermission('view_reports') && (
-                      <div className="mb-3 p-2 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-800 rounded text-xs text-red-700 dark:text-red-300">
-                        ⚠️ Ontbrekende velden: {getMissingFields(project).join(', ')}
-                      </div>
-                    )}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate">
+                                  {project.naam}
+                                </h3>
+                                <span className={`inline-flex px-2.5 py-0.5 text-xs font-semibold rounded-full ${
+                                  project.status === 'actief' ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300' :
+                                  project.status === 'voltooid' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300' :
+                                  'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300'
+                                }`}>
+                                  {t(project.status)}
+                                </span>
+                              </div>
 
-                    <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 break-words line-clamp-3">{project.beschrijving}</p>
-                    <div className="space-y-2">
-                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                        <Calendar size={14} className="mr-2" />
-                        <span>{formatDate(project.start_datum)}</span>
+                              <div className="flex items-center gap-4 mt-1 text-sm">
+                                <span className="font-mono text-gray-600 dark:text-gray-400">
+                                  #{project.project_nummer || <span className="text-red-500">Geen nummer</span>}
+                                </span>
+                                <span className="text-gray-400 dark:text-gray-500">•</span>
+                                <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                  <Calendar size={14} />
+                                  {formatDate(project.start_datum)}
+                                </span>
+                              </div>
+
+                              {/* Description */}
+                              <p className="text-gray-600 dark:text-gray-400 text-sm mt-2 line-clamp-1">
+                                {project.beschrijving === 'Aangemaakt door medewerker - nog in te vullen'
+                                  ? <span className="text-red-500 italic">Beschrijving nog in te vullen</span>
+                                  : project.beschrijving
+                                }
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Right: Stats */}
+                        <div className="flex flex-wrap items-center gap-3 lg:gap-6">
+                          {/* Hours */}
+                          <div className="bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2 min-w-[100px]">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Uren</div>
+                            <div className={`text-xl font-bold ${isOverBudget ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>
+                              {totalHours.toFixed(1)}
+                              {calculatedHours > 0 && (
+                                <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                                  /{calculatedHours}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Progress */}
+                          <div className="bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2 min-w-[120px]">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Voortgang</div>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-2 bg-gray-300 dark:bg-gray-600 rounded-full overflow-hidden w-16">
+                                <div
+                                  className="h-full bg-red-600 rounded-full transition-all"
+                                  style={{ width: `${project.progress_percentage || 0}%` }}
+                                />
+                              </div>
+                              <span className="text-lg font-bold text-gray-900 dark:text-white">
+                                {project.progress_percentage || 0}%
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Users (only for admins) */}
+                          {hasPermission('view_reports') && (
+                            <div className="bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Team</div>
+                              <div className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-1">
+                                <Users size={16} className="text-gray-400" />
+                                {projectUsers.length}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* View Button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedProjectForDetails(project);
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm"
+                          >
+                            <Eye size={16} />
+                            <span className="hidden sm:inline">Details</span>
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                        <Clock size={14} className="mr-2" />
-                        <span>{t('totalLoggedHours')}: {totalHours.toFixed(1)}h</span>
-                      </div>
-                      {hasPermission('view_reports') && (
-                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                          <Users size={14} className="mr-2" />
-                          <span>{projectUsers.length} {projectUsers.length === 1 ? 'gebruiker' : 'gebruikers'}</span>
+
+                      {/* Warning Banner for Incomplete Projects */}
+                      {incomplete && hasPermission('view_reports') && (
+                        <div className="mt-3 flex items-center gap-2 p-2 bg-red-100 dark:bg-red-900/40 border border-red-300 dark:border-red-700 rounded-lg text-sm text-red-700 dark:text-red-300">
+                          <span className="text-lg">⚠️</span>
+                          <span className="font-medium">Actie vereist:</span>
+                          <span>Vul ontbrekende velden in: {getMissingFields(project).join(', ')}</span>
                         </div>
                       )}
-                      {project.progress_percentage > 0 && (
-                        <div className="mt-3">
-                          <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 mb-1">
-                            <span>Voortgang</span>
-                            <span className="font-medium">{project.progress_percentage}%</span>
-                          </div>
-                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div
-                              className="bg-red-600 h-2 rounded-full transition-all duration-300"
-                              style={{ width: `${project.progress_percentage}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mt-4 flex justify-end">
-                      <button
-                        onClick={() => setSelectedProjectForDetails(project)}
-                        className="flex items-center space-x-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm"
-                      >
-                        <Eye size={16} />
-                        <span>Bekijk details</span>
-                      </button>
                     </div>
                   </div>
                 );

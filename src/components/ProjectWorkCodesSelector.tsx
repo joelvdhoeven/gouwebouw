@@ -54,14 +54,14 @@ const ProjectWorkCodesSelector: React.FC<Props> = ({ projectId, onChange, readOn
     loadWorkCodes();
   }, []);
 
-  // Load project work codes when projectId changes
+  // Load project work codes when projectId changes (wait for allWorkCodes to be loaded)
   useEffect(() => {
-    if (projectId) {
+    if (projectId && allWorkCodes.length > 0) {
       loadProjectWorkCodes();
-    } else {
+    } else if (!projectId) {
       setProjectWorkCodes([]);
     }
-  }, [projectId]);
+  }, [projectId, allWorkCodes]);
 
   const loadProjectWorkCodes = async () => {
     if (!projectId || !tableExists) return;
@@ -92,6 +92,13 @@ const ProjectWorkCodesSelector: React.FC<Props> = ({ projectId, onChange, readOn
         throw error;
       }
 
+      // If no codes are configured yet for this project, automatically add all work codes
+      if (!data || data.length === 0) {
+        console.log('No codes configured for project, adding all work codes as default');
+        await addAllWorkCodesToProject();
+        return; // addAllWorkCodesToProject will reload
+      }
+
       setProjectWorkCodes(data || []);
       if (onChange) {
         onChange(data || []);
@@ -106,6 +113,54 @@ const ProjectWorkCodesSelector: React.FC<Props> = ({ projectId, onChange, readOn
       console.error('Error loading project work codes:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Add all work codes to project (used for default selection)
+  const addAllWorkCodesToProject = async () => {
+    if (!projectId || !tableExists || allWorkCodes.length === 0) return;
+
+    try {
+      const insertData = allWorkCodes.map(wc => ({
+        project_id: projectId,
+        work_code_id: wc.id
+      }));
+
+      const { error } = await supabase
+        .from('project_work_codes')
+        .insert(insertData);
+
+      if (error) {
+        if (error.code === 'PGRST205') {
+          setTableExists(false);
+          return;
+        }
+        // Ignore duplicate errors (codes might already exist)
+        if (!error.message?.includes('duplicate')) {
+          throw error;
+        }
+      }
+
+      // Reload to get the inserted codes
+      const { data: newData } = await supabase
+        .from('project_work_codes')
+        .select(`
+          id,
+          project_id,
+          work_code_id,
+          custom_code,
+          custom_name,
+          custom_description,
+          work_codes (id, code, name, description, is_active)
+        `)
+        .eq('project_id', projectId);
+
+      setProjectWorkCodes(newData || []);
+      if (onChange) {
+        onChange(newData || []);
+      }
+    } catch (err) {
+      console.error('Error adding default work codes:', err);
     }
   };
 
