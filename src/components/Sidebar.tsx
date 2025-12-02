@@ -59,27 +59,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection, isOp
     // If no module specified, just check permissions
     if (!item.module) return hasPerms;
 
-    // Special case: Urenregistratie V2 is only visible for admins and superusers
-    if (item.id === 'urenregistratie-v2') {
-      const isAdminOrSuperuser = user?.role === 'admin' || user?.role === 'superuser';
-      if (!isAdminOrSuperuser) return false;
-      // Check if time_registration_v2 module is enabled
-      const moduleVisible = isModuleVisible('time_registration_v2', user?.role);
-      return hasPerms && moduleVisible;
-    }
-
-    console.log(`[Sidebar] Checking menu item: ${item.label}`);
-    console.log(`[Sidebar] Module: ${item.module}, User role: ${user?.role}`);
-    console.log(`[Sidebar] Has permissions: ${hasPerms}`);
-
     // Check if module is visible (considers both enabled state and demo mode)
     const moduleVisible = isModuleVisible(item.module, user?.role);
-    console.log(`[Sidebar] Module visible: ${moduleVisible}`);
 
-    const result = hasPerms && moduleVisible;
-    console.log(`[Sidebar] Final result for ${item.label}: ${result}`);
-
-    return result;
+    return hasPerms && moduleVisible;
   });
 
   return (
