@@ -35,6 +35,15 @@ interface WorkLine {
   materials?: MaterialLine[];
 }
 
+interface ProjectBlock {
+  id: string;
+  project: any | null;
+  voortgang: string;
+  kilometers: string;
+  workLines: WorkLine[];
+  isCollapsed: boolean;
+}
+
 const UrenregistratieV2: React.FC = () => {
   const { t } = useLanguage();
   const { hasPermission, user, profile } = useAuth();
@@ -72,16 +81,17 @@ const UrenregistratieV2: React.FC = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
-  // Form state
-  const [selectedProject, setSelectedProject] = useState<any>(null);
-  const [formData, setFormData] = useState({
-    datum: new Date().toISOString().split('T')[0],
-    voortgang: '',
-    kilometers: '',
-  });
-
-  const [workLines, setWorkLines] = useState<WorkLine[]>([
-    { work_code_id: '', work_code_name: '', werkomschrijving: '', aantal_uren: 0, materials: [] }
+  // Multi-project form state
+  const [datum, setDatum] = useState(new Date().toISOString().split('T')[0]);
+  const [projectBlocks, setProjectBlocks] = useState<ProjectBlock[]>([
+    {
+      id: crypto.randomUUID(),
+      project: null,
+      voortgang: '',
+      kilometers: '',
+      workLines: [{ work_code_id: '', work_code_name: '', werkomschrijving: '', aantal_uren: 0, materials: [] }],
+      isCollapsed: false
+    }
   ]);
 
   // Edit modal state
@@ -93,6 +103,12 @@ const UrenregistratieV2: React.FC = () => {
   const [showQuickProjectModal, setShowQuickProjectModal] = useState(false);
   const [showProjectCreatingModal, setShowProjectCreatingModal] = useState(false);
   const [quickProjectName, setQuickProjectName] = useState('');
+  const [quickProjectBlockId, setQuickProjectBlockId] = useState<string | null>(null);
+
+  // Project search modal state
+  const [showProjectSearchModal, setShowProjectSearchModal] = useState(false);
+  const [projectSearchQuery, setProjectSearchQuery] = useState('');
+  const [searchingForBlockId, setSearchingForBlockId] = useState<string | null>(null);
 
   // Load all data
   useEffect(() => {
@@ -102,7 +118,6 @@ const UrenregistratieV2: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Load registrations
       let query = supabase
         .from('time_registrations')
         .select('*')
@@ -130,12 +145,6 @@ const UrenregistratieV2: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (formError) setFormError('');
   };
 
   const handleDateRangeChange = (range: string) => {
@@ -169,97 +178,166 @@ const UrenregistratieV2: React.FC = () => {
     setEndDateFilter(endDate.toISOString().split('T')[0]);
   };
 
-  const addWorkLine = () => {
-    setWorkLines([...workLines, { work_code_id: '', work_code_name: '', werkomschrijving: '', aantal_uren: 0, materials: [] }]);
+  // Project Block functions
+  const addProjectBlock = () => {
+    setProjectBlocks([...projectBlocks, {
+      id: crypto.randomUUID(),
+      project: null,
+      voortgang: '',
+      kilometers: '',
+      workLines: [{ work_code_id: '', work_code_name: '', werkomschrijving: '', aantal_uren: 0, materials: [] }],
+      isCollapsed: false
+    }]);
   };
 
-  const removeWorkLine = (index: number) => {
-    if (workLines.length > 1) {
-      setWorkLines(workLines.filter((_, i) => i !== index));
+  const removeProjectBlock = (blockId: string) => {
+    if (projectBlocks.length > 1) {
+      setProjectBlocks(projectBlocks.filter(b => b.id !== blockId));
     }
   };
 
-  const updateWorkLine = (index: number, field: keyof WorkLine, value: string | number) => {
-    const updated = [...workLines];
-    if (field === 'work_code_id') {
-      const workCode = workCodes.find(wc => wc.id === value);
-      updated[index] = {
-        ...updated[index],
-        work_code_id: value as string,
-        work_code_name: workCode?.name || ''
-      };
-    } else {
-      updated[index] = { ...updated[index], [field]: value };
-    }
-    setWorkLines(updated);
+  const toggleProjectBlockCollapse = (blockId: string) => {
+    setProjectBlocks(projectBlocks.map(b =>
+      b.id === blockId ? { ...b, isCollapsed: !b.isCollapsed } : b
+    ));
+  };
+
+  const updateProjectBlock = (blockId: string, field: keyof ProjectBlock, value: any) => {
+    setProjectBlocks(projectBlocks.map(b =>
+      b.id === blockId ? { ...b, [field]: value } : b
+    ));
     if (formError) setFormError('');
   };
 
-  const addMaterialToWorkLine = (workLineIndex: number) => {
-    const updated = [...workLines];
-    if (!updated[workLineIndex].materials) {
-      updated[workLineIndex].materials = [];
-    }
-    updated[workLineIndex].materials!.push({
-      type: 'product',
-      product_id: '',
-      product_name: '',
-      quantity: 0,
-      unit: ''
-    });
-    setWorkLines(updated);
+  // Work line functions for a specific project block
+  const addWorkLineToBlock = (blockId: string) => {
+    setProjectBlocks(projectBlocks.map(b =>
+      b.id === blockId
+        ? { ...b, workLines: [...b.workLines, { work_code_id: '', work_code_name: '', werkomschrijving: '', aantal_uren: 0, materials: [] }] }
+        : b
+    ));
   };
 
-  const removeMaterialFromWorkLine = (workLineIndex: number, materialIndex: number) => {
-    const updated = [...workLines];
-    updated[workLineIndex].materials = updated[workLineIndex].materials?.filter((_, i) => i !== materialIndex);
-    setWorkLines(updated);
-  };
-
-  const updateMaterial = (workLineIndex: number, materialIndex: number, field: keyof MaterialLine, value: string | number) => {
-    const updated = [...workLines];
-    if (updated[workLineIndex].materials) {
-      updated[workLineIndex].materials![materialIndex] = {
-        ...updated[workLineIndex].materials![materialIndex],
-        [field]: value
-      };
-
-      if (field === 'product_id' && typeof value === 'string') {
-        const product = products.find((p: any) => p.id === value);
-        if (product) {
-          updated[workLineIndex].materials![materialIndex].product_name = product.name;
-          updated[workLineIndex].materials![materialIndex].unit = product.unit;
-        }
+  const removeWorkLineFromBlock = (blockId: string, lineIndex: number) => {
+    setProjectBlocks(projectBlocks.map(b => {
+      if (b.id === blockId && b.workLines.length > 1) {
+        return { ...b, workLines: b.workLines.filter((_, i) => i !== lineIndex) };
       }
-    }
-    setWorkLines(updated);
+      return b;
+    }));
+  };
+
+  const updateWorkLineInBlock = (blockId: string, lineIndex: number, field: keyof WorkLine, value: string | number) => {
+    setProjectBlocks(projectBlocks.map(b => {
+      if (b.id === blockId) {
+        const updated = [...b.workLines];
+        if (field === 'work_code_id') {
+          const workCode = workCodes.find(wc => wc.id === value);
+          updated[lineIndex] = {
+            ...updated[lineIndex],
+            work_code_id: value as string,
+            work_code_name: workCode?.name || ''
+          };
+        } else {
+          updated[lineIndex] = { ...updated[lineIndex], [field]: value };
+        }
+        return { ...b, workLines: updated };
+      }
+      return b;
+    }));
+    if (formError) setFormError('');
+  };
+
+  // Material functions
+  const addMaterialToWorkLine = (blockId: string, lineIndex: number) => {
+    setProjectBlocks(projectBlocks.map(b => {
+      if (b.id === blockId) {
+        const updated = [...b.workLines];
+        if (!updated[lineIndex].materials) {
+          updated[lineIndex].materials = [];
+        }
+        updated[lineIndex].materials!.push({
+          type: 'product',
+          product_id: '',
+          product_name: '',
+          quantity: 0,
+          unit: ''
+        });
+        return { ...b, workLines: updated };
+      }
+      return b;
+    }));
+  };
+
+  const removeMaterialFromWorkLine = (blockId: string, lineIndex: number, materialIndex: number) => {
+    setProjectBlocks(projectBlocks.map(b => {
+      if (b.id === blockId) {
+        const updated = [...b.workLines];
+        updated[lineIndex].materials = updated[lineIndex].materials?.filter((_, i) => i !== materialIndex);
+        return { ...b, workLines: updated };
+      }
+      return b;
+    }));
+  };
+
+  const updateMaterial = (blockId: string, lineIndex: number, materialIndex: number, field: keyof MaterialLine, value: string | number) => {
+    setProjectBlocks(projectBlocks.map(b => {
+      if (b.id === blockId) {
+        const updated = [...b.workLines];
+        if (updated[lineIndex].materials) {
+          updated[lineIndex].materials![materialIndex] = {
+            ...updated[lineIndex].materials![materialIndex],
+            [field]: value
+          };
+
+          if (field === 'product_id' && typeof value === 'string') {
+            const product = products.find((p: any) => p.id === value);
+            if (product) {
+              updated[lineIndex].materials![materialIndex].product_name = product.name;
+              updated[lineIndex].materials![materialIndex].unit = product.unit;
+            }
+          }
+        }
+        return { ...b, workLines: updated };
+      }
+      return b;
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.datum || !selectedProject) {
-      setFormError('Datum en project zijn verplicht');
-      return;
+    // Validate all project blocks
+    for (let blockIndex = 0; blockIndex < projectBlocks.length; blockIndex++) {
+      const block = projectBlocks[blockIndex];
+
+      if (!block.project) {
+        setFormError(`Selecteer een project voor blok ${blockIndex + 1}`);
+        return;
+      }
+
+      for (let lineIndex = 0; lineIndex < block.workLines.length; lineIndex++) {
+        const line = block.workLines[lineIndex];
+        if (!line.work_code_id || !line.werkomschrijving || !line.aantal_uren) {
+          setFormError(`Vul alle velden in voor werkregel ${lineIndex + 1} in project "${block.project.naam}"`);
+          return;
+        }
+        if (line.aantal_uren <= 0) {
+          setFormError(`Aantal uren moet groter zijn dan 0 voor werkregel ${lineIndex + 1} in project "${block.project.naam}"`);
+          return;
+        }
+        if (line.aantal_uren > 24) {
+          setFormError(`Aantal uren kan niet meer dan 24 zijn voor werkregel ${lineIndex + 1}`);
+          return;
+        }
+      }
     }
 
-    for (let i = 0; i < workLines.length; i++) {
-      const line = workLines[i];
-      if (!line.work_code_id || !line.werkomschrijving || !line.aantal_uren) {
-        setFormError(`Vul alle velden in voor werkregel ${i + 1}`);
-        return;
-      }
-      if (line.aantal_uren <= 0) {
-        setFormError(`Aantal uren moet groter zijn dan 0 voor werkregel ${i + 1}`);
-        return;
-      }
-      if (line.aantal_uren > 24) {
-        setFormError(`Aantal uren kan niet meer dan 24 zijn voor werkregel ${i + 1}`);
-        return;
-      }
-    }
+    // Calculate total hours across all blocks
+    const totalHours = projectBlocks.reduce((sum, block) =>
+      sum + block.workLines.reduce((lineSum, line) => lineSum + line.aantal_uren, 0), 0
+    );
 
-    const totalHours = workLines.reduce((sum, line) => sum + line.aantal_uren, 0);
     if (totalHours > 24) {
       setFormError('Totaal aantal uren kan niet meer dan 24 uur per dag zijn');
       return;
@@ -277,54 +355,62 @@ const UrenregistratieV2: React.FC = () => {
         return;
       }
 
-      const kilometers = formData.kilometers ? parseFloat(formData.kilometers) : 0;
+      // Create registrations for all project blocks
+      const allRegistrations: any[] = [];
 
-      const registrations = workLines.map(line => ({
-        user_id: currentUser.id,
-        project_id: selectedProject?.id || null,
-        project_naam: selectedProject?.naam,
-        datum: formData.datum,
-        werktype: line.work_code_name, // Store work code name as werktype for compatibility
-        werk_code_id: line.work_code_id,
-        aantal_uren: line.aantal_uren,
-        werkomschrijving: line.werkomschrijving,
-        driven_kilometers: kilometers,
-        status: 'submitted',
-        progress_percentage: formData.voortgang ? parseInt(formData.voortgang) : null,
-        materials: line.materials && line.materials.length > 0 ? line.materials : []
-      }));
+      for (const block of projectBlocks) {
+        const kilometers = block.kilometers ? parseFloat(block.kilometers) : 0;
 
-      const { error: insertError } = await supabase.from('time_registrations').insert(registrations);
+        for (const line of block.workLines) {
+          allRegistrations.push({
+            user_id: currentUser.id,
+            project_id: block.project?.id || null,
+            project_naam: block.project?.naam,
+            datum: datum,
+            werktype: line.work_code_name, // Store work code name as werktype for compatibility
+            aantal_uren: line.aantal_uren,
+            werkomschrijving: line.werkomschrijving,
+            driven_kilometers: kilometers,
+            status: 'submitted',
+            progress_percentage: block.voortgang ? parseInt(block.voortgang) : null,
+            materials: line.materials && line.materials.length > 0 ? line.materials : []
+          });
+        }
 
-      if (insertError) throw insertError;
-
-      // Update project progress if provided
-      if (selectedProject?.id && formData.voortgang) {
-        const { data: currentProject } = await supabase
-          .from('projects')
-          .select('progress_percentage')
-          .eq('id', selectedProject.id)
-          .single();
-
-        const newPercentage = parseInt(formData.voortgang);
-        const currentPercentage = currentProject?.progress_percentage || 0;
-
-        if (newPercentage > currentPercentage) {
-          await supabase
+        // Update project progress if provided
+        if (block.project?.id && block.voortgang) {
+          const { data: currentProject } = await supabase
             .from('projects')
-            .update({ progress_percentage: newPercentage })
-            .eq('id', selectedProject.id);
+            .select('progress_percentage')
+            .eq('id', block.project.id)
+            .single();
+
+          const newPercentage = parseInt(block.voortgang);
+          const currentPercentage = currentProject?.progress_percentage || 0;
+
+          if (newPercentage > currentPercentage) {
+            await supabase
+              .from('projects')
+              .update({ progress_percentage: newPercentage })
+              .eq('id', block.project.id);
+          }
         }
       }
 
+      const { error: insertError } = await supabase.from('time_registrations').insert(allRegistrations);
+
+      if (insertError) throw insertError;
+
       // Reset form
-      setFormData({
-        datum: new Date().toISOString().split('T')[0],
+      setDatum(new Date().toISOString().split('T')[0]);
+      setProjectBlocks([{
+        id: crypto.randomUUID(),
+        project: null,
         voortgang: '',
         kilometers: '',
-      });
-      setWorkLines([{ work_code_id: '', work_code_name: '', werkomschrijving: '', aantal_uren: 0, materials: [] }]);
-      setSelectedProject(null);
+        workLines: [{ work_code_id: '', work_code_name: '', werkomschrijving: '', aantal_uren: 0, materials: [] }],
+        isCollapsed: false
+      }]);
 
       setSuccessMessage(t('registratieOpgeslagen'));
       setShowSuccessMessage(true);
@@ -356,7 +442,6 @@ const UrenregistratieV2: React.FC = () => {
     setEditingRegistration({
       id: registratie.id,
       datum: registratie.datum,
-      werk_code_id: registratie.werk_code_id || '',
       werktype: registratie.werktype,
       aantalUren: registratie.aantal_uren.toString(),
       werkomschrijving: registratie.werkomschrijving,
@@ -379,14 +464,11 @@ const UrenregistratieV2: React.FC = () => {
     }
 
     try {
-      const workCode = workCodes.find(wc => wc.id === editingRegistration.werk_code_id);
-
       const { error } = await supabase
         .from('time_registrations')
         .update({
           datum: editingRegistration.datum,
-          werktype: workCode?.name || editingRegistration.werktype,
-          werk_code_id: editingRegistration.werk_code_id,
+          werktype: editingRegistration.werktype,
           aantal_uren: parseFloat(editingRegistration.aantalUren),
           werkomschrijving: editingRegistration.werkomschrijving,
           project_id: editingRegistration.project_id || null,
@@ -462,13 +544,19 @@ const UrenregistratieV2: React.FC = () => {
         return;
       }
 
+      // Update the project block that triggered this
+      if (quickProjectBlockId) {
+        updateProjectBlock(quickProjectBlockId, 'project', newProject);
+      }
+
       setQuickProjectName('');
-      setSelectedProject(newProject);
+      setQuickProjectBlockId(null);
       window.dispatchEvent(new CustomEvent('projectsUpdated'));
 
       setTimeout(() => {
-        window.location.reload();
-      }, 3000);
+        setShowProjectCreatingModal(false);
+        loadData();
+      }, 1500);
     } catch (error) {
       setShowProjectCreatingModal(false);
       alert('Er is een fout opgetreden');
@@ -506,6 +594,45 @@ const UrenregistratieV2: React.FC = () => {
     });
   };
 
+  // Calculate total hours for a block
+  const getBlockTotalHours = (block: ProjectBlock) => {
+    return block.workLines.reduce((sum, line) => sum + (line.aantal_uren || 0), 0);
+  };
+
+  // Calculate grand total hours
+  const getGrandTotalHours = () => {
+    return projectBlocks.reduce((sum, block) => sum + getBlockTotalHours(block), 0);
+  };
+
+  // Filter projects for search modal
+  const filteredProjectsForSearch = projecten.filter((project: any) => {
+    if (!projectSearchQuery.trim()) return true;
+    const query = projectSearchQuery.toLowerCase();
+    return (
+      project.naam?.toLowerCase().includes(query) ||
+      project.project_nummer?.toLowerCase().includes(query) ||
+      project.adres?.toLowerCase().includes(query) ||
+      project.plaats?.toLowerCase().includes(query)
+    );
+  });
+
+  // Handle selecting a project from search
+  const handleSelectProjectFromSearch = (project: any) => {
+    if (searchingForBlockId) {
+      updateProjectBlock(searchingForBlockId, 'project', project);
+    }
+    setShowProjectSearchModal(false);
+    setProjectSearchQuery('');
+    setSearchingForBlockId(null);
+  };
+
+  // Open project search modal
+  const openProjectSearch = (blockId: string) => {
+    setSearchingForBlockId(blockId);
+    setProjectSearchQuery('');
+    setShowProjectSearchModal(true);
+  };
+
   // Filter registrations
   const processedRegistraties = registraties.filter(registratie => {
     if (hasPermission('view_reports') && userFilter && registratie.user_id !== userFilter) {
@@ -523,7 +650,7 @@ const UrenregistratieV2: React.FC = () => {
 
     if (workCodeFilter !== 'all') {
       const workCode = workCodes.find(wc => wc.id === workCodeFilter);
-      if (workCode && registratie.werktype !== workCode.name && registratie.werk_code_id !== workCodeFilter) {
+      if (workCode && registratie.werktype !== workCode.name) {
         return false;
       }
     }
@@ -609,295 +736,302 @@ const UrenregistratieV2: React.FC = () => {
             </button>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Basic Info */}
-              <div>
-                <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-4">{t('basisInformatie')}</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('datum')} *</label>
-                    <input
-                      type="date"
-                      name="datum"
-                      value={formData.datum}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Global Date - shared across all project blocks */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+              <div className="max-w-xs">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('datum')} *</label>
+                <input
+                  type="date"
+                  value={datum}
+                  onChange={(e) => setDatum(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                />
+              </div>
+            </div>
+
+            {/* Project Blocks */}
+            {projectBlocks.map((block, blockIndex) => (
+              <div key={block.id} className="bg-white dark:bg-gray-800 rounded-lg shadow">
+                {/* Block Header */}
+                <div
+                  className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer"
+                  onClick={() => toggleProjectBlockCollapse(block.id)}
+                >
+                  <div className="flex items-center space-x-3">
+                    {block.isCollapsed ? <ChevronRight size={20} className="text-gray-500" /> : <ChevronDown size={20} className="text-gray-500" />}
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+                      Project {blockIndex + 1}: {block.project?.naam || 'Niet geselecteerd'}
+                    </h3>
+                    {block.project && (
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        ({getBlockTotalHours(block).toFixed(1)} uur)
+                      </span>
+                    )}
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('project')} *</label>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <select
-                        value={selectedProject?.id || ''}
-                        onChange={(e) => {
-                          const project = projecten.find(p => p.id === e.target.value);
-                          setSelectedProject(project || null);
-                        }}
-                        required
-                        className="flex-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                      >
-                        <option value="">Selecteer een project</option>
-                        {projecten.map((project: any) => (
-                          <option key={project.id} value={project.id}>
-                            {project.naam} {project.project_nummer ? `(#${project.project_nummer})` : ''}
-                          </option>
-                        ))}
-                      </select>
+                  <div className="flex items-center space-x-2">
+                    {projectBlocks.length > 1 && (
                       <button
                         type="button"
-                        onClick={() => setShowConfirmProjectModal(true)}
-                        className="w-full sm:w-auto px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center justify-center"
-                        title="Snel nieuw project aanmaken"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeProjectBlock(block.id);
+                        }}
+                        className="text-red-600 hover:text-red-800 p-1"
+                        title="Verwijder dit project"
                       >
-                        <Plus size={20} />
-                        <span className="ml-2 sm:hidden">Nieuw Project</span>
+                        <Trash2 size={18} />
                       </button>
-                    </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Progress */}
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Voortgang project (%)</label>
-                  <input
-                    type="number"
-                    name="voortgang"
-                    value={formData.voortgang}
-                    onChange={handleInputChange}
-                    min="0"
-                    max="100"
-                    placeholder="0-100"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('optioneelGeefAanHoeveelProcent')}</p>
-                </div>
-
-                {/* Kilometers */}
-                <div className="mt-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Gereden kilometers</label>
-                    <div className="group relative">
-                      <Info size={16} className="text-gray-400 cursor-help" />
-                      <div className="invisible group-hover:visible absolute z-10 w-64 p-2 bg-gray-900 text-white text-xs rounded-md shadow-lg -top-2 left-6">
-                        Dit zijn kilometers die niet met een zakelijke auto gereden worden en ook geen woon-werk kilometers zijn.
+                {/* Block Content */}
+                {!block.isCollapsed && (
+                  <div className="p-6 space-y-4">
+                    {/* Project Selection */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('project')} *</label>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <select
+                          value={block.project?.id || ''}
+                          onChange={(e) => {
+                            const project = projecten.find(p => p.id === e.target.value);
+                            updateProjectBlock(block.id, 'project', project || null);
+                          }}
+                          required
+                          className="flex-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        >
+                          <option value="">Selecteer een project</option>
+                          {projecten.map((project: any) => (
+                            <option key={project.id} value={project.id}>
+                              {project.naam} {project.project_nummer ? `(#${project.project_nummer})` : ''}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="flex gap-2 w-full sm:w-auto">
+                          <button
+                            type="button"
+                            onClick={() => openProjectSearch(block.id)}
+                            className="flex-1 sm:flex-none px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
+                            title="Zoek project"
+                          >
+                            <Search size={20} />
+                            <span className="ml-2 sm:hidden">Zoeken</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setQuickProjectBlockId(block.id);
+                              setShowConfirmProjectModal(true);
+                            }}
+                            className="flex-1 sm:flex-none px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center justify-center"
+                            title="Snel nieuw project aanmaken"
+                          >
+                            <Plus size={20} />
+                            <span className="ml-2 sm:hidden">Nieuw</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <input
-                    type="number"
-                    name="kilometers"
-                    value={formData.kilometers}
-                    onChange={handleInputChange}
-                    min="0"
-                    step="0.1"
-                    placeholder="0"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
-                </div>
-              </div>
 
-              {/* Work Lines with Bewakingscodes */}
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Werkregels (Bewakingscodes)</h3>
-                  <button
-                    type="button"
-                    onClick={addWorkLine}
-                    className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
-                  >
-                    <Plus size={16} />
-                    Regel toevoegen
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  {workLines.map((line, index) => (
-                    <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
-                      <div className="flex items-start justify-between mb-3">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Regel {index + 1}</span>
-                        {workLines.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeWorkLine(index)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <Minus size={18} />
-                          </button>
-                        )}
+                    {/* Progress and Kilometers */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Voortgang project (%)</label>
+                        <input
+                          type="number"
+                          value={block.voortgang}
+                          onChange={(e) => updateProjectBlock(block.id, 'voortgang', e.target.value)}
+                          min="0"
+                          max="100"
+                          placeholder="0-100"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        />
                       </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Bewakingscode *</label>
-                          <select
-                            value={line.work_code_id}
-                            onChange={(e) => updateWorkLine(index, 'work_code_id', e.target.value)}
-                            required
-                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                          >
-                            <option value="">Selecteer bewakingscode</option>
-                            {workCodes.map((wc) => (
-                              <option key={wc.id} value={wc.id}>
-                                {wc.code} - {wc.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('aantalUren')} *</label>
-                          <input
-                            type="number"
-                            value={line.aantal_uren || ''}
-                            onChange={(e) => updateWorkLine(index, 'aantal_uren', parseFloat(e.target.value) || 0)}
-                            step="0.5"
-                            min="0"
-                            required
-                            placeholder="bv. 8 of 4.5"
-                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                          />
-                        </div>
-
-                        <div className="md:col-span-1">
-                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('werkomschrijving')} *</label>
-                          <input
-                            type="text"
-                            value={line.werkomschrijving}
-                            onChange={(e) => updateWorkLine(index, 'werkomschrijving', e.target.value)}
-                            required
-                            placeholder="Beschrijf het uitgevoerde werk"
-                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Materials Section */}
-                      <div className="mt-4 pt-4 border-t border-gray-300 dark:border-gray-600">
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Materialen (optioneel)</label>
-                          <button
-                            type="button"
-                            onClick={() => addMaterialToWorkLine(index)}
-                            className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-                          >
-                            <Plus size={14} />
-                            Materiaal
-                          </button>
-                        </div>
-
-                        {line.materials && line.materials.length > 0 && (
-                          <div className="space-y-2">
-                            {line.materials.map((material, matIdx) => (
-                              <div key={matIdx} className="border border-gray-200 dark:border-gray-600 rounded bg-white dark:bg-gray-800">
-                                <div className="p-2 bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => updateMaterial(index, matIdx, 'type', material.type === 'product' ? 'description' : 'product')}
-                                      className={`px-2 py-1 text-xs rounded ${material.type === 'product' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300'}`}
-                                    >
-                                      Product
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => updateMaterial(index, matIdx, 'type', material.type === 'description' ? 'product' : 'description')}
-                                      className={`px-2 py-1 text-xs rounded ${material.type === 'description' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300'}`}
-                                    >
-                                      Omschrijving
-                                    </button>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => removeMaterialFromWorkLine(index, matIdx)}
-                                    className="text-red-600 hover:text-red-800"
-                                  >
-                                    <X size={16} />
-                                  </button>
-                                </div>
-
-                                <div className="p-2">
-                                  {material.type === 'product' ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                                      <div className="md:col-span-2">
-                                        <select
-                                          value={material.product_id || ''}
-                                          onChange={(e) => updateMaterial(index, matIdx, 'product_id', e.target.value)}
-                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                        >
-                                          <option value="">Selecteer product</option>
-                                          {products.map((product: any) => (
-                                            <option key={product.id} value={product.id}>
-                                              {product.name} ({product.sku})
-                                            </option>
-                                          ))}
-                                        </select>
-                                      </div>
-                                      <div className="flex gap-2 items-center">
-                                        <input
-                                          type="number"
-                                          value={material.quantity || ''}
-                                          onChange={(e) => updateMaterial(index, matIdx, 'quantity', parseFloat(e.target.value) || 0)}
-                                          placeholder="Aantal"
-                                          min="0"
-                                          step="0.1"
-                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                        />
-                                        <span className="text-xs text-gray-600 dark:text-gray-400 min-w-[40px]">{material.unit || '-'}</span>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                                      <div className="md:col-span-2">
-                                        <input
-                                          type="text"
-                                          value={material.description || ''}
-                                          onChange={(e) => updateMaterial(index, matIdx, 'description', e.target.value)}
-                                          placeholder="Beschrijving materiaal"
-                                          className="w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                        />
-                                      </div>
-                                      <div className="flex gap-2 items-center">
-                                        <input
-                                          type="number"
-                                          value={material.quantity || ''}
-                                          onChange={(e) => updateMaterial(index, matIdx, 'quantity', parseFloat(e.target.value) || 0)}
-                                          placeholder="Aantal"
-                                          min="0"
-                                          step="0.1"
-                                          className="w-20 px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                        />
-                                        <input
-                                          type="text"
-                                          value={material.unit || ''}
-                                          onChange={(e) => updateMaterial(index, matIdx, 'unit', e.target.value)}
-                                          placeholder="Eenheid"
-                                          className="w-20 px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                        />
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Gereden kilometers</label>
+                          <div className="group relative">
+                            <Info size={16} className="text-gray-400 cursor-help" />
+                            <div className="invisible group-hover:visible absolute z-10 w-64 p-2 bg-gray-900 text-white text-xs rounded-md shadow-lg -top-2 left-6">
+                              Dit zijn kilometers die niet met een zakelijke auto gereden worden.
+                            </div>
                           </div>
-                        )}
+                        </div>
+                        <input
+                          type="number"
+                          value={block.kilometers}
+                          onChange={(e) => updateProjectBlock(block.id, 'kilometers', e.target.value)}
+                          min="0"
+                          step="0.1"
+                          placeholder="0"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        />
                       </div>
                     </div>
-                  ))}
-                </div>
 
-                {/* Total Hours */}
-                <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-md">
-                  <p className="text-sm text-blue-800 dark:text-blue-300">
-                    <strong>Totaal uren:</strong> {workLines.reduce((sum, line) => sum + (line.aantal_uren || 0), 0).toFixed(1)} uur
-                  </p>
+                    {/* Work Lines */}
+                    <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Werkregels (Bewakingscodes)</h4>
+                        <button
+                          type="button"
+                          onClick={() => addWorkLineToBlock(block.id)}
+                          className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700"
+                        >
+                          <Plus size={16} />
+                          Regel toevoegen
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                        {block.workLines.map((line, lineIndex) => (
+                          <div key={lineIndex} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
+                            <div className="flex items-start justify-between mb-3">
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Regel {lineIndex + 1}</span>
+                              {block.workLines.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeWorkLineFromBlock(block.id, lineIndex)}
+                                  className="text-red-600 hover:text-red-800"
+                                >
+                                  <Minus size={18} />
+                                </button>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Bewakingscode *</label>
+                                <select
+                                  value={line.work_code_id}
+                                  onChange={(e) => updateWorkLineInBlock(block.id, lineIndex, 'work_code_id', e.target.value)}
+                                  required
+                                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                >
+                                  <option value="">Selecteer code</option>
+                                  {workCodes.map((wc) => (
+                                    <option key={wc.id} value={wc.id}>
+                                      {wc.code} - {wc.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('aantalUren')} *</label>
+                                <input
+                                  type="number"
+                                  value={line.aantal_uren || ''}
+                                  onChange={(e) => updateWorkLineInBlock(block.id, lineIndex, 'aantal_uren', parseFloat(e.target.value) || 0)}
+                                  step="0.5"
+                                  min="0"
+                                  required
+                                  placeholder="bv. 8"
+                                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{t('werkomschrijving')} *</label>
+                                <input
+                                  type="text"
+                                  value={line.werkomschrijving}
+                                  onChange={(e) => updateWorkLineInBlock(block.id, lineIndex, 'werkomschrijving', e.target.value)}
+                                  required
+                                  placeholder="Beschrijf het werk"
+                                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Materials */}
+                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                              <div className="flex items-center justify-between mb-2">
+                                <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Materialen</label>
+                                <button
+                                  type="button"
+                                  onClick={() => addMaterialToWorkLine(block.id, lineIndex)}
+                                  className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                                >
+                                  <Plus size={12} />
+                                  Materiaal
+                                </button>
+                              </div>
+
+                              {line.materials && line.materials.length > 0 && (
+                                <div className="space-y-2">
+                                  {line.materials.map((material, matIdx) => (
+                                    <div key={matIdx} className="flex gap-2 items-center bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600">
+                                      <select
+                                        value={material.product_id || ''}
+                                        onChange={(e) => updateMaterial(block.id, lineIndex, matIdx, 'product_id', e.target.value)}
+                                        className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                      >
+                                        <option value="">Product...</option>
+                                        {products.map((p: any) => (
+                                          <option key={p.id} value={p.id}>{p.name}</option>
+                                        ))}
+                                      </select>
+                                      <input
+                                        type="number"
+                                        value={material.quantity || ''}
+                                        onChange={(e) => updateMaterial(block.id, lineIndex, matIdx, 'quantity', parseFloat(e.target.value) || 0)}
+                                        placeholder="Aantal"
+                                        min="0"
+                                        className="w-20 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                      />
+                                      <span className="text-xs text-gray-500 w-12">{material.unit || ''}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => removeMaterialFromWorkLine(block.id, lineIndex, matIdx)}
+                                        className="text-red-500 hover:text-red-700"
+                                      >
+                                        <X size={14} />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Block Total */}
+                      <div className="mt-3 p-2 bg-gray-100 dark:bg-gray-700 rounded text-sm text-gray-700 dark:text-gray-300">
+                        <strong>Subtotaal:</strong> {getBlockTotalHours(block).toFixed(1)} uur
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Add Another Project Button */}
+            <button
+              type="button"
+              onClick={addProjectBlock}
+              className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-400 hover:border-red-500 hover:text-red-500 dark:hover:border-red-500 dark:hover:text-red-500 transition-colors flex items-center justify-center space-x-2"
+            >
+              <Plus size={20} />
+              <span>Nog een project toevoegen</span>
+            </button>
+
+            {/* Grand Total and Submit */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-lg font-semibold text-gray-800 dark:text-white">
+                  Totaal: {getGrandTotalHours().toFixed(1)} uur
+                </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  {projectBlocks.length} project{projectBlocks.length !== 1 ? 'en' : ''}
                 </div>
               </div>
 
-              {/* Submit Buttons */}
-              <div className="flex justify-end space-x-3 pt-4">
+              <div className="flex justify-end space-x-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -916,8 +1050,8 @@ const UrenregistratieV2: React.FC = () => {
                   {mutationLoading ? 'Opslaan...' : t('registratieOpslaan')}
                 </button>
               </div>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
       )}
 
@@ -958,13 +1092,11 @@ const UrenregistratieV2: React.FC = () => {
                   <select
                     value={userFilter}
                     onChange={(e) => setUserFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     <option value="">Alle gebruikers</option>
-                    {gebruikers.map((gebruiker: any) => (
-                      <option key={gebruiker.id} value={gebruiker.id}>
-                        {gebruiker.naam}
-                      </option>
+                    {gebruikers.map((g: any) => (
+                      <option key={g.id} value={g.id}>{g.naam}</option>
                     ))}
                   </select>
                 </div>
@@ -974,7 +1106,7 @@ const UrenregistratieV2: React.FC = () => {
                 <select
                   value={dateRangeFilter}
                   onChange={(e) => handleDateRangeChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="custom">Aangepast</option>
                   <option value="deze-week">Deze week</option>
@@ -989,7 +1121,6 @@ const UrenregistratieV2: React.FC = () => {
                   setStartDateFilter(date);
                   setDateRangeFilter('custom');
                 }}
-                placeholder={t('dateInputPlaceholder')}
               />
               <DatePickerField
                 label={t('totDatum')}
@@ -998,20 +1129,17 @@ const UrenregistratieV2: React.FC = () => {
                   setEndDateFilter(date);
                   setDateRangeFilter('custom');
                 }}
-                placeholder={t('dateInputPlaceholder')}
               />
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bewakingscode</label>
                 <select
                   value={workCodeFilter}
                   onChange={(e) => setWorkCodeFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="all">Alle codes</option>
                   {workCodes.map((wc) => (
-                    <option key={wc.id} value={wc.id}>
-                      {wc.code} - {wc.name}
-                    </option>
+                    <option key={wc.id} value={wc.id}>{wc.code} - {wc.name}</option>
                   ))}
                 </select>
               </div>
@@ -1022,410 +1150,329 @@ const UrenregistratieV2: React.FC = () => {
                 placeholder={t('zoekProjectOfOrdernummer')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full md:w-80 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full md:w-80 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
           </div>
 
-          {/* Registrations Table */}
-          {filteredRegistraties.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow mt-6">
+          {/* Table */}
+          {filteredRegistraties.length > 0 ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
               <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                 <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
-                  {searchTerm ? `Zoekresultaten (${filteredRegistraties.length})` : `Registraties (${filteredRegistraties.length})`}
+                  Registraties ({filteredRegistraties.length})
                 </h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-gray-50 dark:bg-gray-900">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('datum')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{t('datum')}</th>
                       {hasPermission('view_reports') && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Gebruiker</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Gebruiker</th>
                       )}
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Project</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bewakingscode</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('aantalUren')}</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('werkomschrijving')}</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('acties')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Project</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Code</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Uren</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Omschrijving</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Acties</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {paginatedRegistraties.map((registratie) => {
-                      const hasExtraInfo = (registratie.driven_kilometers && registratie.driven_kilometers > 0) ||
-                                          (registratie.materials && registratie.materials.length > 0);
-                      const isExpanded = expandedRows.has(registratie.id);
-
-                      return (
-                        <React.Fragment key={registratie.id}>
-                          <tr className={`${isExpanded ? 'bg-gray-50 dark:bg-gray-900' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {formatDate(registratie.datum)}
-                            </td>
-                            {hasPermission('view_reports') && (
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                {gebruikers.find((g: any) => g.id === registratie.user_id)?.naam || 'Onbekend'}
-                              </td>
-                            )}
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {registratie.project_id ?
-                                projecten.find(p => p.id === registratie.project_id)?.naam || 'Onbekend project' :
-                                '-'
-                              }
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {registratie.werktype}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {registratie.aantal_uren.toString().replace('.', ',')}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs">
-                              <div className="break-words">{registratie.werkomschrijving}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <div className="flex space-x-2 items-center">
-                                {hasExtraInfo && (
-                                  <button
-                                    onClick={() => toggleRowExpansion(registratie.id)}
-                                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-                                    title={isExpanded ? 'Verberg details' : 'Toon details'}
-                                  >
-                                    {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    {paginatedRegistraties.map((reg) => (
+                      <tr key={reg.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{formatDate(reg.datum)}</td>
+                        {hasPermission('view_reports') && (
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                            {gebruikers.find((g: any) => g.id === reg.user_id)?.naam || 'Onbekend'}
+                          </td>
+                        )}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                          {reg.project_naam || projecten.find(p => p.id === reg.project_id)?.naam || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{reg.werktype}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{reg.aantal_uren}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs truncate">{reg.werkomschrijving}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <div className="flex space-x-2">
+                            {isRegistrationEditable(reg) && (
+                              <>
+                                <button onClick={() => handleEditRegistration(reg)} className="text-blue-600 hover:text-blue-900">
+                                  <Pencil size={16} />
+                                </button>
+                                {hasPermission('approve_hours') && (
+                                  <button onClick={() => handleDeleteRegistration(reg.id)} className="text-red-600 hover:text-red-900">
+                                    <Trash2 size={16} />
                                   </button>
                                 )}
-                                {isRegistrationEditable(registratie) && (
-                                  <>
-                                    <button
-                                      onClick={() => handleEditRegistration(registratie)}
-                                      className="text-blue-600 hover:text-blue-900"
-                                      title="Bewerken"
-                                    >
-                                      <Pencil size={16} />
-                                    </button>
-                                    {hasPermission('approve_hours') && (
-                                      <button
-                                        onClick={() => handleDeleteRegistration(registratie.id)}
-                                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                                        title="Verwijderen"
-                                      >
-                                        <Trash2 size={16} />
-                                      </button>
-                                    )}
-                                  </>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                          {isExpanded && hasExtraInfo && (
-                            <tr className="bg-gray-50 dark:bg-gray-900">
-                              <td colSpan={hasPermission('view_reports') ? 7 : 6} className="px-6 py-4">
-                                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {registratie.driven_kilometers && registratie.driven_kilometers > 0 && (
-                                      <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 p-4 rounded-lg shadow-sm">
-                                        <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">Kilometers</div>
-                                        <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                                          {registratie.driven_kilometers.toString().replace('.', ',')} km
-                                        </div>
-                                      </div>
-                                    )}
-                                    {registratie.materials && registratie.materials.length > 0 && (
-                                      <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 p-4 rounded-lg shadow-sm">
-                                        <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-3">Materialen</div>
-                                        <div className="space-y-2">
-                                          {registratie.materials.map((mat: any, idx: number) => (
-                                            <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-gray-100 dark:border-gray-600 last:border-0">
-                                              <span className="font-medium text-gray-900 dark:text-white">
-                                                {mat.type === 'product' ? mat.product_name : mat.description}
-                                              </span>
-                                              <span className="text-gray-600 dark:text-gray-400 font-semibold">{mat.quantity} {mat.unit}</span>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
 
               {/* Pagination */}
-              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <label className="text-sm text-gray-700 dark:text-gray-300">Toon:</label>
-                  <select
-                    value={itemsPerPage}
-                    onChange={(e) => {
-                      setItemsPerPage(Number(e.target.value));
-                      setCurrentPage(1);
-                    }}
-                    className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value={10}>10</option>
-                    <option value={25}>25</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">resultaten per pagina</span>
-                </div>
-
-                <div className="flex items-center space-x-2">
+              {totalPages > 1 && (
+                <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
                   <span className="text-sm text-gray-700 dark:text-gray-300">
-                    Pagina {currentPage} van {totalPages} ({totalItems} resultaten)
+                    Pagina {currentPage} van {totalPages}
                   </span>
-
                   <div className="flex space-x-1">
                     <button
-                      onClick={() => setCurrentPage(1)}
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
-                    >
-                      «
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
-                      className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-gray-700 dark:text-gray-300"
+                      className="px-3 py-1 border rounded disabled:opacity-50 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
                     >
                       <ChevronLeft size={16} />
                     </button>
                     <button
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
-                      className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-gray-700 dark:text-gray-300"
+                      className="px-3 py-1 border rounded disabled:opacity-50 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600"
                     >
                       <ChevronRight size={16} />
                     </button>
-                    <button
-                      onClick={() => setCurrentPage(totalPages)}
-                      disabled={currentPage === totalPages}
-                      className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
-                    >
-                      »
-                    </button>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
-          )}
-
-          {filteredRegistraties.length === 0 && (
+          ) : (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
-              <p className="text-gray-500 dark:text-gray-400">Geen registraties gevonden voor de geselecteerde filters.</p>
+              <p className="text-gray-500 dark:text-gray-400">Geen registraties gevonden.</p>
             </div>
           )}
         </div>
       )}
 
       {/* Edit Modal */}
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setEditingRegistration(null);
-        }}
-        title="Urenregistratie bewerken"
-      >
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Registratie bewerken">
         {editingRegistration && (
           <form onSubmit={handleUpdateRegistration} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('datum')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Datum</label>
               <input
                 type="date"
                 value={editingRegistration.datum}
                 onChange={(e) => setEditingRegistration({ ...editingRegistration, datum: e.target.value })}
-                required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('project')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bewakingscode</label>
               <select
-                value={editingRegistration.project_id || ''}
-                onChange={(e) => setEditingRegistration({ ...editingRegistration, project_id: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                value={editingRegistration.werktype}
+                onChange={(e) => setEditingRegistration({ ...editingRegistration, werktype: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
-                <option value="">Selecteer een project</option>
-                {projecten.map((project: any) => (
-                  <option key={project.id} value={project.id}>
-                    {project.naam}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bewakingscode *</label>
-              <select
-                value={editingRegistration.werk_code_id || ''}
-                onChange={(e) => setEditingRegistration({ ...editingRegistration, werk_code_id: e.target.value })}
-                required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-              >
-                <option value="">Selecteer bewakingscode</option>
                 {workCodes.map((wc) => (
-                  <option key={wc.id} value={wc.id}>
-                    {wc.code} - {wc.name}
-                  </option>
+                  <option key={wc.id} value={wc.name}>{wc.code} - {wc.name}</option>
                 ))}
               </select>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('aantalUren')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Aantal uren</label>
               <input
                 type="number"
                 step="0.5"
                 value={editingRegistration.aantalUren}
                 onChange={(e) => setEditingRegistration({ ...editingRegistration, aantalUren: e.target.value })}
-                required
-                min="0.5"
-                max="24"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('werkomschrijving')} *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Omschrijving</label>
               <textarea
                 value={editingRegistration.werkomschrijving}
                 onChange={(e) => setEditingRegistration({ ...editingRegistration, werkomschrijving: e.target.value })}
-                rows={4}
-                required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditingRegistration(null);
-                }}
-                className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                {t('annuleren')}
+            <div className="flex justify-end space-x-3">
+              <button type="button" onClick={() => setShowEditModal(false)} className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300">
+                Annuleren
               </button>
-              <button
-                type="submit"
-                className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-              >
-                {t('opslaan')}
+              <button type="submit" className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                Opslaan
               </button>
             </div>
           </form>
         )}
       </Modal>
 
-      {/* Confirmation Modal */}
-      <Modal
-        isOpen={showConfirmProjectModal}
-        onClose={() => setShowConfirmProjectModal(false)}
-        title="Project Niet Gevonden?"
-      >
-        <div className="space-y-6">
-          <p className="text-gray-700 dark:text-gray-300">
-            Weet je zeker dat het project niet in het keuzemenu staat?
-          </p>
-          <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={() => setShowConfirmProjectModal(false)}
-              className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              Nee
-            </button>
-            <button
-              onClick={() => {
-                setShowConfirmProjectModal(false);
-                setShowQuickProjectModal(true);
-              }}
-              className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-            >
-              Ja
-            </button>
-          </div>
+      {/* Confirm Project Modal */}
+      <Modal isOpen={showConfirmProjectModal} onClose={() => setShowConfirmProjectModal(false)} title="Nieuw project?">
+        <p className="text-gray-700 dark:text-gray-300 mb-4">
+          Weet je zeker dat het project niet in de lijst staat?
+        </p>
+        <div className="flex justify-end space-x-3">
+          <button onClick={() => setShowConfirmProjectModal(false)} className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300">
+            Nee
+          </button>
+          <button
+            onClick={() => {
+              setShowConfirmProjectModal(false);
+              setShowQuickProjectModal(true);
+            }}
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+          >
+            Ja
+          </button>
         </div>
       </Modal>
 
       {/* Quick Project Modal */}
-      <Modal
-        isOpen={showQuickProjectModal}
-        onClose={() => {
-          setShowQuickProjectModal(false);
-          setQuickProjectName('');
-        }}
-        title="Snel Project Aanmaken"
-      >
+      <Modal isOpen={showQuickProjectModal} onClose={() => setShowQuickProjectModal(false)} title="Snel project aanmaken">
         <div className="space-y-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Maak snel een nieuw project aan. Kantoorpersoneel zal later de details aanvullen.
+            Kantoorpersoneel vult later de details aan.
           </p>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Projectnaam *</label>
-            <input
-              type="text"
-              value={quickProjectName}
-              onChange={(e) => setQuickProjectName(e.target.value)}
-              placeholder="Bijv: Renovatie Hoofdstraat 123"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleQuickProjectCreate();
-                }
-              }}
-            />
-          </div>
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={() => {
-                setShowQuickProjectModal(false);
-                setQuickProjectName('');
-              }}
-              className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
+          <input
+            type="text"
+            value={quickProjectName}
+            onChange={(e) => setQuickProjectName(e.target.value)}
+            placeholder="Projectnaam"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            onKeyPress={(e) => e.key === 'Enter' && handleQuickProjectCreate()}
+          />
+          <div className="flex justify-end space-x-3">
+            <button onClick={() => setShowQuickProjectModal(false)} className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300">
               Annuleren
             </button>
-            <button
-              onClick={handleQuickProjectCreate}
-              className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-            >
+            <button onClick={handleQuickProjectCreate} className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
               Aanmaken
             </button>
           </div>
         </div>
       </Modal>
 
-      {/* Project Creating Modal */}
-      <Modal
-        isOpen={showProjectCreatingModal}
-        onClose={() => {}}
-        title="Project Aanmaken"
-      >
-        <div className="py-8">
-          <div className="flex flex-col items-center justify-center space-y-6">
-            <div className="relative">
-              <div className="w-20 h-20 border-4 border-red-200 rounded-full"></div>
-              <div className="absolute top-0 left-0 w-20 h-20 border-4 border-red-600 rounded-full border-t-transparent animate-spin"></div>
-            </div>
-            <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Project wordt aangemaakt...</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Even geduld, we maken het project aan.</p>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-4">De pagina wordt automatisch ververst...</p>
+      {/* Creating Modal */}
+      <Modal isOpen={showProjectCreatingModal} onClose={() => {}} title="Project aanmaken...">
+        <div className="py-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Even geduld...</p>
+        </div>
+      </Modal>
+
+      {/* Project Search Modal */}
+      {showProjectSearchModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black/50 transition-opacity"
+              onClick={() => {
+                setShowProjectSearchModal(false);
+                setProjectSearchQuery('');
+                setSearchingForBlockId(null);
+              }}
+            />
+
+            {/* Modal Panel */}
+            <div className="relative w-full sm:max-w-lg transform overflow-hidden bg-white dark:bg-gray-800 shadow-xl transition-all sm:rounded-lg h-[80vh] sm:h-auto sm:max-h-[80vh] flex flex-col rounded-t-2xl sm:rounded-lg">
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-t-2xl sm:rounded-t-lg">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Project zoeken
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowProjectSearchModal(false);
+                    setProjectSearchQuery('');
+                    setSearchingForBlockId(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Search Input */}
+              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                <div className="relative">
+                  <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={projectSearchQuery}
+                    onChange={(e) => setProjectSearchQuery(e.target.value)}
+                    placeholder="Zoek op naam, nummer, adres of plaats..."
+                    autoFocus
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                  />
+                  {projectSearchQuery && (
+                    <button
+                      onClick={() => setProjectSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Project List */}
+              <div className="flex-1 overflow-y-auto">
+                {filteredProjectsForSearch.length === 0 ? (
+                  <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                    Geen projecten gevonden
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {filteredProjectsForSearch.map((project: any) => (
+                      <li key={project.id}>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectProjectFromSearch(project)}
+                          className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:bg-gray-50 dark:focus:bg-gray-700"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                {project.naam}
+                              </p>
+                              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                                {project.project_nummer && (
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    #{project.project_nummer}
+                                  </span>
+                                )}
+                                {project.adres && (
+                                  <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    {project.adres}
+                                  </span>
+                                )}
+                                {project.plaats && (
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    {project.plaats}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {project.progress_percentage !== undefined && project.progress_percentage !== null && (
+                              <span className="flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300">
+                                {project.progress_percentage}%
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Footer with count */}
+              <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-xs text-gray-500 dark:text-gray-400">
+                {filteredProjectsForSearch.length} project{filteredProjectsForSearch.length !== 1 ? 'en' : ''} gevonden
+              </div>
             </div>
           </div>
         </div>
-      </Modal>
+      )}
     </div>
   );
 };
