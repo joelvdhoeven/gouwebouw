@@ -1184,12 +1184,30 @@ const VoorraadbeheerAdmin: React.FC = () => {
     event.target.value = '';
   };
 
-  const filteredStock = stock.filter(s => {
+  // Get products that have stock entries
+  const productsWithStock = new Set(stock.map(s => s.product_id));
+
+  // Create "virtual" stock entries for products without any stock
+  const productsWithoutStock: Stock[] = products
+    .filter(p => !productsWithStock.has(p.id))
+    .map(p => ({
+      id: `no-stock-${p.id}`,
+      product_id: p.id,
+      location_id: '',
+      quantity: 0,
+      product: p,
+      location: null
+    }));
+
+  // Combine stock with products without stock
+  const allStockItems = [...stock, ...productsWithoutStock];
+
+  const filteredStock = allStockItems.filter(s => {
     const matchesSearch = !searchTerm ||
       s.product?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.product?.sku.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !categoryFilter || s.product?.category === categoryFilter;
-    const matchesLocation = !locationFilter || s.location_id === locationFilter;
+    const matchesLocation = !locationFilter || (s.location_id === locationFilter || (!s.location_id && !locationFilter));
     return matchesSearch && matchesCategory && matchesLocation;
   });
 
@@ -1626,10 +1644,14 @@ const VoorraadbeheerAdmin: React.FC = () => {
                           <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{item.product?.sku}</td>
                           <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">{item.product?.category}</td>
                           <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                            <div className="flex items-center gap-2">
-                              {item.location?.type === 'bus' ? <Truck size={16} /> : <Warehouse size={16} />}
-                              {item.location?.name}
-                            </div>
+                            {item.location ? (
+                              <div className="flex items-center gap-2">
+                                {item.location.type === 'bus' ? <Truck size={16} /> : <Warehouse size={16} />}
+                                {item.location.name}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 dark:text-gray-500 italic">Geen locatie</span>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
                             {item.quantity} {item.product?.unit}
@@ -1638,7 +1660,11 @@ const VoorraadbeheerAdmin: React.FC = () => {
                             {item.product?.minimum_stock}
                           </td>
                           <td className="px-4 py-3 text-sm">
-                            {isLow ? (
+                            {!item.location ? (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                                Nieuw
+                              </span>
+                            ) : isLow ? (
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200">
                                 Laag
                               </span>
@@ -1650,13 +1676,27 @@ const VoorraadbeheerAdmin: React.FC = () => {
                           </td>
                           <td className="px-4 py-3 text-sm">
                             <div className="flex items-center justify-center gap-1">
-                              <button
-                                onClick={() => handleEditStock(item)}
-                                className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
-                                title="Bewerk voorraad"
-                              >
-                                <Package size={16} />
-                              </button>
+                              {item.location ? (
+                                <button
+                                  onClick={() => handleEditStock(item)}
+                                  className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
+                                  title="Bewerk voorraad"
+                                >
+                                  <Package size={16} />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    // For products without stock, open add stock modal
+                                    setEditingProduct(item.product || null);
+                                    setShowEditModal(true);
+                                  }}
+                                  className="p-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                                  title="Voorraad toevoegen"
+                                >
+                                  <Plus size={16} />
+                                </button>
+                              )}
                               {canManage && item.product && (
                                 <button
                                   onClick={() => handleEditFullProduct(item.product!)}
@@ -1666,23 +1706,25 @@ const VoorraadbeheerAdmin: React.FC = () => {
                                   <Edit size={16} />
                                 </button>
                               )}
-                              <button
-                                onClick={() => {
-                                  setMoveStockData({
-                                    productId: item.product_id,
-                                    productName: item.product?.name || '',
-                                    fromLocationId: item.location_id,
-                                    toLocationId: '',
-                                    quantity: 1,
-                                    maxQuantity: item.quantity
-                                  });
-                                  setShowMoveStockModal(true);
-                                }}
-                                className="p-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
-                                title="Verplaats naar andere locatie"
-                              >
-                                <ArrowRightLeft size={16} />
-                              </button>
+                              {item.location && item.quantity > 0 && (
+                                <button
+                                  onClick={() => {
+                                    setMoveStockData({
+                                      productId: item.product_id,
+                                      productName: item.product?.name || '',
+                                      fromLocationId: item.location_id,
+                                      toLocationId: '',
+                                      quantity: 1,
+                                      maxQuantity: item.quantity
+                                    });
+                                    setShowMoveStockModal(true);
+                                  }}
+                                  className="p-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                                  title="Verplaats naar andere locatie"
+                                >
+                                  <ArrowRightLeft size={16} />
+                                </button>
+                              )}
                               {canManage && (
                                 <button
                                   onClick={() => handleDeleteProduct(item.product_id)}
