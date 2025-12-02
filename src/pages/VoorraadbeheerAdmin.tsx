@@ -61,7 +61,7 @@ interface Project {
 const VoorraadbeheerAdmin: React.FC = () => {
   const { user, profile } = useAuth();
   const { getCsvSeparator } = useSystemSettings();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'overzicht' | 'boeken' | 'producten' | 'locaties'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'overzicht' | 'locaties'>('dashboard');
   const [products, setProducts] = useState<Product[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [stock, setStock] = useState<Stock[]>([]);
@@ -1191,8 +1191,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
           <div className="flex space-x-1 p-1">
             {[
               { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-              { id: 'overzicht', label: 'Overzicht', icon: Package },
-              { id: 'producten', label: 'Producten', icon: Box },
+              { id: 'overzicht', label: 'Voorraad', icon: Package },
               { id: 'locaties', label: 'Locaties', icon: MapPin }
             ].map((tab) => (
               <button
@@ -1328,7 +1327,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   {canManage && (
                     <button
                       onClick={() => {
-                        setActiveTab('producten');
+                        setActiveTab('overzicht');
                         setTimeout(() => setShowAddProductModal(true), 100);
                       }}
                       className="flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
@@ -1603,14 +1602,23 @@ const VoorraadbeheerAdmin: React.FC = () => {
                             )}
                           </td>
                           <td className="px-4 py-3 text-sm">
-                            <div className="flex items-center justify-center gap-2">
+                            <div className="flex items-center justify-center gap-1">
                               <button
                                 onClick={() => handleEditStock(item)}
-                                className="p-1 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
+                                className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
                                 title="Bewerk voorraad"
                               >
-                                <Edit size={16} />
+                                <Package size={16} />
                               </button>
+                              {canManage && item.product && (
+                                <button
+                                  onClick={() => handleEditFullProduct(item.product!)}
+                                  className="p-1.5 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded"
+                                  title="Bewerk product"
+                                >
+                                  <Edit size={16} />
+                                </button>
+                              )}
                               <button
                                 onClick={() => {
                                   setMoveStockData({
@@ -1623,7 +1631,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                                   });
                                   setShowMoveStockModal(true);
                                 }}
-                                className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
+                                className="p-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
                                 title="Verplaats naar andere locatie"
                               >
                                 <ArrowRightLeft size={16} />
@@ -1631,7 +1639,7 @@ const VoorraadbeheerAdmin: React.FC = () => {
                               {canManage && (
                                 <button
                                   onClick={() => handleDeleteProduct(item.product_id)}
-                                  className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                                  className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                                   title="Verwijder product"
                                 >
                                   <Trash2 size={16} />
@@ -1644,106 +1652,6 @@ const VoorraadbeheerAdmin: React.FC = () => {
                     })}
                   </tbody>
                 </table>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'producten' && (
-            <div className="space-y-4">
-              {/* Action Bar */}
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    <Box className="text-red-600" size={20} />
-                    Producten ({products.length})
-                  </h3>
-                  {canManage && (
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => setShowAddProductModal(true)}
-                        className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 text-sm font-medium transition-colors"
-                      >
-                        <Plus size={16} />
-                        <span className="hidden sm:inline">Toevoegen</span>
-                      </button>
-                      <label className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 text-sm font-medium cursor-pointer transition-colors">
-                        <Upload size={16} />
-                        <span className="hidden sm:inline">Import CSV</span>
-                        <input
-                          type="file"
-                          accept=".csv"
-                          onChange={handleImportProducts}
-                          className="hidden"
-                        />
-                      </label>
-                      <button
-                        onClick={exportProductsToCSV}
-                        className="px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center gap-2 text-sm font-medium transition-colors"
-                      >
-                        <Download size={16} />
-                        <span className="hidden sm:inline">Export CSV</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 text-gray-400 dark:text-gray-500" size={20} />
-                <input
-                  type="text"
-                  placeholder="Zoek op naam, SKU of materiaal groep..."
-                  value={productSearchTerm}
-                  onChange={(e) => setProductSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {products.filter(p =>
-                  !productSearchTerm ||
-                  p.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
-                  p.sku.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
-                  p.category.toLowerCase().includes(productSearchTerm.toLowerCase())
-                ).map((product) => (
-                  <div key={product.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800 hover:shadow-md dark:hover:shadow-gray-900/50 transition-shadow">
-                    <div className="flex flex-col sm:flex-row items-start justify-between gap-2 mb-2">
-                      <h3 className="font-semibold text-gray-900 dark:text-white flex-1 break-words">{product.name}</h3>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-300 px-2 py-1 rounded whitespace-nowrap">{product.sku}</span>
-                        {canManage && (
-                          <>
-                            <button
-                              onClick={() => handleEditFullProduct(product)}
-                              className="p-1 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded"
-                              title="Bewerk product"
-                            >
-                              <Edit size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteProduct(product.id)}
-                              className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
-                              title="Verwijder product"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{product.category}</p>
-                    {product.description && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{product.description}</p>
-                    )}
-                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm">
-                      <span className="text-gray-600 dark:text-gray-300">Min. voorraad: {product.minimum_stock}</span>
-                      <span className="text-gray-600 dark:text-gray-300">Eenheid: {product.unit}</span>
-                    </div>
-                    {product.ean && (
-                      <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 truncate" title={product.ean}>EAN: {product.ean}</div>
-                    )}
-                  </div>
-                ))}
               </div>
             </div>
           )}
