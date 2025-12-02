@@ -2657,9 +2657,9 @@ const VoorraadbeheerAdmin: React.FC = () => {
               </div>
 
               {/* Initial Stock Section */}
-              <div className="border-t border-gray-200 pt-4">
-                <h3 className="text-md font-semibold text-gray-900 mb-3">Initiële Voorraad (optioneel)</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <h3 className="text-md font-semibold text-gray-900 dark:text-white mb-3">Initiële Voorraad (optioneel)</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   Voeg direct voorraad toe zodat het product in het overzicht verschijnt. Je kunt dit ook later doen.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
