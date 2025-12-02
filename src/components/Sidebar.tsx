@@ -37,6 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection, isOp
     { id: 'dashboard', label: t('dashboard'), icon: Home, permission: 'view_dashboard', module: null },
     { id: 'financieel-dashboard', label: 'Financieel Dashboard', icon: TrendingUp, permission: 'manage_settings', module: 'financial_dashboard' },
     { id: 'urenregistratie', label: t('urenregistratie'), icon: Clock, permission: 'register_hours', module: 'time_registration' },
+    { id: 'urenregistratie-v2', label: 'Urenregistratie V2', icon: Clock, permission: 'register_hours', module: 'time_registration_v2' },
     { id: 'mijn-notificaties', label: 'Notificaties', icon: Bell, permission: 'register_hours', module: 'notifications' },
     { id: 'voorraad-afboeken', label: 'Voorraad Afboeken', icon: Package, permission: 'view_dashboard', module: 'inventory' },
     { id: 'voorraadbeheer', label: 'Voorraadbeheer', icon: Package, permission: 'manage_settings', module: 'inventory' },
@@ -57,6 +58,15 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection, isOp
     const hasPerms = hasPermission(item.permission);
     // If no module specified, just check permissions
     if (!item.module) return hasPerms;
+
+    // Special case: Urenregistratie V2 is only visible for admins and superusers
+    if (item.id === 'urenregistratie-v2') {
+      const isAdminOrSuperuser = user?.role === 'admin' || user?.role === 'superuser';
+      if (!isAdminOrSuperuser) return false;
+      // Check if time_registration_v2 module is enabled
+      const moduleVisible = isModuleVisible('time_registration_v2', user?.role);
+      return hasPerms && moduleVisible;
+    }
 
     console.log(`[Sidebar] Checking menu item: ${item.label}`);
     console.log(`[Sidebar] Module: ${item.module}, User role: ${user?.role}`);

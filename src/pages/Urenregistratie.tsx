@@ -749,13 +749,13 @@ const Urenregistratie: React.FC = () => {
   return (
     <div>
       {showSuccessMessage && (
-        <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-md">
+        <div className="mb-4 p-4 bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-300 rounded-md">
           {successMessage}
         </div>
       )}
       
       {formError && (
-        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
+        <div className="mb-4 p-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 rounded-md">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -772,7 +772,7 @@ const Urenregistratie: React.FC = () => {
       {showNewRegistration && (
         <div>
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">{t('nieuweRegistratie')}</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{t('nieuweRegistratie')}</h1>
             <button 
               onClick={() => {
                 setShowNewRegistration(false);
@@ -784,7 +784,7 @@ const Urenregistratie: React.FC = () => {
             </button>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <h3 className="text-md font-medium text-gray-700 mb-4">{t('basisInformatie')}</h3>
@@ -797,7 +797,7 @@ const Urenregistratie: React.FC = () => {
                       value={formData.datum}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -811,7 +811,7 @@ const Urenregistratie: React.FC = () => {
                           setSelectedProject(project || null);
                         }}
                         required
-                        className="flex-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        className="flex-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                       >
                         <option value="">Selecteer een project</option>
                         {projecten.map((project: any) => (
@@ -848,14 +848,14 @@ const Urenregistratie: React.FC = () => {
                     min="0"
                     max="100"
                     placeholder="0-100"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">{t('optioneelGeefAanHoeveelProcent')}</p>
                 </div>
 
                 <div className="mt-4">
                   <div className="flex items-center gap-2 mb-1">
-                    <label className="block text-sm font-medium text-gray-700">Gereden kilometers</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Gereden kilometers</label>
                     <div className="group relative">
                       <Info size={16} className="text-gray-400 cursor-help" />
                       <div className="invisible group-hover:visible absolute z-10 w-64 p-2 bg-gray-900 text-white text-xs rounded-md shadow-lg -top-2 left-6">
@@ -871,15 +871,15 @@ const Urenregistratie: React.FC = () => {
                     min="0"
                     step="0.1"
                     placeholder="0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">Optioneel - vul alleen in indien van toepassing</p>
                 </div>
               </div>
 
-              <div className="border-t border-gray-200 pt-4">
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-900">Werkregels</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Werkregels</h3>
                   <button
                     type="button"
                     onClick={addWorkLine}
@@ -892,9 +892,9 @@ const Urenregistratie: React.FC = () => {
 
                 <div className="space-y-3">
                   {workLines.map((line, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900 dark:bg-gray-900">
                       <div className="flex items-start justify-between mb-3">
-                        <span className="text-sm font-medium text-gray-700">Regel {index + 1}</span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Regel {index + 1}</span>
                         {workLines.length > 1 && (
                           <button
                             type="button"
@@ -913,7 +913,7 @@ const Urenregistratie: React.FC = () => {
                             value={line.werktype}
                             onChange={(e) => updateWorkLine(index, 'werktype', e.target.value)}
                             required
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                           >
                             <option value="">{t('selecteerType')}</option>
                             <option value="projectbasis">{t('projectbasis')}</option>
@@ -932,7 +932,7 @@ const Urenregistratie: React.FC = () => {
                             min="0"
                             required
                             placeholder="bv. 8 of 4.5"
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                           />
                         </div>
 
@@ -944,7 +944,7 @@ const Urenregistratie: React.FC = () => {
                             onChange={(e) => updateWorkLine(index, 'werkomschrijving', e.target.value)}
                             required
                             placeholder="Beschrijf het uitgevoerde werk"
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                           />
                         </div>
                       </div>
@@ -952,7 +952,7 @@ const Urenregistratie: React.FC = () => {
                       {(line.werktype === 'regie' || line.werktype === 'meerwerk') && (
                         <div className="mt-4 pt-4 border-t border-gray-300">
                           <div className="flex items-center justify-between mb-2">
-                            <label className="block text-xs font-semibold text-gray-700">Materialen</label>
+                            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">Materialen</label>
                             <button
                               type="button"
                               onClick={() => addMaterialToWorkLine(index)}
@@ -967,7 +967,7 @@ const Urenregistratie: React.FC = () => {
                             <div className="space-y-2">
                               {line.materials.map((material, matIdx) => (
                                 <div key={matIdx} className="border border-gray-200 rounded bg-white">
-                                  <div className="p-2 bg-gray-100 border-b border-gray-200 flex items-center justify-between">
+                                  <div className="p-2 bg-gray-100 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                       <button
                                         type="button"
@@ -1065,8 +1065,8 @@ const Urenregistratie: React.FC = () => {
                   ))}
                 </div>
 
-                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-sm text-blue-800">
+                <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-md">
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
                     <strong>Totaal uren:</strong> {workLines.reduce((sum, line) => sum + (line.aantal_uren || 0), 0).toFixed(1)} uur
                   </p>
                 </div>
@@ -1099,12 +1099,12 @@ const Urenregistratie: React.FC = () => {
       {showOverview && (
         <div>
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">{t('urenregistratie')}</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{t('urenregistratie')}</h1>
             <div className="flex space-x-3">
               {hasPermission('export_data') && (
                 <button
                   onClick={handleExport}
-                  className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                  className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 transition-colors"
                 >
                   <Download size={16} />
                   <span>{t('exporteren')}</span>
@@ -1121,7 +1121,7 @@ const Urenregistratie: React.FC = () => {
           </div>
 
           {/* Filters */}
-          <div className="bg-white rounded-lg shadow mb-6 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               {hasPermission('view_reports') && (
                 <div>
@@ -1129,7 +1129,7 @@ const Urenregistratie: React.FC = () => {
                   <select
                     value={userFilter}
                     onChange={(e) => setUserFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
                     <option value="">Alle gebruikers</option>
                     {gebruikers.map((gebruiker: any) => (
@@ -1145,7 +1145,7 @@ const Urenregistratie: React.FC = () => {
                 <select
                   value={dateRangeFilter}
                   onChange={(e) => handleDateRangeChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="custom">Aangepast</option>
                   <option value="deze-week">Deze week</option>
@@ -1176,7 +1176,7 @@ const Urenregistratie: React.FC = () => {
                 <select
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="alleTypes">{t('alleTypes')}</option>
                   <option value="projectbasis">{t('projectbasis')}</option>
@@ -1191,22 +1191,22 @@ const Urenregistratie: React.FC = () => {
                 placeholder={t('zoekProjectOfOrdernummer')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full md:w-80 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full md:w-80 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
             </div>
           </div>
 
           {/* Registraties overzicht */}
           {filteredRegistraties.length > 0 && (
-            <div className="bg-white rounded-lg shadow mt-6">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-800">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow mt-6">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
                   {searchTerm ? `Zoekresultaten (${filteredRegistraties.length})` : `Registraties (${filteredRegistraties.length})`}
                 </h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gray-50 dark:bg-gray-900">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('datum')}</th>
                       {hasPermission('view_reports') && (
@@ -1229,24 +1229,24 @@ const Urenregistratie: React.FC = () => {
                       return (
                         <React.Fragment key={registratie.id}>
                           <tr className={isExpanded ? 'bg-gray-50' : 'hover:bg-gray-50'}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                               {formatDate(registratie.datum)}
                             </td>
                             {hasPermission('view_reports') && (
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                 {gebruikers.find((g: any) => g.id === registratie.user_id)?.naam || 'Onbekend'}
                               </td>
                             )}
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                               {registratie.project_id ?
                                 projecten.find(p => p.id === registratie.project_id)?.naam || 'Onbekend project' :
                                 '-'
                               }
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                               {registratie.werktype}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                               {registratie.aantal_uren.toString().replace('.', ',')}
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-900 max-w-xs">
@@ -1275,7 +1275,7 @@ const Urenregistratie: React.FC = () => {
                                     {hasPermission('approve_hours') && (
                                       <button
                                         onClick={() => handleDeleteRegistration(registratie.id)}
-                                        className="text-gray-600 hover:text-gray-900"
+                                        className="text-gray-600 hover:text-gray-900 dark:text-white"
                                         title="Verwijderen"
                                       >
                                         <Trash2 size={16} />
@@ -1287,14 +1287,14 @@ const Urenregistratie: React.FC = () => {
                             </td>
                           </tr>
                           {isExpanded && hasExtraInfo && (
-                            <tr className="bg-gray-50">
+                            <tr className="bg-gray-50 dark:bg-gray-900">
                               <td colSpan={hasPermission('view_reports') ? 7 : 6} className="px-6 py-4">
-                                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {registratie.driven_kilometers && registratie.driven_kilometers > 0 && (
                                       <div className="bg-white border border-gray-200 p-4 rounded-lg shadow-sm">
                                         <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Kilometers</div>
-                                        <div className="text-2xl font-bold text-gray-900">
+                                        <div className="text-2xl font-bold text-gray-900 dark:text-white">
                                           {registratie.driven_kilometers.toString().replace('.', ',')} km
                                         </div>
                                       </div>
@@ -1305,7 +1305,7 @@ const Urenregistratie: React.FC = () => {
                                         <div className="space-y-2">
                                           {registratie.materials.map((mat: any, idx: number) => (
                                             <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-gray-100 last:border-0">
-                                              <span className="font-medium text-gray-900">
+                                              <span className="font-medium text-gray-900 dark:text-white">
                                                 {mat.type === 'product' ? mat.product_name : mat.description}
                                               </span>
                                               <span className="text-gray-600 font-semibold">{mat.quantity} {mat.unit}</span>
@@ -1335,29 +1335,29 @@ const Urenregistratie: React.FC = () => {
               </div>
 
               {/* Pagination Controls */}
-              <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <label className="text-sm text-gray-700">Toon:</label>
+                  <label className="text-sm text-gray-700 dark:text-gray-300">Toon:</label>
                   <select
                     value={itemsPerPage}
                     onChange={(e) => {
                       setItemsPerPage(Number(e.target.value));
                       setCurrentPage(1);
                     }}
-                    className="px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
                     <option value={10}>10</option>
                     <option value={25}>25</option>
                     <option value={50}>50</option>
                     <option value={100}>100</option>
                   </select>
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
                     resultaten per pagina
                   </span>
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
                     Pagina {currentPage} van {totalPages} ({totalItems} resultaten)
                   </span>
 
@@ -1365,7 +1365,7 @@ const Urenregistratie: React.FC = () => {
                     <button
                       onClick={() => setCurrentPage(1)}
                       disabled={currentPage === 1}
-                      className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Eerste pagina"
                     >
                       «
@@ -1373,7 +1373,7 @@ const Urenregistratie: React.FC = () => {
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
-                      className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                      className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                       title="Vorige pagina"
                     >
                       <ChevronLeft size={16} />
@@ -1410,7 +1410,7 @@ const Urenregistratie: React.FC = () => {
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages}
-                      className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                      className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                       title="Volgende pagina"
                     >
                       <ChevronRight size={16} />
@@ -1418,7 +1418,7 @@ const Urenregistratie: React.FC = () => {
                     <button
                       onClick={() => setCurrentPage(totalPages)}
                       disabled={currentPage === totalPages}
-                      className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Laatste pagina"
                     >
                       »
@@ -1444,7 +1444,7 @@ const Urenregistratie: React.FC = () => {
                   value={formData.datum}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
               <div>
@@ -1455,7 +1455,7 @@ const Urenregistratie: React.FC = () => {
                   value={formData.ordernummer}
                   onChange={handleInputChange}
                   placeholder={t('projectOrdernummerPlaceholder')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
             </div>
@@ -1467,7 +1467,7 @@ const Urenregistratie: React.FC = () => {
                   value={formData.werktype}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="">{t('selecteerType')}</option>
                   <option value="projectbasis">{t('projectbasis')}</option>
@@ -1486,7 +1486,7 @@ const Urenregistratie: React.FC = () => {
                   min="0"
                   required
                   placeholder="bv. 8 of 4.5"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
             </div>
@@ -1502,7 +1502,7 @@ const Urenregistratie: React.FC = () => {
                   onChange={handleInputChange}
                   required={formData.werktype === 'meerwerk' || formData.werktype === 'regie'}
                   placeholder={t('verbruiktMateriaalPlaceholder')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
             )}
@@ -1518,7 +1518,7 @@ const Urenregistratie: React.FC = () => {
               min="0"
               max="100"
               placeholder="0-100"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
             <p className="text-xs text-gray-500 mt-1">Optioneel: geef aan hoeveel procent van het project is voltooid</p>
           </div>
@@ -1532,7 +1532,7 @@ const Urenregistratie: React.FC = () => {
               rows={4}
               required
               placeholder={formData.werktype === 'meerwerk' ? t('beschrijfMeerwerk') : t('beschrijfWerk')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
           </div>
 
@@ -1585,7 +1585,7 @@ const Urenregistratie: React.FC = () => {
         </div>
         
         {newProjectModalError && (
-          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
+          <div className="mb-4 p-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 rounded-md">
             <div className="flex">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -1609,7 +1609,7 @@ const Urenregistratie: React.FC = () => {
               onChange={handleNewProjectDetailsChange}
               required
               placeholder="Bijv. Renovatie kantoorpand"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
           </div>
           
@@ -1622,7 +1622,7 @@ const Urenregistratie: React.FC = () => {
               onChange={handleNewProjectDetailsChange}
               required
               placeholder="Bijv. Amsterdam, Damrak 1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
           </div>
           
@@ -1635,7 +1635,7 @@ const Urenregistratie: React.FC = () => {
               rows={3}
               required
               placeholder={t('beschrijfProject')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
           </div>
           
@@ -1680,7 +1680,7 @@ const Urenregistratie: React.FC = () => {
                 value={editingRegistration.datum}
                 onChange={handleEditInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
             </div>
 
@@ -1691,7 +1691,7 @@ const Urenregistratie: React.FC = () => {
                 value={editingRegistration.project_id || ''}
                 onChange={handleEditInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               >
                 <option value="">Selecteer een project</option>
                 {projecten.map((project: any) => (
@@ -1709,7 +1709,7 @@ const Urenregistratie: React.FC = () => {
                 value={editingRegistration.werktype}
                 onChange={handleEditInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               >
                 <option value="">{t('selecteerType')}</option>
                 <option value="projectbasis">{t('projectbasis')}</option>
@@ -1730,7 +1730,7 @@ const Urenregistratie: React.FC = () => {
                 min="0.5"
                 max="24"
                 placeholder={t('aantalUrenPlaceholder')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
             </div>
 
@@ -1743,7 +1743,7 @@ const Urenregistratie: React.FC = () => {
                   value={editingRegistration.locatie}
                   onChange={handleEditInputChange}
                   placeholder={t('locatiePlaceholder')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
             )}
@@ -1758,14 +1758,14 @@ const Urenregistratie: React.FC = () => {
                 min="0"
                 max="100"
                 placeholder="0-100"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
               <p className="text-xs text-gray-500 mt-1">{t('optioneelGeefAanHoeveelProcent')}</p>
             </div>
 
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <label className="block text-sm font-medium text-gray-700">Gereden kilometers</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Gereden kilometers</label>
                 <div className="group relative">
                   <Info size={16} className="text-gray-400 cursor-help" />
                   <div className="invisible group-hover:visible absolute z-10 w-64 p-2 bg-gray-900 text-white text-xs rounded-md shadow-lg -top-2 left-6">
@@ -1781,7 +1781,7 @@ const Urenregistratie: React.FC = () => {
                 min="0"
                 step="0.1"
                 placeholder="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
               <p className="text-xs text-gray-500 mt-1">Optioneel - vul alleen in indien van toepassing</p>
             </div>
@@ -1795,7 +1795,7 @@ const Urenregistratie: React.FC = () => {
                 rows={4}
                 required
                 placeholder={t('werkomschrijvingPlaceholder')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
             </div>
 
@@ -1828,7 +1828,7 @@ const Urenregistratie: React.FC = () => {
         title="Project Niet Gevonden?"
       >
         <div className="space-y-6">
-          <p className="text-gray-700">
+          <p className="text-gray-700 dark:text-gray-300">
             Weet je zeker dat het project niet in het keuzemenu staat?
           </p>
           <div className="flex justify-end space-x-3">
@@ -1862,7 +1862,7 @@ const Urenregistratie: React.FC = () => {
         title="Snel Project Aanmaken"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Maak snel een nieuw project aan. Kantoorpersoneel zal later de details aanvullen.
           </p>
           <div>
@@ -1872,7 +1872,7 @@ const Urenregistratie: React.FC = () => {
               value={quickProjectName}
               onChange={(e) => setQuickProjectName(e.target.value)}
               placeholder="Bijv: Renovatie Hoofdstraat 123"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
                   handleQuickProjectCreate();
@@ -1914,8 +1914,8 @@ const Urenregistratie: React.FC = () => {
               <div className="absolute top-0 left-0 w-20 h-20 border-4 border-red-600 rounded-full border-t-transparent animate-spin"></div>
             </div>
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-gray-800">Project wordt aangemaakt...</h3>
-              <p className="text-sm text-gray-600">Even geduld, we maken het project aan en slaan je urenregistratie op.</p>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Project wordt aangemaakt...</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Even geduld, we maken het project aan en slaan je urenregistratie op.</p>
               <p className="text-xs text-gray-500 mt-4">De pagina wordt automatisch ververst...</p>
             </div>
           </div>

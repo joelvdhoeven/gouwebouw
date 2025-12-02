@@ -9,6 +9,7 @@ interface SystemSettings {
   module_notifications: boolean;
   module_email_notifications: boolean;
   module_time_registration: boolean;
+  module_time_registration_v2: boolean;
   module_special_tools: boolean;
   module_financial_dashboard: boolean;
   csv_separator: ',' | ';';
@@ -20,6 +21,7 @@ interface SystemSettings {
   module_notifications_demo: boolean;
   module_email_notifications_demo: boolean;
   module_time_registration_demo: boolean;
+  module_time_registration_v2_demo: boolean;
   module_special_tools_demo: boolean;
   module_financial_dashboard_demo: boolean;
 }
@@ -57,6 +59,7 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
           module_notifications: data.module_notifications,
           module_email_notifications: data.module_email_notifications,
           module_time_registration: data.module_time_registration,
+          module_time_registration_v2: data.module_time_registration_v2 ?? false,
           module_special_tools: data.module_special_tools,
           module_financial_dashboard: data.module_financial_dashboard,
           csv_separator: data.csv_separator || ';',
@@ -67,11 +70,12 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
           module_notifications_demo: data.module_notifications_demo || false,
           module_email_notifications_demo: data.module_email_notifications_demo || false,
           module_time_registration_demo: data.module_time_registration_demo || false,
+          module_time_registration_v2_demo: data.module_time_registration_v2_demo ?? true, // Default demo mode for V2
           module_special_tools_demo: data.module_special_tools_demo || false,
           module_financial_dashboard_demo: data.module_financial_dashboard_demo || false,
         });
       } else {
-        // Default: alle modules aan, demo mode uit
+        // Default: alle modules aan, demo mode uit (behalve V2 die standaard in demo mode staat)
         setSettings({
           module_invoicing: true,
           module_hourly_rates: true,
@@ -80,6 +84,7 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
           module_notifications: true,
           module_email_notifications: true,
           module_time_registration: true,
+          module_time_registration_v2: false,
           module_special_tools: true,
           module_financial_dashboard: true,
           csv_separator: ';',
@@ -90,13 +95,14 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
           module_notifications_demo: false,
           module_email_notifications_demo: false,
           module_time_registration_demo: false,
+          module_time_registration_v2_demo: true, // V2 standaard in demo mode (alleen admin/superuser)
           module_special_tools_demo: false,
           module_financial_dashboard_demo: false,
         });
       }
     } catch (error) {
       console.error('Error loading system settings:', error);
-      // Default: alle modules aan bij error, demo mode uit
+      // Default: alle modules aan bij error, demo mode uit (behalve V2)
       setSettings({
         module_invoicing: true,
         module_hourly_rates: true,
@@ -105,6 +111,7 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
         module_notifications: true,
         module_email_notifications: true,
         module_time_registration: true,
+        module_time_registration_v2: false,
         module_special_tools: true,
         module_financial_dashboard: true,
         csv_separator: ';',
@@ -115,6 +122,7 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
         module_notifications_demo: false,
         module_email_notifications_demo: false,
         module_time_registration_demo: false,
+        module_time_registration_v2_demo: true,
         module_special_tools_demo: false,
         module_financial_dashboard_demo: false,
       });
