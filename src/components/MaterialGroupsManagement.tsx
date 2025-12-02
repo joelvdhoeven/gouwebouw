@@ -184,22 +184,22 @@ const MaterialGroupsManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       {successMessage && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded flex items-center gap-2">
+        <div className="bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-400 px-4 py-3 rounded flex items-center gap-2">
           <CheckCircle size={20} />
           <span>{successMessage}</span>
         </div>
       )}
 
       {errorMessage && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded flex items-center gap-2">
+        <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-400 px-4 py-3 rounded flex items-center gap-2">
           <AlertCircle size={20} />
           <span>{errorMessage}</span>
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Materiaalgroepen Beheer</h2>
-        <p className="text-sm text-gray-600 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Materiaalgroepen Beheer</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
           Beheer de materiaalgroepen voor voorraadclassificatie. Deze groepen worden gebruikt om producten te categoriseren in het voorraadbeheer.
         </p>
 
@@ -216,12 +216,12 @@ const MaterialGroupsManagement: React.FC = () => {
 
         {/* Add New Group Form */}
         {showAddForm && (
-          <form onSubmit={handleAddGroup} className="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
-            <h3 className="text-md font-semibold text-gray-800 mb-4">Nieuwe Materiaalgroep Toevoegen</h3>
+          <form onSubmit={handleAddGroup} className="mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-700">
+            <h3 className="text-md font-semibold text-gray-800 dark:text-white mb-4">Nieuwe Materiaalgroep Toevoegen</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Code * <span className="text-xs text-gray-500">(2 cijfers, bijv. "09", "10")</span>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Code * <span className="text-xs text-gray-500 dark:text-gray-400">(2 cijfers, bijv. "09", "10")</span>
                 </label>
                 <input
                   type="text"
@@ -230,12 +230,12 @@ const MaterialGroupsManagement: React.FC = () => {
                   placeholder="09"
                   required
                   maxLength={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Naam *
                 </label>
                 <input
@@ -245,12 +245,12 @@ const MaterialGroupsManagement: React.FC = () => {
                   placeholder="Elektra materialen"
                   required
                   maxLength={100}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Beschrijving
                 </label>
                 <textarea
@@ -258,12 +258,12 @@ const MaterialGroupsManagement: React.FC = () => {
                   onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
                   placeholder="Beschrijf welke materialen in deze groep vallen"
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Sorteervolgorde
                 </label>
                 <input
@@ -271,7 +271,7 @@ const MaterialGroupsManagement: React.FC = () => {
                   value={newGroup.sort_order}
                   onChange={(e) => setNewGroup({ ...newGroup, sort_order: parseInt(e.target.value) || 0 })}
                   placeholder="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
 
@@ -283,7 +283,7 @@ const MaterialGroupsManagement: React.FC = () => {
                     onChange={(e) => setNewGroup({ ...newGroup, is_active: e.target.checked })}
                     className="mr-2 w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
                   />
-                  <span className="text-sm font-medium text-gray-700">Actief</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Actief</span>
                 </label>
               </div>
             </div>
@@ -292,7 +292,7 @@ const MaterialGroupsManagement: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               >
                 Annuleren
               </button>
@@ -313,7 +313,7 @@ const MaterialGroupsManagement: React.FC = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
           </div>
         ) : materialGroups.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             <p>Geen materiaalgroepen gevonden.</p>
             <p className="text-sm mt-2">Klik op "Nieuwe Materiaalgroep" om er een toe te voegen.</p>
           </div>
@@ -323,7 +323,7 @@ const MaterialGroupsManagement: React.FC = () => {
               <div
                 key={group.id}
                 className={`border rounded-lg p-4 ${
-                  group.is_active ? 'border-gray-200 bg-white' : 'border-gray-300 bg-gray-50'
+                  group.is_active ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'
                 }`}
               >
                 {editingGroup?.id === group.id ? (
@@ -331,44 +331,44 @@ const MaterialGroupsManagement: React.FC = () => {
                   <div className="space-y-3">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Code *</label>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Code *</label>
                         <input
                           type="text"
                           value={editingGroup.code}
                           onChange={(e) => setEditingGroup({ ...editingGroup, code: e.target.value.replace(/[^0-9]/g, '').slice(0, 2) })}
                           maxLength={2}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Naam *</label>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Naam *</label>
                         <input
                           type="text"
                           value={editingGroup.name}
                           onChange={(e) => setEditingGroup({ ...editingGroup, name: e.target.value })}
                           maxLength={100}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                         />
                       </div>
 
                       <div className="md:col-span-2">
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Beschrijving</label>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Beschrijving</label>
                         <textarea
                           value={editingGroup.description}
                           onChange={(e) => setEditingGroup({ ...editingGroup, description: e.target.value })}
                           rows={2}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Sorteervolgorde</label>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Sorteervolgorde</label>
                         <input
                           type="number"
                           value={editingGroup.sort_order}
                           onChange={(e) => setEditingGroup({ ...editingGroup, sort_order: parseInt(e.target.value) || 0 })}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                         />
                       </div>
 
@@ -380,15 +380,15 @@ const MaterialGroupsManagement: React.FC = () => {
                             onChange={(e) => setEditingGroup({ ...editingGroup, is_active: e.target.checked })}
                             className="mr-2 w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
                           />
-                          <span className="text-xs font-medium text-gray-700">Actief</span>
+                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Actief</span>
                         </label>
                       </div>
                     </div>
 
-                    <div className="flex justify-end gap-2 pt-2 border-t border-gray-200">
+                    <div className="flex justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
                       <button
                         onClick={() => setEditingGroup(null)}
-                        className="px-3 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                        className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                       >
                         Annuleren
                       </button>
@@ -407,21 +407,21 @@ const MaterialGroupsManagement: React.FC = () => {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <span className={`px-3 py-1 text-sm font-semibold rounded ${
-                          group.is_active ? 'bg-red-100 text-red-800' : 'bg-gray-200 text-gray-600'
+                          group.is_active ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                         }`}>
                           {group.code}
                         </span>
-                        <h3 className="text-md font-semibold text-gray-800">{group.name}</h3>
+                        <h3 className="text-md font-semibold text-gray-800 dark:text-white">{group.name}</h3>
                         {!group.is_active && (
-                          <span className="text-xs bg-gray-300 text-gray-600 px-2 py-0.5 rounded">
+                          <span className="text-xs bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded">
                             Inactief
                           </span>
                         )}
                       </div>
                       {group.description && (
-                        <p className="text-sm text-gray-600 mb-1">{group.description}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{group.description}</p>
                       )}
-                      <p className="text-xs text-gray-500">Sorteervolgorde: {group.sort_order}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Sorteervolgorde: {group.sort_order}</p>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -429,22 +429,22 @@ const MaterialGroupsManagement: React.FC = () => {
                         onClick={() => toggleActiveStatus(group)}
                         className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
                           group.is_active
-                            ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                            : 'bg-green-100 text-green-800 hover:bg-green-200'
+                            ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 hover:bg-yellow-200 dark:hover:bg-yellow-900/50'
+                            : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
                         }`}
                       >
                         {group.is_active ? 'Deactiveren' : 'Activeren'}
                       </button>
                       <button
                         onClick={() => setEditingGroup(group)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                        className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
                         title="Bewerken"
                       >
                         <Edit2 size={16} />
                       </button>
                       <button
                         onClick={() => handleDeleteGroup(group.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
                         title="Verwijderen"
                       >
                         <Trash2 size={16} />
@@ -459,9 +459,9 @@ const MaterialGroupsManagement: React.FC = () => {
       </div>
 
       {/* Info Box */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-blue-900 mb-2">Info over Materiaalgroepen</h3>
-        <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2">Info over Materiaalgroepen</h3>
+        <ul className="text-sm text-blue-800 dark:text-blue-400 space-y-1 list-disc list-inside">
           <li>Materiaalgroepen worden gebruikt om producten te categoriseren in het voorraadbeheer</li>
           <li>De code moet 2 cijfers zijn (bijv. 01, 02, ..., 09, 10)</li>
           <li>Standaard groepen: 01 Diversen, 02 Pur & Kit, 03 Montage, 04 Afwerking, etc.</li>

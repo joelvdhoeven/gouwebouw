@@ -351,14 +351,14 @@ const Instellingen: React.FC = () => {
           <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">{t('wachtwoordWijzigen')}</h2>
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('huidigWachtwoord')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('huidigWachtwoord')}</label>
               <div className="relative">
                 <input
                   type={showCurrentPassword ? 'text' : 'password'}
                   value={passwordData.currentPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
                 <button
                   type="button"
@@ -371,14 +371,14 @@ const Instellingen: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('nieuwWachtwoord')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('nieuwWachtwoord')}</label>
               <div className="relative">
                 <input
                   type={showNewPassword ? 'text' : 'password'}
                   value={passwordData.newPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
                 <button
                   type="button"
@@ -391,14 +391,14 @@ const Instellingen: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('bevestigNieuwWachtwoord')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('bevestigNieuwWachtwoord')}</label>
               <div className="relative">
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={passwordData.confirmPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
                 <button
                   type="button"
@@ -426,21 +426,21 @@ const Instellingen: React.FC = () => {
       {/* System Settings Tab (Admin only) */}
       {activeTab === 'systeem' && hasPermission('manage_settings') && (
         <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="flex items-center gap-2 mb-4">
               <Package size={20} className="text-red-600" />
-              <h2 className="text-lg font-semibold text-gray-800">Module Beheer</h2>
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Module Beheer</h2>
             </div>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
               Schakel modules in of uit. Uitgeschakelde modules worden verborgen in de navigatie en zijn niet toegankelijk.
             </p>
 
             <div className="space-y-4">
-              <div className="p-4 border border-gray-200 rounded-lg">
+              <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="font-medium text-gray-800">Financieel Dashboard</p>
-                    <p className="text-sm text-gray-500">Inzicht in omzet, kosten, winst en statistieken</p>
+                    <p className="font-medium text-gray-800 dark:text-white">Financieel Dashboard</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Inzicht in omzet, kosten, winst en statistieken</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -452,10 +452,10 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100 dark:border-gray-700">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
-                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
+                    <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Alleen zichtbaar voor admins</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -469,11 +469,11 @@ const Instellingen: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-4 border border-gray-200 rounded-lg">
+              <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="font-medium text-gray-800">Urenregistratie</p>
-                    <p className="text-sm text-gray-500">Registreer gewerkte uren op projecten</p>
+                    <p className="font-medium text-gray-800 dark:text-white">Urenregistratie</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Registreer gewerkte uren op projecten</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -485,10 +485,10 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100 dark:border-gray-700">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">V2</span>
-                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
+                    <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-1 rounded">V2</span>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Alleen zichtbaar voor admins</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -502,11 +502,11 @@ const Instellingen: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-4 border border-gray-200 rounded-lg">
+              <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="font-medium text-gray-800">Voorraadbeheer</p>
-                    <p className="text-sm text-gray-500">Beheer voorraad en boek materiaal af</p>
+                    <p className="font-medium text-gray-800 dark:text-white">Voorraadbeheer</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Beheer voorraad en boek materiaal af</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -518,10 +518,10 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100 dark:border-gray-700">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
-                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
+                    <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Alleen zichtbaar voor admins</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -535,11 +535,11 @@ const Instellingen: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-4 border border-gray-200 rounded-lg">
+              <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="font-medium text-gray-800">Schademeldingen</p>
-                    <p className="text-sm text-gray-500">Registreer en beheer schademeldingen</p>
+                    <p className="font-medium text-gray-800 dark:text-white">Schademeldingen</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Registreer en beheer schademeldingen</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -551,10 +551,10 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100 dark:border-gray-700">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
-                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
+                    <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Alleen zichtbaar voor admins</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -568,11 +568,11 @@ const Instellingen: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-4 border border-gray-200 rounded-lg">
+              <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="font-medium text-gray-800">Speciaal Gereedschap</p>
-                    <p className="text-sm text-gray-500">Beheer speciaal gereedschap en onderhoud</p>
+                    <p className="font-medium text-gray-800 dark:text-white">Speciaal Gereedschap</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Beheer speciaal gereedschap en onderhoud</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -584,10 +584,10 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100 dark:border-gray-700">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
-                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
+                    <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Alleen zichtbaar voor admins</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -601,11 +601,11 @@ const Instellingen: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-4 border border-gray-200 rounded-lg">
+              <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="font-medium text-gray-800">Factuur Generatie</p>
-                    <p className="text-sm text-gray-500">Genereer facturen vanuit projecten</p>
+                    <p className="font-medium text-gray-800 dark:text-white">Factuur Generatie</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Genereer facturen vanuit projecten</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -617,10 +617,10 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100 dark:border-gray-700">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
-                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
+                    <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Alleen zichtbaar voor admins</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -634,11 +634,11 @@ const Instellingen: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-4 border border-gray-200 rounded-lg">
+              <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="font-medium text-gray-800">Uurtarieven Instellingen</p>
-                    <p className="text-sm text-gray-500">Beheer uurtarieven voor medewerkers</p>
+                    <p className="font-medium text-gray-800 dark:text-white">Uurtarieven Instellingen</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Beheer uurtarieven voor medewerkers</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -650,10 +650,10 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100 dark:border-gray-700">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
-                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
+                    <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Alleen zichtbaar voor admins</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -667,11 +667,11 @@ const Instellingen: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-4 border border-gray-200 rounded-lg">
+              <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="font-medium text-gray-800">Meldingen</p>
-                    <p className="text-sm text-gray-500">Systeem meldingen en beheer</p>
+                    <p className="font-medium text-gray-800 dark:text-white">Meldingen</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Systeem meldingen en beheer</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -683,10 +683,10 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100 dark:border-gray-700">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
-                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
+                    <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Alleen zichtbaar voor admins</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -700,11 +700,11 @@ const Instellingen: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-4 border border-gray-200 rounded-lg">
+              <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="font-medium text-gray-800">E-mail Notificaties</p>
-                    <p className="text-sm text-gray-500">Automatische e-mail notificaties</p>
+                    <p className="font-medium text-gray-800 dark:text-white">E-mail Notificaties</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Automatische e-mail notificaties</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -716,10 +716,10 @@ const Instellingen: React.FC = () => {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
-                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100 dark:border-gray-700">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">DEMO MODUS</span>
-                    <p className="text-xs text-gray-600">Alleen zichtbaar voor admins</p>
+                    <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Alleen zichtbaar voor admins</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -735,20 +735,20 @@ const Instellingen: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="flex items-center gap-2 mb-4">
               <SettingsIcon size={20} className="text-red-600" />
-              <h2 className="text-lg font-semibold text-gray-800">CSV Export/Import Instellingen</h2>
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-white">CSV Export/Import Instellingen</h2>
             </div>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
               Kies het scheidingsteken voor CSV bestanden. Puntkomma (;) werkt het beste voor Excel in Europa.
             </p>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+              <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div>
-                  <p className="font-medium text-gray-800">CSV Scheidingsteken</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="font-medium text-gray-800 dark:text-white">CSV Scheidingsteken</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {moduleSettings.csv_separator === ';'
                       ? 'Puntkomma (;) - Aanbevolen voor Excel'
                       : 'Komma (,) - Standaard CSV format'}
@@ -760,7 +760,7 @@ const Instellingen: React.FC = () => {
                     className={`px-4 py-2 rounded-md transition-colors ${
                       moduleSettings.csv_separator === ';'
                         ? 'bg-red-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                     }`}
                   >
                     Puntkomma (;)
@@ -770,7 +770,7 @@ const Instellingen: React.FC = () => {
                     className={`px-4 py-2 rounded-md transition-colors ${
                       moduleSettings.csv_separator === ','
                         ? 'bg-red-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                     }`}
                   >
                     Komma (,)

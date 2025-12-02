@@ -178,22 +178,22 @@ const WorkCodesManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       {successMessage && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded flex items-center gap-2">
+        <div className="bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-400 px-4 py-3 rounded flex items-center gap-2">
           <CheckCircle size={20} />
           <span>{successMessage}</span>
         </div>
       )}
 
       {errorMessage && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded flex items-center gap-2">
+        <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-400 px-4 py-3 rounded flex items-center gap-2">
           <AlertCircle size={20} />
           <span>{errorMessage}</span>
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Bewakingscodes Beheer</h2>
-        <p className="text-sm text-gray-600 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Bewakingscodes Beheer</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
           Beheer algemene bewakingscodes (groepcodes). Deze codes worden gebruikt bij urenregistratie om werk te categoriseren en zijn beschikbaar voor alle projecten.
         </p>
 
@@ -210,12 +210,12 @@ const WorkCodesManagement: React.FC = () => {
 
         {/* Add New Code Form */}
         {showAddForm && (
-          <form onSubmit={handleAddCode} className="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
-            <h3 className="text-md font-semibold text-gray-800 mb-4">Nieuwe Bewakingscode Toevoegen</h3>
+          <form onSubmit={handleAddCode} className="mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-700">
+            <h3 className="text-md font-semibold text-gray-800 dark:text-white mb-4">Nieuwe Bewakingscode Toevoegen</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Code * <span className="text-xs text-gray-500">(bijv. "001", "MW01", "999")</span>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Code * <span className="text-xs text-gray-500 dark:text-gray-400">(bijv. "001", "MW01", "999")</span>
                 </label>
                 <input
                   type="text"
@@ -224,12 +224,12 @@ const WorkCodesManagement: React.FC = () => {
                   placeholder="001"
                   required
                   maxLength={50}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Naam *
                 </label>
                 <input
@@ -239,12 +239,12 @@ const WorkCodesManagement: React.FC = () => {
                   placeholder="Voorbereiding"
                   required
                   maxLength={255}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Beschrijving
                 </label>
                 <textarea
@@ -252,12 +252,12 @@ const WorkCodesManagement: React.FC = () => {
                   onChange={(e) => setNewCode({ ...newCode, description: e.target.value })}
                   placeholder="Voorbereidende werkzaamheden"
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Sorteervolgorde
                 </label>
                 <input
@@ -265,7 +265,7 @@ const WorkCodesManagement: React.FC = () => {
                   value={newCode.sort_order}
                   onChange={(e) => setNewCode({ ...newCode, sort_order: parseInt(e.target.value) || 0 })}
                   placeholder="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
 
@@ -277,7 +277,7 @@ const WorkCodesManagement: React.FC = () => {
                     onChange={(e) => setNewCode({ ...newCode, is_active: e.target.checked })}
                     className="mr-2 w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
                   />
-                  <span className="text-sm font-medium text-gray-700">Actief</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Actief</span>
                 </label>
               </div>
             </div>
@@ -286,7 +286,7 @@ const WorkCodesManagement: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               >
                 Annuleren
               </button>
@@ -307,7 +307,7 @@ const WorkCodesManagement: React.FC = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
           </div>
         ) : workCodes.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             <p>Geen bewakingscodes gevonden.</p>
             <p className="text-sm mt-2">Klik op "Nieuwe Bewakingscode" om er een toe te voegen.</p>
           </div>
@@ -317,7 +317,7 @@ const WorkCodesManagement: React.FC = () => {
               <div
                 key={code.id}
                 className={`border rounded-lg p-4 ${
-                  code.is_active ? 'border-gray-200 bg-white' : 'border-gray-300 bg-gray-50'
+                  code.is_active ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800' : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700'
                 }`}
               >
                 {editingCode?.id === code.id ? (
@@ -325,44 +325,44 @@ const WorkCodesManagement: React.FC = () => {
                   <div className="space-y-3">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Code *</label>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Code *</label>
                         <input
                           type="text"
                           value={editingCode.code}
                           onChange={(e) => setEditingCode({ ...editingCode, code: e.target.value.toUpperCase() })}
                           maxLength={50}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Naam *</label>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Naam *</label>
                         <input
                           type="text"
                           value={editingCode.name}
                           onChange={(e) => setEditingCode({ ...editingCode, name: e.target.value })}
                           maxLength={255}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                         />
                       </div>
 
                       <div className="md:col-span-2">
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Beschrijving</label>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Beschrijving</label>
                         <textarea
                           value={editingCode.description}
                           onChange={(e) => setEditingCode({ ...editingCode, description: e.target.value })}
                           rows={2}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Sorteervolgorde</label>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Sorteervolgorde</label>
                         <input
                           type="number"
                           value={editingCode.sort_order}
                           onChange={(e) => setEditingCode({ ...editingCode, sort_order: parseInt(e.target.value) || 0 })}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                         />
                       </div>
 
@@ -374,15 +374,15 @@ const WorkCodesManagement: React.FC = () => {
                             onChange={(e) => setEditingCode({ ...editingCode, is_active: e.target.checked })}
                             className="mr-2 w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
                           />
-                          <span className="text-xs font-medium text-gray-700">Actief</span>
+                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Actief</span>
                         </label>
                       </div>
                     </div>
 
-                    <div className="flex justify-end gap-2 pt-2 border-t border-gray-200">
+                    <div className="flex justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
                       <button
                         onClick={() => setEditingCode(null)}
-                        className="px-3 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                        className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                       >
                         Annuleren
                       </button>
@@ -401,21 +401,21 @@ const WorkCodesManagement: React.FC = () => {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <span className={`px-3 py-1 text-sm font-semibold rounded ${
-                          code.is_active ? 'bg-red-100 text-red-800' : 'bg-gray-200 text-gray-600'
+                          code.is_active ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                         }`}>
                           {code.code}
                         </span>
-                        <h3 className="text-md font-semibold text-gray-800">{code.name}</h3>
+                        <h3 className="text-md font-semibold text-gray-800 dark:text-white">{code.name}</h3>
                         {!code.is_active && (
-                          <span className="text-xs bg-gray-300 text-gray-600 px-2 py-0.5 rounded">
+                          <span className="text-xs bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded">
                             Inactief
                           </span>
                         )}
                       </div>
                       {code.description && (
-                        <p className="text-sm text-gray-600 mb-1">{code.description}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{code.description}</p>
                       )}
-                      <p className="text-xs text-gray-500">Sorteervolgorde: {code.sort_order}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Sorteervolgorde: {code.sort_order}</p>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -423,22 +423,22 @@ const WorkCodesManagement: React.FC = () => {
                         onClick={() => toggleActiveStatus(code)}
                         className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
                           code.is_active
-                            ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                            : 'bg-green-100 text-green-800 hover:bg-green-200'
+                            ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 hover:bg-yellow-200 dark:hover:bg-yellow-900/50'
+                            : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
                         }`}
                       >
                         {code.is_active ? 'Deactiveren' : 'Activeren'}
                       </button>
                       <button
                         onClick={() => setEditingCode(code)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                        className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
                         title="Bewerken"
                       >
                         <Edit2 size={16} />
                       </button>
                       <button
                         onClick={() => handleDeleteCode(code.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
                         title="Verwijderen"
                       >
                         <Trash2 size={16} />
@@ -453,9 +453,9 @@ const WorkCodesManagement: React.FC = () => {
       </div>
 
       {/* Info Box */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-blue-900 mb-2">ℹ️ Tips voor Bewakingscodes</h3>
-        <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2">Tips voor Bewakingscodes</h3>
+        <ul className="text-sm text-blue-800 dark:text-blue-400 space-y-1 list-disc list-inside">
           <li>Gebruik duidelijke en herkenbare codes (bijv. "001", "MW01", "999")</li>
           <li>Code "999" wordt vaak gebruikt als fallback voor "Niet gespecificeerd"</li>
           <li>Codes met "MW" kunnen staan voor meerwerk (bijv. MW01, MW02)</li>
