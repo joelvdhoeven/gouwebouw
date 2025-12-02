@@ -53,6 +53,7 @@ const Instellingen: React.FC = () => {
     module_notifications: boolean;
     module_email_notifications: boolean;
     module_time_registration: boolean;
+    module_time_registration_v2: boolean;
     module_special_tools: boolean;
     module_financial_dashboard: boolean;
     csv_separator: ',' | ';';
@@ -63,6 +64,7 @@ const Instellingen: React.FC = () => {
     module_notifications_demo: boolean;
     module_email_notifications_demo: boolean;
     module_time_registration_demo: boolean;
+    module_time_registration_v2_demo: boolean;
     module_special_tools_demo: boolean;
     module_financial_dashboard_demo: boolean;
   }>({
@@ -73,6 +75,7 @@ const Instellingen: React.FC = () => {
     module_notifications: true,
     module_email_notifications: true,
     module_time_registration: true,
+    module_time_registration_v2: false,
     module_special_tools: true,
     module_financial_dashboard: true,
     csv_separator: ';',
@@ -83,6 +86,7 @@ const Instellingen: React.FC = () => {
     module_notifications_demo: false,
     module_email_notifications_demo: false,
     module_time_registration_demo: false,
+    module_time_registration_v2_demo: false,
     module_special_tools_demo: false,
     module_financial_dashboard_demo: false,
   });
@@ -116,6 +120,7 @@ const Instellingen: React.FC = () => {
           module_notifications: data.module_notifications,
           module_email_notifications: data.module_email_notifications,
           module_time_registration: data.module_time_registration,
+          module_time_registration_v2: data.module_time_registration_v2 ?? false,
           module_special_tools: data.module_special_tools,
           module_financial_dashboard: data.module_financial_dashboard,
           csv_separator: csvSeparator,
@@ -126,6 +131,7 @@ const Instellingen: React.FC = () => {
           module_notifications_demo: data.module_notifications_demo || false,
           module_email_notifications_demo: data.module_email_notifications_demo || false,
           module_time_registration_demo: data.module_time_registration_demo || false,
+          module_time_registration_v2_demo: data.module_time_registration_v2_demo ?? false,
           module_special_tools_demo: data.module_special_tools_demo || false,
           module_financial_dashboard_demo: data.module_financial_dashboard_demo || false,
         });
@@ -472,8 +478,8 @@ const Instellingen: React.FC = () => {
               <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="font-medium text-gray-800 dark:text-white">Urenregistratie</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Registreer gewerkte uren op projecten</p>
+                    <p className="font-medium text-gray-800 dark:text-white">Urenregistratie (Klassiek)</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Originele urenregistratie module</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -487,7 +493,7 @@ const Instellingen: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between pl-4 pt-3 border-t border-gray-100 dark:border-gray-700">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-1 rounded">V2</span>
+                    <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-1 rounded">DEMO MODUS</span>
                     <p className="text-xs text-gray-600 dark:text-gray-400">Alleen zichtbaar voor admins</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -495,6 +501,42 @@ const Instellingen: React.FC = () => {
                       type="checkbox"
                       checked={moduleSettings.module_time_registration_demo}
                       onChange={(e) => setModuleSettings({ ...moduleSettings, module_time_registration_demo: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="p-4 border border-blue-200 dark:border-blue-700 rounded-lg bg-blue-50/50 dark:bg-blue-900/20">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-gray-800 dark:text-white">Urenregistratie V2</p>
+                      <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/50 px-2 py-0.5 rounded">NIEUW</span>
+                    </div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Nieuwe urenregistratie met bewakingscodes per project</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_time_registration_v2}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_time_registration_v2: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+                <div className="flex items-center justify-between pl-4 pt-3 border-t border-blue-100 dark:border-blue-800">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-1 rounded">DEMO MODUS</span>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Alleen zichtbaar voor admins</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={moduleSettings.module_time_registration_v2_demo}
+                      onChange={(e) => setModuleSettings({ ...moduleSettings, module_time_registration_v2_demo: e.target.checked })}
                       className="sr-only peer"
                     />
                     <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>

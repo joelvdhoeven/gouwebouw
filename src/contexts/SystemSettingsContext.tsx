@@ -70,12 +70,12 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
           module_notifications_demo: data.module_notifications_demo || false,
           module_email_notifications_demo: data.module_email_notifications_demo || false,
           module_time_registration_demo: data.module_time_registration_demo || false,
-          module_time_registration_v2_demo: data.module_time_registration_v2_demo ?? true, // Default demo mode for V2
+          module_time_registration_v2_demo: data.module_time_registration_v2_demo ?? false,
           module_special_tools_demo: data.module_special_tools_demo || false,
           module_financial_dashboard_demo: data.module_financial_dashboard_demo || false,
         });
       } else {
-        // Default: alle modules aan, demo mode uit (behalve V2 die standaard in demo mode staat)
+        // Default: alle modules aan, demo mode uit
         setSettings({
           module_invoicing: true,
           module_hourly_rates: true,
@@ -95,14 +95,14 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
           module_notifications_demo: false,
           module_email_notifications_demo: false,
           module_time_registration_demo: false,
-          module_time_registration_v2_demo: true, // V2 standaard in demo mode (alleen admin/superuser)
+          module_time_registration_v2_demo: false,
           module_special_tools_demo: false,
           module_financial_dashboard_demo: false,
         });
       }
     } catch (error) {
       console.error('Error loading system settings:', error);
-      // Default: alle modules aan bij error, demo mode uit (behalve V2)
+      // Default: alle modules aan bij error, demo mode uit
       setSettings({
         module_invoicing: true,
         module_hourly_rates: true,
@@ -122,7 +122,7 @@ export const SystemSettingsProvider: React.FC<{ children: React.ReactNode }> = (
         module_notifications_demo: false,
         module_email_notifications_demo: false,
         module_time_registration_demo: false,
-        module_time_registration_v2_demo: true,
+        module_time_registration_v2_demo: false,
         module_special_tools_demo: false,
         module_financial_dashboard_demo: false,
       });
