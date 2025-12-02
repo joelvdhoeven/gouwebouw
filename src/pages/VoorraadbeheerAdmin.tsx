@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Package, Search, Plus, AlertCircle, Truck, Warehouse, Download, Upload, ScanLine, Filter, X, Edit, Trash2, Eye, ArrowRightLeft, Image as ImageIcon, Camera } from 'lucide-react';
+import { Package, Search, Plus, AlertCircle, Truck, Warehouse, Download, Upload, ScanLine, Filter, X, Edit, Trash2, Eye, ArrowRightLeft, Image as ImageIcon, Camera, LayoutDashboard, MapPin, TrendingUp, TrendingDown, Box, CheckSquare, Square, ChevronRight, BarChart3 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystemSettings } from '../contexts/SystemSettingsContext';
@@ -61,7 +61,7 @@ interface Project {
 const VoorraadbeheerAdmin: React.FC = () => {
   const { user, profile } = useAuth();
   const { getCsvSeparator } = useSystemSettings();
-  const [activeTab, setActiveTab] = useState<'overzicht' | 'boeken' | 'producten' | 'locaties'>('overzicht');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'overzicht' | 'boeken' | 'producten' | 'locaties'>('dashboard');
   const [products, setProducts] = useState<Product[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [stock, setStock] = useState<Stock[]>([]);
@@ -1189,23 +1189,222 @@ const VoorraadbeheerAdmin: React.FC = () => {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/50">
         <div className="border-b border-gray-200 dark:border-gray-700">
           <div className="flex space-x-1 p-1">
-            {['overzicht', 'producten', 'locaties'].map((tab) => (
+            {[
+              { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+              { id: 'overzicht', label: 'Overzicht', icon: Package },
+              { id: 'producten', label: 'Producten', icon: Box },
+              { id: 'locaties', label: 'Locaties', icon: MapPin }
+            ].map((tab) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab as any)}
-                className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                  activeTab === tab
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-2 ${
+                  activeTab === tab.id
                     ? 'bg-red-600 text-white'
                     : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                <tab.icon size={16} />
+                <span className="hidden sm:inline">{tab.label}</span>
               </button>
             ))}
           </div>
         </div>
 
         <div className="p-6">
+          {/* Dashboard Tab */}
+          {activeTab === 'dashboard' && (
+            <div className="space-y-6">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Total Products */}
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl p-5 border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Totaal Producten</p>
+                      <p className="text-3xl font-bold text-blue-900 dark:text-blue-100 mt-1">{products.length}</p>
+                    </div>
+                    <div className="bg-blue-200 dark:bg-blue-800 p-3 rounded-lg">
+                      <Box className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Locations */}
+                <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 rounded-xl p-5 border border-green-200 dark:border-green-800">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-green-600 dark:text-green-400">Locaties</p>
+                      <p className="text-3xl font-bold text-green-900 dark:text-green-100 mt-1">{locations.length}</p>
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                        {locations.filter(l => l.type === 'magazijn').length} magazijn, {locations.filter(l => l.type === 'bus').length} bus
+                      </p>
+                    </div>
+                    <div className="bg-green-200 dark:bg-green-800 p-3 rounded-lg">
+                      <MapPin className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Stock Items */}
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 rounded-xl p-5 border border-purple-200 dark:border-purple-800">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-purple-600 dark:text-purple-400">Voorraad Items</p>
+                      <p className="text-3xl font-bold text-purple-900 dark:text-purple-100 mt-1">{stock.length}</p>
+                      <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                        {stock.reduce((sum, s) => sum + s.quantity, 0).toFixed(0)} totaal stuks
+                      </p>
+                    </div>
+                    <div className="bg-purple-200 dark:bg-purple-800 p-3 rounded-lg">
+                      <Package className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Low Stock Alerts */}
+                <div className={`bg-gradient-to-br ${lowStockAlerts.length > 0 ? 'from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 border-red-200 dark:border-red-800' : 'from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 border-gray-200 dark:border-gray-700'} rounded-xl p-5 border`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className={`text-sm font-medium ${lowStockAlerts.length > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>Lage Voorraad</p>
+                      <p className={`text-3xl font-bold mt-1 ${lowStockAlerts.length > 0 ? 'text-red-900 dark:text-red-100' : 'text-gray-900 dark:text-gray-100'}`}>{lowStockAlerts.length}</p>
+                      <p className={`text-xs mt-1 ${lowStockAlerts.length > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                        {lowStockAlerts.length > 0 ? 'waarschuwingen' : 'alles op voorraad'}
+                      </p>
+                    </div>
+                    <div className={`${lowStockAlerts.length > 0 ? 'bg-red-200 dark:bg-red-800' : 'bg-gray-200 dark:bg-gray-700'} p-3 rounded-lg`}>
+                      <AlertCircle className={`h-6 w-6 ${lowStockAlerts.length > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Low Stock Warnings */}
+              {lowStockAlerts.length > 0 && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-5">
+                  <div className="flex items-center gap-3 mb-4">
+                    <AlertCircle className="text-red-600 dark:text-red-400" size={24} />
+                    <h3 className="text-lg font-semibold text-red-900 dark:text-red-200">Lage Voorraad Waarschuwingen</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {lowStockAlerts.slice(0, 6).map((alert, idx) => (
+                      <div key={idx} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-red-200 dark:border-red-800">
+                        <p className="font-medium text-gray-900 dark:text-white text-sm">{alert.product_name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{alert.location_name}</p>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-red-600 dark:text-red-400 font-semibold">{alert.current_stock} {products.find(p => p.id === alert.product_id)?.unit}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">min: {alert.minimum_stock}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {lowStockAlerts.length > 6 && (
+                    <button
+                      onClick={() => setActiveTab('overzicht')}
+                      className="mt-4 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium flex items-center gap-1"
+                    >
+                      Bekijk alle {lowStockAlerts.length} waarschuwingen
+                      <ChevronRight size={16} />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Quick Actions */}
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <BarChart3 className="text-red-600" size={20} />
+                  Snelle Acties
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <button
+                    onClick={() => setActiveTab('overzicht')}
+                    className="flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    <Package className="h-8 w-8 text-blue-600 dark:text-blue-400 mb-2" />
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">Voorraad</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Bekijken</span>
+                  </button>
+                  {canManage && (
+                    <button
+                      onClick={() => {
+                        setActiveTab('producten');
+                        setTimeout(() => setShowAddProductModal(true), 100);
+                      }}
+                      className="flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      <Plus className="h-8 w-8 text-green-600 dark:text-green-400 mb-2" />
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">Product</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Toevoegen</span>
+                    </button>
+                  )}
+                  {canManage && (
+                    <button
+                      onClick={() => {
+                        setActiveTab('locaties');
+                        setTimeout(() => setShowAddLocationModal(true), 100);
+                      }}
+                      className="flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      <MapPin className="h-8 w-8 text-purple-600 dark:text-purple-400 mb-2" />
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">Locatie</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Toevoegen</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={exportToCSV}
+                    className="flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    <Download className="h-8 w-8 text-red-600 dark:text-red-400 mb-2" />
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">Export</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">CSV</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Location Overview */}
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <MapPin className="text-red-600" size={20} />
+                  Locatie Overzicht
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {locations.map((location) => {
+                    const locationStock = stock.filter(s => s.location_id === location.id);
+                    const totalItems = locationStock.reduce((sum, s) => sum + s.quantity, 0);
+                    const uniqueProducts = locationStock.length;
+                    return (
+                      <div
+                        key={location.id}
+                        onClick={() => {
+                          setLocationFilter(location.id);
+                          setActiveTab('overzicht');
+                        }}
+                        className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer"
+                      >
+                        {location.type === 'bus' ? (
+                          <Truck className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+                        ) : (
+                          <Warehouse className="h-10 w-10 text-green-600 dark:text-green-400" />
+                        )}
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900 dark:text-white">{location.name}</p>
+                          {location.license_plate && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{location.license_plate}</p>
+                          )}
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                            {uniqueProducts} producten • {totalItems.toFixed(0)} stuks
+                          </p>
+                        </div>
+                        <ChevronRight className="text-gray-400" size={20} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'overzicht' && (
             <div className="space-y-4">
               {selectedStockIds.size > 0 && (
@@ -1249,53 +1448,62 @@ const VoorraadbeheerAdmin: React.FC = () => {
                   </div>
                 </div>
               )}
-              <div className="flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-3 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex flex-wrap gap-2">
-                  {canManage && (
-                    <>
-                      <button
-                        onClick={() => setShowAddProductModal(true)}
-                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
-                      >
-                        <Plus size={18} />
-                        Product Toevoegen
-                      </button>
-                      <button
-                        onClick={() => setShowAddLocationModal(true)}
-                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
-                      >
-                        <Plus size={18} />
-                        Locatie Toevoegen
-                      </button>
-                    </>
-                  )}
-                  <button
-                    onClick={exportToCSV}
-                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
-                  >
-                    <Download size={18} />
-                    Export Voorraad
-                  </button>
-                  {canManage && (
-                    <div className="flex flex-col items-end gap-1">
-                      <label className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2 cursor-pointer">
-                        <Upload size={18} />
-                        Import Voorraad
-                        <input
-                          type="file"
-                          accept=".csv"
-                          onChange={handleImportProducts}
-                          className="hidden"
-                        />
-                      </label>
-                      <button
-                        onClick={downloadImportTemplate}
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
-                      >
-                        Download import sjabloon
-                      </button>
-                    </div>
-                  )}
+              {/* Action Bar */}
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Package className="text-red-600" size={20} />
+                    Voorraad Beheer
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {canManage && (
+                      <>
+                        <button
+                          onClick={() => setShowAddProductModal(true)}
+                          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 text-sm font-medium transition-colors"
+                        >
+                          <Plus size={16} />
+                          <span className="hidden sm:inline">Product</span>
+                        </button>
+                        <button
+                          onClick={() => setShowAddLocationModal(true)}
+                          className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition-colors"
+                        >
+                          <MapPin size={16} />
+                          <span className="hidden sm:inline">Locatie</span>
+                        </button>
+                      </>
+                    )}
+                    <button
+                      onClick={exportToCSV}
+                      className="px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center gap-2 text-sm font-medium transition-colors"
+                    >
+                      <Download size={16} />
+                      <span className="hidden sm:inline">Export</span>
+                    </button>
+                    {canManage && (
+                      <>
+                        <label className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 text-sm font-medium cursor-pointer transition-colors">
+                          <Upload size={16} />
+                          <span className="hidden sm:inline">Import</span>
+                          <input
+                            type="file"
+                            accept=".csv"
+                            onChange={handleImportProducts}
+                            className="hidden"
+                          />
+                        </label>
+                        <button
+                          onClick={downloadImportTemplate}
+                          className="px-3 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center gap-2 text-sm font-medium transition-colors"
+                          title="Download import sjabloon"
+                        >
+                          <Download size={16} />
+                          <span className="hidden sm:inline">Sjabloon</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
@@ -1442,49 +1650,54 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
           {activeTab === 'producten' && (
             <div className="space-y-4">
-              {/* Search and Actions - Mobile Responsive */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-2.5 text-gray-400 dark:text-gray-500" size={20} />
-                  <input
-                    type="text"
-                    placeholder="Zoek op naam, SKU of materiaal groep..."
-                    value={productSearchTerm}
-                    onChange={(e) => setProductSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
+              {/* Action Bar */}
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Box className="text-red-600" size={20} />
+                    Producten ({products.length})
+                  </h3>
+                  {canManage && (
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setShowAddProductModal(true)}
+                        className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 text-sm font-medium transition-colors"
+                      >
+                        <Plus size={16} />
+                        <span className="hidden sm:inline">Toevoegen</span>
+                      </button>
+                      <label className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 text-sm font-medium cursor-pointer transition-colors">
+                        <Upload size={16} />
+                        <span className="hidden sm:inline">Import CSV</span>
+                        <input
+                          type="file"
+                          accept=".csv"
+                          onChange={handleImportProducts}
+                          className="hidden"
+                        />
+                      </label>
+                      <button
+                        onClick={exportProductsToCSV}
+                        className="px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center gap-2 text-sm font-medium transition-colors"
+                      >
+                        <Download size={16} />
+                        <span className="hidden sm:inline">Export CSV</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
-                {canManage && (
-                  <div className="flex flex-wrap gap-2">
-                    <label className="flex-1 sm:flex-none px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap">
-                      <Upload size={18} />
-                      <span className="hidden sm:inline">Import CSV</span>
-                      <span className="sm:hidden">Import</span>
-                      <input
-                        type="file"
-                        accept=".csv"
-                        onChange={handleImportProducts}
-                        className="hidden"
-                      />
-                    </label>
-                    <button
-                      onClick={exportProductsToCSV}
-                      className="flex-1 sm:flex-none px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2 whitespace-nowrap"
-                    >
-                      <Download size={18} />
-                      <span className="hidden sm:inline">Export CSV</span>
-                      <span className="sm:hidden">Export</span>
-                    </button>
-                    <button
-                      onClick={() => setShowAddProductModal(true)}
-                      className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2 whitespace-nowrap"
-                    >
-                      <Plus size={18} />
-                      <span className="hidden sm:inline">Product Toevoegen</span>
-                      <span className="sm:hidden">Toevoegen</span>
-                    </button>
-                  </div>
-                )}
+              </div>
+
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 text-gray-400 dark:text-gray-500" size={20} />
+                <input
+                  type="text"
+                  placeholder="Zoek op naam, SKU of materiaal groep..."
+                  value={productSearchTerm}
+                  onChange={(e) => setProductSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {products.filter(p =>
@@ -1537,17 +1750,33 @@ const VoorraadbeheerAdmin: React.FC = () => {
 
           {activeTab === 'locaties' && (
             <div className="space-y-4">
-              {canManage && (
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => setShowAddLocationModal(true)}
-                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
-                  >
-                    <Plus size={18} />
-                    Locatie Toevoegen
-                  </button>
+              {/* Action Bar */}
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <MapPin className="text-red-600" size={20} />
+                    Locaties ({locations.length})
+                  </h3>
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mr-2">
+                      <Warehouse size={16} className="text-green-600" />
+                      <span>{locations.filter(l => l.type === 'magazijn').length} magazijn</span>
+                      <span className="mx-1">•</span>
+                      <Truck size={16} className="text-blue-600" />
+                      <span>{locations.filter(l => l.type === 'bus').length} bus</span>
+                    </div>
+                    {canManage && (
+                      <button
+                        onClick={() => setShowAddLocationModal(true)}
+                        className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 text-sm font-medium transition-colors"
+                      >
+                        <Plus size={16} />
+                        <span className="hidden sm:inline">Locatie Toevoegen</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {locations.map((location) => (
                   <div
