@@ -1,18 +1,19 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Download, Plus, Calendar, X, Trash2, Pencil, Minus, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useSystemSettings } from '../contexts/SystemSettingsContext';
 import { useSupabaseQuery, useSupabaseMutation } from '../hooks/useSupabase';
 import { supabase } from '../lib/supabase';
-import type { UrenRegistratie, Project, WorkLine, MaterialLine } from '../types';
+import { UrenRegistratie, Project, WorkLine, MaterialLine } from '../types';
 import { exportUrenRegistraties } from '../utils/exportUtils';
 import { formatDate } from '../utils/dateUtils';
+import ProtectedRoute from '../components/ProtectedRoute';
 import Modal from '../components/Modal';
 import DatePickerField from '../components/DatePickerField';
 import MaterialSelectionModal from '../components/MaterialSelectionModal';
 
-function UrenregistratieV2() {
+const UrenregistratieV2: React.FC = () => {
   const { t } = useLanguage();
   const { hasPermission, user, profile } = useAuth();
   const { settings } = useSystemSettings();
@@ -1549,7 +1550,7 @@ function UrenregistratieV2() {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">{t('urenregistratie')}</h1>
             <div className="flex space-x-3">
-{hasPermission('export_data') && (
+<ProtectedRoute permission="export_data">
                 <button
                   onClick={handleExport}
                   className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
@@ -1557,7 +1558,7 @@ function UrenregistratieV2() {
                   <Download size={16} />
                   <span>{t('exporteren')}</span>
                 </button>
-              )}
+              </ProtectedRoute>
               <button 
                 onClick={handleNewRegistration}
                 className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
