@@ -13,7 +13,7 @@ import Modal from '../components/Modal';
 import DatePickerField from '../components/DatePickerField';
 import MaterialSelectionModal from '../components/MaterialSelectionModal';
 
-const Urenregistratie: React.FC = () => {
+const UrenregistratieV2: React.FC = () => {
   const { t } = useLanguage();
   const { hasPermission, user, profile } = useAuth();
   const { settings } = useSystemSettings();
@@ -2457,4 +2457,4 @@ const Urenregistratie: React.FC = () => {
   );
 };
 
-export default Urenregistratie;
+export default UrenregistratieV2;
