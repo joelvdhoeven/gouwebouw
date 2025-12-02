@@ -33,6 +33,7 @@ const ProjectWorkCodesSelector: React.FC<Props> = ({ projectId, onChange, readOn
   const [showAddCustom, setShowAddCustom] = useState(false);
   const [customCode, setCustomCode] = useState({ code: '', name: '', description: '' });
   const [error, setError] = useState('');
+  const [tableExists, setTableExists] = useState(true);
 
   // Load all active work codes
   useEffect(() => {
@@ -63,7 +64,7 @@ const ProjectWorkCodesSelector: React.FC<Props> = ({ projectId, onChange, readOn
   }, [projectId]);
 
   const loadProjectWorkCodes = async () => {
-    if (!projectId) return;
+    if (!projectId || !tableExists) return;
 
     setLoading(true);
     try {
@@ -81,9 +82,10 @@ const ProjectWorkCodesSelector: React.FC<Props> = ({ projectId, onChange, readOn
         .eq('project_id', projectId);
 
       if (error) {
-        // Table might not exist yet
-        if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
-          console.log('project_work_codes table does not exist yet');
+        // Table might not exist yet - check for various error codes
+        if (error.code === 'PGRST116' || error.code === 'PGRST205' || error.message?.includes('does not exist')) {
+          console.log('project_work_codes table does not exist yet - feature disabled');
+          setTableExists(false);
           setProjectWorkCodes([]);
           return;
         }
@@ -94,7 +96,13 @@ const ProjectWorkCodesSelector: React.FC<Props> = ({ projectId, onChange, readOn
       if (onChange) {
         onChange(data || []);
       }
-    } catch (err) {
+    } catch (err: any) {
+      // Also check error in catch block
+      if (err?.code === 'PGRST205' || err?.message?.includes('does not exist')) {
+        setTableExists(false);
+        setProjectWorkCodes([]);
+        return;
+      }
       console.error('Error loading project work codes:', err);
     } finally {
       setLoading(false);
@@ -108,7 +116,7 @@ const ProjectWorkCodesSelector: React.FC<Props> = ({ projectId, onChange, readOn
 
   // Toggle a standard work code
   const toggleWorkCode = async (workCode: WorkCode) => {
-    if (!projectId || readOnly) return;
+    if (!projectId || readOnly || !tableExists) return;
 
     try {
       if (isCodeSelected(workCode.id)) {
@@ -119,7 +127,13 @@ const ProjectWorkCodesSelector: React.FC<Props> = ({ projectId, onChange, readOn
           .eq('project_id', projectId)
           .eq('work_code_id', workCode.id);
 
-        if (error) throw error;
+        if (error) {
+          if (error.code === 'PGRST205') {
+            setTableExists(false);
+            return;
+          }
+          throw error;
+        }
       } else {
         // Add
         const { error } = await supabase
@@ -129,11 +143,21 @@ const ProjectWorkCodesSelector: React.FC<Props> = ({ projectId, onChange, readOn
             work_code_id: workCode.id
           });
 
-        if (error) throw error;
+        if (error) {
+          if (error.code === 'PGRST205') {
+            setTableExists(false);
+            return;
+          }
+          throw error;
+        }
       }
 
       await loadProjectWorkCodes();
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.code === 'PGRST205') {
+        setTableExists(false);
+        return;
+      }
       console.error('Error toggling work code:', err);
       setError('Fout bij het wijzigen van bewakingscode');
       setTimeout(() => setError(''), 3000);
@@ -142,7 +166,7 @@ const ProjectWorkCodesSelector: React.FC<Props> = ({ projectId, onChange, readOn
 
   // Add a custom work code
   const handleAddCustomCode = async () => {
-    if (!projectId || readOnly) return;
+    if (!projectId || readOnly || !tableExists) return;
 
     if (!customCode.code || !customCode.name) {
       setError('Code en naam zijn verplicht');
@@ -168,12 +192,22 @@ const ProjectWorkCodesSelector: React.FC<Props> = ({ projectId, onChange, readOn
           custom_description: customCode.description || null
         });
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === 'PGRST205') {
+          setTableExists(false);
+          return;
+        }
+        throw error;
+      }
 
       setCustomCode({ code: '', name: '', description: '' });
       setShowAddCustom(false);
       await loadProjectWorkCodes();
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.code === 'PGRST205') {
+        setTableExists(false);
+        return;
+      }
       console.error('Error adding custom code:', err);
       setError('Fout bij het toevoegen van aangepaste code');
       setTimeout(() => setError(''), 3000);
@@ -182,7 +216,7 @@ const ProjectWorkCodesSelector: React.FC<Props> = ({ projectId, onChange, readOn
 
   // Remove a project work code (custom or standard)
   const removeProjectWorkCode = async (pwcId: string) => {
-    if (!projectId || readOnly) return;
+    if (!projectId || readOnly || !tableExists) return;
 
     try {
       const { error } = await supabase
@@ -190,9 +224,19 @@ const ProjectWorkCodesSelector: React.FC<Props> = ({ projectId, onChange, readOn
         .delete()
         .eq('id', pwcId);
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === 'PGRST205') {
+          setTableExists(false);
+          return;
+        }
+        throw error;
+      }
       await loadProjectWorkCodes();
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.code === 'PGRST205') {
+        setTableExists(false);
+        return;
+      }
       console.error('Error removing work code:', err);
       setError('Fout bij het verwijderen van bewakingscode');
       setTimeout(() => setError(''), 3000);
@@ -204,9 +248,20 @@ const ProjectWorkCodesSelector: React.FC<Props> = ({ projectId, onChange, readOn
 
   if (!projectId) {
     return (
-      <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <p className="text-sm text-gray-500 italic">
+      <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+        <p className="text-sm text-gray-500 dark:text-gray-400 italic">
           Sla het project eerst op om bewakingscodes te kunnen toewijzen.
+        </p>
+      </div>
+    );
+  }
+
+  // Show message if table doesn't exist yet
+  if (!tableExists) {
+    return (
+      <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+        <p className="text-sm text-yellow-700 dark:text-yellow-400">
+          Project-specifieke bewakingscodes zijn nog niet beschikbaar. De database moet eerst worden bijgewerkt.
         </p>
       </div>
     );

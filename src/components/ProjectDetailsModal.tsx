@@ -206,13 +206,13 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title={project.naam}>
       <div className="space-y-4">
         {/* Header Actions */}
-        <div className="flex justify-between items-center border-b border-gray-200 pb-4">
+        <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-4">
           <div>
-            <p className="text-sm text-gray-500">#{project.project_nummer || 'Geen nummer'}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">#{project.project_nummer || 'Geen nummer'}</p>
             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full mt-2 ${
-              project.status === 'actief' ? 'bg-green-100 text-green-800' :
-              project.status === 'voltooid' ? 'bg-blue-100 text-blue-800' :
-              'bg-yellow-100 text-yellow-800'
+              project.status === 'actief' ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300' :
+              project.status === 'voltooid' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300' :
+              'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300'
             }`}>
               {project.status}
             </span>
@@ -256,14 +256,14 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <nav className="-mb-px flex space-x-8 overflow-x-auto">
             <button
               onClick={() => setActiveTab('overview')}
               className={`${
                 activeTab === 'overview'
                   ? 'border-red-600 text-red-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
             >
               Overzicht
@@ -273,7 +273,7 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
               className={`${
                 activeTab === 'users'
                   ? 'border-red-600 text-red-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
             >
               <Users size={16} />
@@ -284,7 +284,7 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
               className={`${
                 activeTab === 'registrations'
                   ? 'border-red-600 text-red-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
             >
               <Clock size={16} />
@@ -295,7 +295,7 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
               className={`${
                 activeTab === 'materials'
                   ? 'border-red-600 text-red-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
             >
               <Package size={16} />
@@ -309,40 +309,40 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
           {activeTab === 'overview' && (
             <div className="space-y-4">
               <div>
-                <h3 className="font-medium text-gray-800 mb-2">Beschrijving</h3>
-                <p className="text-gray-600">{project.beschrijving}</p>
+                <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Beschrijving</h3>
+                <p className="text-gray-600 dark:text-gray-400">{project.beschrijving}</p>
               </div>
               <div>
-                <h3 className="font-medium text-gray-800 mb-2">Start Datum</h3>
-                <p className="text-gray-600">{formatDate(project.start_datum)}</p>
+                <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Start Datum</h3>
+                <p className="text-gray-600 dark:text-gray-400">{formatDate(project.start_datum)}</p>
               </div>
               {project.oppervlakte_m2 && (
                 <div>
-                  <h3 className="font-medium text-gray-800 mb-2">Oppervlakte</h3>
-                  <p className="text-gray-600">{project.oppervlakte_m2} m²</p>
+                  <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Oppervlakte</h3>
+                  <p className="text-gray-600 dark:text-gray-400">{project.oppervlakte_m2} m²</p>
                 </div>
               )}
               <div>
-                <h3 className="font-medium text-gray-800 mb-2">Totaal Uren</h3>
+                <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Totaal Uren</h3>
                 <p className="text-2xl font-bold text-red-600">{totalHours.toFixed(1)}h</p>
               </div>
               <div>
-                <h3 className="font-medium text-gray-800 mb-2">Kilometers Geregistreerd</h3>
+                <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Kilometers Geregistreerd</h3>
                 <p className="text-2xl font-bold text-red-600">
                   {projectRegistrations.reduce((sum, reg) => sum + (parseFloat(reg.driven_kilometers) || 0), 0).toFixed(1)} km
                 </p>
               </div>
               {project.progress_percentage > 0 && (
                 <div>
-                  <h3 className="font-medium text-gray-800 mb-2">Voortgang</h3>
+                  <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Voortgang</h3>
                   <div className="flex items-center space-x-3">
-                    <div className="flex-1 bg-gray-200 rounded-full h-3">
+                    <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                       <div
                         className="bg-red-600 h-3 rounded-full transition-all duration-300"
                         style={{ width: `${project.progress_percentage}%` }}
                       ></div>
                     </div>
-                    <span className="font-medium text-gray-800">{project.progress_percentage}%</span>
+                    <span className="font-medium text-gray-800 dark:text-gray-200">{project.progress_percentage}%</span>
                   </div>
                 </div>
               )}
@@ -352,18 +352,18 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
           {activeTab === 'users' && (
             <div className="space-y-3">
               {projectUsers.map((userInfo) => (
-                <div key={userInfo.userId} className="bg-gray-50 rounded p-4">
+                <div key={userInfo.userId} className="bg-gray-50 dark:bg-gray-700 rounded p-4">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium text-gray-800">{userInfo.naam}</span>
+                    <span className="font-medium text-gray-800 dark:text-gray-200">{userInfo.naam}</span>
                     <span className="text-red-600 font-semibold text-lg">{userInfo.totalHours.toFixed(1)}h</span>
                   </div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
                     {userInfo.registrations.length} {userInfo.registrations.length === 1 ? 'registratie' : 'registraties'}
                   </div>
                 </div>
               ))}
               {projectUsers.length === 0 && (
-                <p className="text-gray-500 text-center py-4">Geen uren geregistreerd</p>
+                <p className="text-gray-500 dark:text-gray-400 text-center py-4">Geen uren geregistreerd</p>
               )}
             </div>
           )}
@@ -374,45 +374,45 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                 const gebruiker = gebruikers.find((g: any) => g.id === reg.user_id);
 
                 return (
-                  <div key={reg.id} className="bg-gray-50 rounded p-3 text-sm border border-gray-200">
+                  <div key={reg.id} className="bg-gray-50 dark:bg-gray-700 rounded p-3 text-sm border border-gray-200 dark:border-gray-600">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex flex-col">
-                        <span className="font-medium text-gray-800">{gebruiker?.naam || 'Onbekend'}</span>
-                        <span className="text-xs text-gray-500">{formatDate(reg.datum)}</span>
+                        <span className="font-medium text-gray-800 dark:text-gray-200">{gebruiker?.naam || 'Onbekend'}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{formatDate(reg.datum)}</span>
                       </div>
                       <span className="text-red-600 font-semibold">{parseFloat(reg.aantal_uren) || 0}h</span>
                     </div>
 
-                    <div className="text-gray-600 mb-1">{reg.werkomschrijving}</div>
+                    <div className="text-gray-600 dark:text-gray-300 mb-1">{reg.werkomschrijving}</div>
                     <div className="text-gray-400 mb-1">{reg.werktype}</div>
 
                     {/* Additional information */}
-                    <div className="flex flex-wrap gap-3 mt-2 pt-2 border-t border-gray-200">
+                    <div className="flex flex-wrap gap-3 mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
                       {reg.driven_kilometers > 0 && (
                         <div className="text-xs">
-                          <span className="text-gray-500">Kilometers:</span>
-                          <span className="text-gray-700 ml-1 font-medium">{parseFloat(reg.driven_kilometers).toFixed(1)} km</span>
+                          <span className="text-gray-500 dark:text-gray-400">Kilometers:</span>
+                          <span className="text-gray-700 dark:text-gray-300 ml-1 font-medium">{parseFloat(reg.driven_kilometers).toFixed(1)} km</span>
                         </div>
                       )}
                       {reg.locatie && (
                         <div className="text-xs">
-                          <span className="text-gray-500">Locatie:</span>
-                          <span className="text-gray-700 ml-1">{reg.locatie}</span>
+                          <span className="text-gray-500 dark:text-gray-400">Locatie:</span>
+                          <span className="text-gray-700 dark:text-gray-300 ml-1">{reg.locatie}</span>
                         </div>
                       )}
                       {reg.progress_percentage > 0 && (
                         <div className="text-xs">
-                          <span className="text-gray-500">Voortgang:</span>
-                          <span className="text-blue-600 font-medium ml-1">{reg.progress_percentage}%</span>
+                          <span className="text-gray-500 dark:text-gray-400">Voortgang:</span>
+                          <span className="text-blue-600 dark:text-blue-400 font-medium ml-1">{reg.progress_percentage}%</span>
                         </div>
                       )}
                       {reg.status && (
                         <div className="text-xs">
-                          <span className="text-gray-500">Status:</span>
+                          <span className="text-gray-500 dark:text-gray-400">Status:</span>
                           <span className={`ml-1 font-medium ${
-                            reg.status === 'goedgekeurd' ? 'text-green-600' :
-                            reg.status === 'afgekeurd' ? 'text-red-600' :
-                            'text-yellow-600'
+                            reg.status === 'goedgekeurd' ? 'text-green-600 dark:text-green-400' :
+                            reg.status === 'afgekeurd' ? 'text-red-600 dark:text-red-400' :
+                            'text-yellow-600 dark:text-yellow-400'
                           }`}>{reg.status}</span>
                         </div>
                       )}
@@ -421,7 +421,7 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                 );
               })}
               {projectRegistrations.length === 0 && (
-                <p className="text-gray-500 text-center py-4">Geen registraties gevonden</p>
+                <p className="text-gray-500 dark:text-gray-400 text-center py-4">Geen registraties gevonden</p>
               )}
             </div>
           )}
@@ -430,18 +430,18 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
             <div className="space-y-2">
               {projectMaterials.map((transaction: any) => {
                 return (
-                  <div key={transaction.id} className="bg-gray-50 rounded p-3 text-sm border border-gray-200">
+                  <div key={transaction.id} className="bg-gray-50 dark:bg-gray-700 rounded p-3 text-sm border border-gray-200 dark:border-gray-600">
                     <div className="flex justify-between items-start mb-1">
                       <div className="flex flex-col">
-                        <span className="font-medium text-gray-800">{transaction.product?.name}</span>
-                        <span className="text-xs text-gray-500">{transaction.product?.sku}</span>
+                        <span className="font-medium text-gray-800 dark:text-gray-200">{transaction.product?.name}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{transaction.product?.sku}</span>
                       </div>
                       <span className={`font-semibold ${transaction.quantity < 0 ? 'text-red-600' : 'text-green-600'}`}>
                         {transaction.quantity > 0 ? '+' : ''}{transaction.quantity} {transaction.product?.unit}
                       </span>
                     </div>
-                    <div className="text-gray-500 mb-1">{formatDate(transaction.created_at)}</div>
-                    <div className="text-gray-600">
+                    <div className="text-gray-500 dark:text-gray-400 mb-1">{formatDate(transaction.created_at)}</div>
+                    <div className="text-gray-600 dark:text-gray-300">
                       {transaction.user?.naam || 'Onbekend'} - {transaction.location?.name}
                     </div>
                     {transaction.notes && (
@@ -451,7 +451,7 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                 );
               })}
               {projectMaterials.length === 0 && (
-                <p className="text-gray-500 text-center py-4">Geen materiaal geboekt</p>
+                <p className="text-gray-500 dark:text-gray-400 text-center py-4">Geen materiaal geboekt</p>
               )}
             </div>
           )}
