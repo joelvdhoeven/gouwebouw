@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FolderOpen, Plus, Calendar, Users, Clock, BarChart3, Eye, Search, Archive } from 'lucide-react';
+import { FolderOpen, Plus, Calendar, Users, Clock, BarChart3, Eye, Search, Archive, Check } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import { nl } from 'date-fns/locale';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -13,6 +13,14 @@ import SupabaseErrorHelper from '../components/SupabaseErrorHelper';
 import ProjectDetailsModal from '../components/ProjectDetailsModal';
 import ProjectWorkCodesSelector from '../components/ProjectWorkCodesSelector';
 
+interface WorkCode {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  is_active: boolean;
+}
+
 const Projecten: React.FC = () => {
   const { t } = useLanguage();
   const { user, hasPermission } = useAuth();
@@ -20,6 +28,11 @@ const Projecten: React.FC = () => {
   const { data: urenRegistraties = [] } = useSupabaseQuery<any>('time_registrations', 'id, user_id, project_id, datum, aantal_uren, werktype, werkomschrijving, locatie, status, project_naam, progress_percentage, created_at, updated_at, driven_kilometers');
   const { data: gebruikers = [] } = useSupabaseQuery<any>('profiles', 'id, naam');
   const { data: systemSettings = [] } = useSupabaseQuery<any>('system_settings');
+
+  // Work codes for new project creation
+  const [allWorkCodes, setAllWorkCodes] = useState<WorkCode[]>([]);
+  const [selectedWorkCodeIds, setSelectedWorkCodeIds] = useState<string[]>([]);
+  const [workCodesLoading, setWorkCodesLoading] = useState(false);
 
   // Filter projects based on user role and status
   const filteredByRole = hasPermission('view_reports')
@@ -40,6 +53,34 @@ const Projecten: React.FC = () => {
     console.log('Active projecten:', projecten);
     console.log('Archived projecten:', archivedProjecten);
   }, [allProjecten, projecten, archivedProjecten]);
+
+  // Load work codes for new project creation
+  const loadWorkCodes = async () => {
+    setWorkCodesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('work_codes')
+        .select('*')
+        .eq('is_active', true)
+        .order('code', { ascending: true });
+
+      if (error) throw error;
+      setAllWorkCodes(data || []);
+      // Select all work codes by default for new projects
+      setSelectedWorkCodeIds((data || []).map((wc: WorkCode) => wc.id));
+    } catch (err) {
+      console.error('Error loading work codes:', err);
+    } finally {
+      setWorkCodesLoading(false);
+    }
+  };
+
+  // Load work codes when modal opens for new project
+  useEffect(() => {
+    if (showModal && !editingProject) {
+      loadWorkCodes();
+    }
+  }, [showModal, editingProject]);
   const { insert: insertProject, update: updateProject, remove: deleteProject, loading: mutationLoading } = useSupabaseMutation('projects');
   const [showModal, setShowModal] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -93,9 +134,31 @@ const Projecten: React.FC = () => {
     const action = editingProject
       ? updateProject(editingProject.id, projectData)
       : insertProject(projectData);
-    
+
     action
-      .then(() => {
+      .then(async (result) => {
+        // If this is a new project and work codes were selected, save them
+        if (!editingProject && result && selectedWorkCodeIds.length > 0) {
+          try {
+            const newProjectId = result.id;
+            const workCodeInserts = selectedWorkCodeIds.map(workCodeId => ({
+              project_id: newProjectId,
+              work_code_id: workCodeId
+            }));
+
+            const { error: workCodeError } = await supabase
+              .from('project_work_codes')
+              .insert(workCodeInserts);
+
+            if (workCodeError) {
+              console.error('Error saving work codes:', workCodeError);
+              // Don't fail the whole operation, just log the error
+            }
+          } catch (err) {
+            console.error('Error saving work codes:', err);
+          }
+        }
+
         setLastError(null);
         setEditingProject(null);
         setFormData({
@@ -107,6 +170,7 @@ const Projecten: React.FC = () => {
           progressPercentage: '',
           calculatedHours: '',
         });
+        setSelectedWorkCodeIds([]);
 
         setShowModal(false);
         setShowSuccessMessage(true);
@@ -134,7 +198,28 @@ const Projecten: React.FC = () => {
       progressPercentage: '',
       calculatedHours: '',
     });
+    setSelectedWorkCodeIds([]);
     setShowModal(true);
+  };
+
+  // Toggle work code selection for new projects
+  const toggleWorkCodeSelection = (workCodeId: string) => {
+    setSelectedWorkCodeIds(prev => {
+      if (prev.includes(workCodeId)) {
+        return prev.filter(id => id !== workCodeId);
+      } else {
+        return [...prev, workCodeId];
+      }
+    });
+  };
+
+  // Select/deselect all work codes
+  const toggleAllWorkCodes = () => {
+    if (selectedWorkCodeIds.length === allWorkCodes.length) {
+      setSelectedWorkCodeIds([]);
+    } else {
+      setSelectedWorkCodeIds(allWorkCodes.map(wc => wc.id));
+    }
   };
 
   const handleEditProject = (project: any) => {
@@ -668,16 +753,80 @@ const Projecten: React.FC = () => {
             />
           </div>
 
-          {/* Bewakingscodes per Project - only show when editing existing project */}
-          {editingProject && (
-            <div className="border-t pt-4">
-              <h3 className="text-md font-semibold text-gray-800 dark:text-white mb-3">Bewakingscodes voor dit Project</h3>
+          {/* Bewakingscodes per Project */}
+          <div className="border-t pt-4">
+            <h3 className="text-md font-semibold text-gray-800 dark:text-white mb-3">Bewakingscodes voor dit Project</h3>
+
+            {editingProject ? (
+              // Use existing ProjectWorkCodesSelector for editing
               <ProjectWorkCodesSelector
                 projectId={editingProject.id}
                 readOnly={!hasPermission('manage_projects')}
               />
-            </div>
-          )}
+            ) : (
+              // Show simple selector for new projects
+              <div className="space-y-3">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Selecteer welke bewakingscodes beschikbaar zijn voor dit project. Standaard zijn alle codes geselecteerd.
+                </p>
+
+                {workCodesLoading ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600"></div>
+                  </div>
+                ) : allWorkCodes.length > 0 ? (
+                  <>
+                    {/* Select All / Deselect All button */}
+                    <div className="flex justify-end mb-2">
+                      <button
+                        type="button"
+                        onClick={toggleAllWorkCodes}
+                        className="text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        {selectedWorkCodeIds.length === allWorkCodes.length ? 'Alles deselecteren' : 'Alles selecteren'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                      {allWorkCodes.map(wc => {
+                        const selected = selectedWorkCodeIds.includes(wc.id);
+                        return (
+                          <button
+                            key={wc.id}
+                            type="button"
+                            onClick={() => toggleWorkCodeSelection(wc.id)}
+                            className={`flex items-center justify-between p-2 rounded border text-left text-sm transition-colors ${
+                              selected
+                                ? 'bg-red-50 dark:bg-red-900/30 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200'
+                                : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+                            } cursor-pointer`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-0.5 rounded text-xs font-mono ${
+                                selected ? 'bg-red-200 dark:bg-red-800' : 'bg-gray-100 dark:bg-gray-600'
+                              }`}>
+                                {wc.code}
+                              </span>
+                              <span className="truncate">{wc.name}</span>
+                            </div>
+                            {selected && <Check size={16} className="text-red-600 dark:text-red-400 flex-shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      {selectedWorkCodeIds.length} van {allWorkCodes.length} bewakingscode(s) geselecteerd
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 italic py-2">
+                    Geen bewakingscodes beschikbaar. Voeg ze eerst toe via Instellingen → Bewakingscodes.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="flex flex-col space-y-3 pt-4">
             {editingProject && editingProject.status === 'actief' && hasPermission('manage_projects') && (
