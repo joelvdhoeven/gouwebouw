@@ -75,12 +75,6 @@ const Projecten: React.FC = () => {
     }
   };
 
-  // Load work codes when modal opens for new project
-  useEffect(() => {
-    if (showModal && !editingProject) {
-      loadWorkCodes();
-    }
-  }, [showModal, editingProject]);
   const { insert: insertProject, update: updateProject, remove: deleteProject, loading: mutationLoading } = useSupabaseMutation('projects');
   const [showModal, setShowModal] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -91,6 +85,13 @@ const Projecten: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [archiveSearchTerm, setArchiveSearchTerm] = useState('');
   const [showArchive, setShowArchive] = useState(false);
+
+  // Load work codes when modal opens for new project
+  useEffect(() => {
+    if (showModal && !editingProject) {
+      loadWorkCodes();
+    }
+  }, [showModal, editingProject]);
 
   const [formData, setFormData] = useState({
     naam: '',
