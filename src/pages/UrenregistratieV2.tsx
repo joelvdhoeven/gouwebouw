@@ -124,6 +124,12 @@ const UrenregistratieV2: React.FC = () => {
   const [projectSearchQuery, setProjectSearchQuery] = useState('');
   const [searchingForBlockId, setSearchingForBlockId] = useState<string | null>(null);
 
+  // Work code search modal state
+  const [showWorkCodeSearchModal, setShowWorkCodeSearchModal] = useState(false);
+  const [workCodeSearchQuery, setWorkCodeSearchQuery] = useState('');
+  const [workCodeSearchBlockId, setWorkCodeSearchBlockId] = useState<string | null>(null);
+  const [workCodeSearchLineIndex, setWorkCodeSearchLineIndex] = useState<number | null>(null);
+
   // Load all data
   useEffect(() => {
     loadData();
@@ -145,7 +151,7 @@ const UrenregistratieV2: React.FC = () => {
         query,
         supabase.from('projects').select('*').eq('status', 'actief'),
         supabase.from('profiles').select('id, naam, email'),
-        supabase.from('work_codes').select('*').eq('is_active', true).order('sort_order'),
+        supabase.from('work_codes').select('*').eq('is_active', true).order('code').order('name'),
         supabase.from('inventory_products').select('id, name, sku, unit')
       ]);
 
@@ -732,6 +738,50 @@ const UrenregistratieV2: React.FC = () => {
     setShowProjectSearchModal(true);
   };
 
+  // Work code search functions
+  const openWorkCodeSearch = (blockId: string, lineIndex: number) => {
+    setWorkCodeSearchBlockId(blockId);
+    setWorkCodeSearchLineIndex(lineIndex);
+    setWorkCodeSearchQuery('');
+    setShowWorkCodeSearchModal(true);
+  };
+
+  const handleSelectWorkCodeFromSearch = (workCode: WorkCode) => {
+    if (workCodeSearchBlockId !== null && workCodeSearchLineIndex !== null) {
+      updateWorkLineInBlock(workCodeSearchBlockId, workCodeSearchLineIndex, 'work_code_id', workCode.id);
+    }
+    setShowWorkCodeSearchModal(false);
+    setWorkCodeSearchQuery('');
+    setWorkCodeSearchBlockId(null);
+    setWorkCodeSearchLineIndex(null);
+  };
+
+  // Get available work codes for search (from current block or all)
+  const getWorkCodesForSearch = (): WorkCode[] => {
+    if (workCodeSearchBlockId) {
+      const block = projectBlocks.find(b => b.id === workCodeSearchBlockId);
+      if (block && block.availableWorkCodes.length > 0) {
+        return block.availableWorkCodes;
+      }
+    }
+    return workCodes;
+  };
+
+  // Filter work codes for search
+  const filteredWorkCodesForSearch = getWorkCodesForSearch()
+    .filter(wc => {
+      if (!workCodeSearchQuery) return true;
+      const query = workCodeSearchQuery.toLowerCase();
+      return (
+        wc.code.toLowerCase().includes(query) ||
+        wc.name.toLowerCase().includes(query)
+      );
+    })
+    .sort((a, b) => {
+      // Sort by code first (handles both numeric and alphabetic codes)
+      return a.code.localeCompare(b.code, undefined, { numeric: true, sensitivity: 'base' });
+    });
+
   // Filter registrations
   const processedRegistraties = registraties.filter(registratie => {
     if (hasPermission('view_reports') && userFilter && registratie.user_id !== userFilter) {
@@ -1009,19 +1059,24 @@ const UrenregistratieV2: React.FC = () => {
                                     <span className="ml-1 text-xs text-blue-600 dark:text-blue-400">(project-specifiek)</span>
                                   )}
                                 </label>
-                                <select
-                                  value={line.work_code_id}
-                                  onChange={(e) => updateWorkLineInBlock(block.id, lineIndex, 'work_code_id', e.target.value)}
-                                  required
-                                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                <button
+                                  type="button"
+                                  onClick={() => openWorkCodeSearch(block.id, lineIndex)}
+                                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-left focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 flex items-center justify-between"
                                 >
-                                  <option value="">Selecteer code</option>
-                                  {(block.availableWorkCodes.length > 0 ? block.availableWorkCodes : workCodes).map((wc) => (
-                                    <option key={wc.id} value={wc.id}>
-                                      {wc.code} - {wc.name}
-                                    </option>
-                                  ))}
-                                </select>
+                                  {line.work_code_id ? (
+                                    <span className="text-gray-900 dark:text-white truncate">
+                                      {(() => {
+                                        const codes = block.availableWorkCodes.length > 0 ? block.availableWorkCodes : workCodes;
+                                        const wc = codes.find(c => c.id === line.work_code_id);
+                                        return wc ? `${wc.code} - ${wc.name}` : 'Selecteer code';
+                                      })()}
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-400 dark:text-gray-500">Zoek bewakingscode...</span>
+                                  )}
+                                  <Search size={16} className="text-gray-400 flex-shrink-0 ml-2" />
+                                </button>
                               </div>
 
                               <div>
@@ -1572,6 +1627,110 @@ const UrenregistratieV2: React.FC = () => {
               {/* Footer with count */}
               <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-xs text-gray-500 dark:text-gray-400">
                 {filteredProjectsForSearch.length} project{filteredProjectsForSearch.length !== 1 ? 'en' : ''} gevonden
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Work Code Search Modal */}
+      {showWorkCodeSearchModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black/50 transition-opacity"
+              onClick={() => {
+                setShowWorkCodeSearchModal(false);
+                setWorkCodeSearchQuery('');
+                setWorkCodeSearchBlockId(null);
+                setWorkCodeSearchLineIndex(null);
+              }}
+            />
+
+            {/* Modal Panel */}
+            <div className="relative w-full sm:max-w-lg transform overflow-hidden bg-white dark:bg-gray-800 shadow-xl transition-all sm:rounded-lg h-[80vh] sm:h-auto sm:max-h-[80vh] flex flex-col rounded-t-2xl sm:rounded-lg">
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-t-2xl sm:rounded-t-lg">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Bewakingscode zoeken
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowWorkCodeSearchModal(false);
+                    setWorkCodeSearchQuery('');
+                    setWorkCodeSearchBlockId(null);
+                    setWorkCodeSearchLineIndex(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Search Input */}
+              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                <div className="relative">
+                  <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={workCodeSearchQuery}
+                    onChange={(e) => setWorkCodeSearchQuery(e.target.value)}
+                    placeholder="Zoek op code of naam..."
+                    autoFocus
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm"
+                  />
+                  {workCodeSearchQuery && (
+                    <button
+                      onClick={() => setWorkCodeSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Work Code List */}
+              <div className="flex-1 overflow-y-auto">
+                {filteredWorkCodesForSearch.length === 0 ? (
+                  <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                    Geen bewakingscodes gevonden
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {filteredWorkCodesForSearch.map((wc) => (
+                      <li key={wc.id}>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectWorkCodeFromSearch(wc)}
+                          className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:bg-gray-50 dark:focus:bg-gray-700"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-red-600 dark:text-red-400 mr-2">
+                                  {wc.code}
+                                </span>
+                                {wc.name}
+                              </p>
+                              {wc.description && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+                                  {wc.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Footer with count */}
+              <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-xs text-gray-500 dark:text-gray-400">
+                {filteredWorkCodesForSearch.length} bewakingscode{filteredWorkCodesForSearch.length !== 1 ? 's' : ''} gevonden
               </div>
             </div>
           </div>
