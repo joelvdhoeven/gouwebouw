@@ -478,8 +478,8 @@ const Instellingen: React.FC = () => {
               <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="font-medium text-gray-800 dark:text-white">Urenregistratie (Klassiek)</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Originele urenregistratie module</p>
+                    <p className="font-medium text-gray-800 dark:text-white">Urenregistratie (oud)</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Oude urenregistratie module</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -512,10 +512,10 @@ const Instellingen: React.FC = () => {
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="font-medium text-gray-800 dark:text-white">Urenregistratie V2</p>
-                      <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/50 px-2 py-0.5 rounded">NIEUW</span>
+                      <p className="font-medium text-gray-800 dark:text-white">Urenregistratie</p>
+                      <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/50 px-2 py-0.5 rounded">AANBEVOLEN</span>
                     </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Nieuwe urenregistratie met bewakingscodes per project</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Urenregistratie met bewakingscodes per project</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
