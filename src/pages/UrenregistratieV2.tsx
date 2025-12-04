@@ -1360,7 +1360,32 @@ const UrenregistratieV2: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                           {reg.project_naam || projecten.find(p => p.id === reg.project_id)?.naam || '-'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{reg.werktype}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                          {(() => {
+                            const werktype = reg.werktype || '';
+                            // Check if it's in "CODE - Name" format
+                            const match = werktype.match(/^([A-Z0-9]+)\s*-\s*(.+)$/i);
+                            if (match) {
+                              return (
+                                <span title={match[2]}>
+                                  <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs mr-1">{match[1]}</span>
+                                  <span className="text-gray-600 dark:text-gray-400">{match[2]}</span>
+                                </span>
+                              );
+                            }
+                            // Try to find code by name in workCodes
+                            const workCode = workCodes.find(wc => wc.name === werktype || wc.code === werktype);
+                            if (workCode) {
+                              return (
+                                <span title={workCode.name}>
+                                  <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs mr-1">{workCode.code}</span>
+                                  <span className="text-gray-600 dark:text-gray-400">{workCode.name}</span>
+                                </span>
+                              );
+                            }
+                            return werktype;
+                          })()}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{reg.aantal_uren}</td>
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs truncate">{reg.werkomschrijving}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
