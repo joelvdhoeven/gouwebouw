@@ -1125,7 +1125,7 @@ const Urenregistratie: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               {hasPermission('view_reports') && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Gebruiker</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gebruiker</label>
                   <select
                     value={userFilter}
                     onChange={(e) => setUserFilter(e.target.value)}
@@ -1141,7 +1141,7 @@ const Urenregistratie: React.FC = () => {
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Periode</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Periode</label>
                 <select
                   value={dateRangeFilter}
                   onChange={(e) => handleDateRangeChange(e.target.value)}
@@ -1172,7 +1172,7 @@ const Urenregistratie: React.FC = () => {
                 placeholder={t('dateInputPlaceholder')}
               />
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('type')}</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('type')}</label>
                 <select
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
@@ -1205,21 +1205,21 @@ const Urenregistratie: React.FC = () => {
                 </h2>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-gray-50 dark:bg-gray-900">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('datum')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('datum')}</th>
                       {hasPermission('view_reports') && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gebruiker</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Gebruiker</th>
                       )}
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('werktype')}</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('aantalUren')}</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('werkomschrijving')}</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('acties')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Project</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('werktype')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('aantalUren')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('werkomschrijving')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('acties')}</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {paginatedRegistraties.map((registratie) => {
                       const hasExtraInfo = (registratie.driven_kilometers && registratie.driven_kilometers > 0) ||
                                           (registratie.materials && registratie.materials.length > 0) ||
@@ -1228,7 +1228,7 @@ const Urenregistratie: React.FC = () => {
 
                       return (
                         <React.Fragment key={registratie.id}>
-                          <tr className={isExpanded ? 'bg-gray-50' : 'hover:bg-gray-50'}>
+                          <tr className={isExpanded ? 'bg-gray-50 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                               {formatDate(registratie.datum)}
                             </td>
@@ -1249,7 +1249,7 @@ const Urenregistratie: React.FC = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                               {registratie.aantal_uren.toString().replace('.', ',')}
                             </td>
-                            <td className="px-6 py-4 text-sm text-gray-900 max-w-xs">
+                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs">
                               <div className="break-words">{registratie.werkomschrijving}</div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -1289,35 +1289,35 @@ const Urenregistratie: React.FC = () => {
                           {isExpanded && hasExtraInfo && (
                             <tr className="bg-gray-50 dark:bg-gray-900">
                               <td colSpan={hasPermission('view_reports') ? 7 : 6} className="px-6 py-4">
-                                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+                                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {registratie.driven_kilometers && registratie.driven_kilometers > 0 && (
-                                      <div className="bg-white border border-gray-200 p-4 rounded-lg shadow-sm">
-                                        <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Kilometers</div>
+                                      <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 p-4 rounded-lg shadow-sm">
+                                        <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">Kilometers</div>
                                         <div className="text-2xl font-bold text-gray-900 dark:text-white">
                                           {registratie.driven_kilometers.toString().replace('.', ',')} km
                                         </div>
                                       </div>
                                     )}
                                     {registratie.materials && registratie.materials.length > 0 && (
-                                      <div className="bg-white border border-gray-200 p-4 rounded-lg shadow-sm">
-                                        <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3">Materialen</div>
+                                      <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 p-4 rounded-lg shadow-sm">
+                                        <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-3">Materialen</div>
                                         <div className="space-y-2">
                                           {registratie.materials.map((mat: any, idx: number) => (
-                                            <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-gray-100 last:border-0">
+                                            <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-gray-100 dark:border-gray-600 last:border-0">
                                               <span className="font-medium text-gray-900 dark:text-white">
                                                 {mat.type === 'product' ? mat.product_name : mat.description}
                                               </span>
-                                              <span className="text-gray-600 font-semibold">{mat.quantity} {mat.unit}</span>
+                                              <span className="text-gray-600 dark:text-gray-300 font-semibold">{mat.quantity} {mat.unit}</span>
                                             </div>
                                           ))}
                                         </div>
                                       </div>
                                     )}
                                     {registratie.verbruikt_materiaal && registratie.verbruikt_materiaal.trim() !== '' && (
-                                      <div className="bg-amber-50 p-3 rounded-lg md:col-span-2">
-                                        <div className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Verbruikt Materiaal</div>
-                                        <div className="text-sm text-amber-900">
+                                      <div className="bg-amber-50 dark:bg-amber-900/30 p-3 rounded-lg md:col-span-2">
+                                        <div className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-1">Verbruikt Materiaal</div>
+                                        <div className="text-sm text-amber-900 dark:text-amber-200">
                                           {registratie.verbruikt_materiaal}
                                         </div>
                                       </div>
