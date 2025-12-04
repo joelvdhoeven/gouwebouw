@@ -42,14 +42,31 @@ export const exportUrenRegistraties = (registraties: any[], separator: string = 
       }).join('; ');
     }
 
-    // Get bewakingscode and name separately
-    const bewakingscode = reg.werktype || '';
+    // Get bewakingscode and name
+    // werktype can contain either the code OR the name, so we need to check both
+    const werktypeValue = reg.werktype || '';
+    let bewakingscode = '';
     let bewakingscodeNaam = '';
-    if (workCodes && workCodes.length > 0 && bewakingscode) {
-      const workCode = workCodes.find((wc: any) => wc.code === bewakingscode);
-      if (workCode) {
-        bewakingscodeNaam = workCode.name;
+
+    if (workCodes && workCodes.length > 0 && werktypeValue) {
+      // First try to find by code
+      let workCode = workCodes.find((wc: any) => wc.code === werktypeValue);
+
+      // If not found by code, try to find by name
+      if (!workCode) {
+        workCode = workCodes.find((wc: any) => wc.name === werktypeValue);
       }
+
+      if (workCode) {
+        bewakingscode = workCode.code;
+        bewakingscodeNaam = workCode.name;
+      } else {
+        // If no match found, use the original value as the name
+        bewakingscodeNaam = werktypeValue;
+      }
+    } else {
+      // No work codes available, just use what we have
+      bewakingscodeNaam = werktypeValue;
     }
 
     return {
