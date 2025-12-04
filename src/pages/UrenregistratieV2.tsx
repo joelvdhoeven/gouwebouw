@@ -468,12 +468,17 @@ const UrenregistratieV2: React.FC = () => {
         const kilometers = block.kilometers ? parseFloat(block.kilometers) : 0;
 
         for (const line of block.workLines) {
+          // Find the work code to get both code and name
+          const codesToSearch = block.availableWorkCodes.length > 0 ? block.availableWorkCodes : workCodes;
+          const workCode = codesToSearch.find(wc => wc.id === line.work_code_id);
+
           allRegistrations.push({
             user_id: currentUser.id,
             project_id: block.project?.id || null,
             project_naam: block.project?.naam,
             datum: datum,
-            werktype: line.work_code_name, // Store work code name as werktype for compatibility
+            // Store as "CODE - Name" format for export compatibility
+            werktype: workCode ? `${workCode.code} - ${workCode.name}` : line.work_code_name,
             aantal_uren: line.aantal_uren,
             werkomschrijving: line.werkomschrijving,
             driven_kilometers: kilometers,

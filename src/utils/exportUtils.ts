@@ -30,7 +30,7 @@ export const exportToCSV = (data: any[], filename: string, headers: string[], se
   }
 };
 
-export const exportUrenRegistraties = (registraties: any[], separator: string = ';', workCodes: any[] = []) => {
+export const exportUrenRegistraties = (registraties: any[], separator: string = ';', workCodes: any[] = [], projectWorkCodes: any[] = []) => {
   const headers = ['Datum', 'Gebruiker', 'Project', 'Bewakingscode', 'Bewakingscode Naam', 'Uren', 'Omschrijving', 'Kilometers', 'Materiaal (tekst)', 'Materiaal (afgeboekt)'];
   const data = registraties.map(reg => {
     // Format afgeboekte materialen
@@ -43,30 +43,55 @@ export const exportUrenRegistraties = (registraties: any[], separator: string = 
     }
 
     // Get bewakingscode and name
-    // werktype can contain either the code OR the name, so we need to check both
+    // werktype can contain: code, name, or "code - name" format
     const werktypeValue = reg.werktype || '';
     let bewakingscode = '';
     let bewakingscodeNaam = '';
 
-    if (workCodes && workCodes.length > 0 && werktypeValue) {
-      // First try to find by code
-      let workCode = workCodes.find((wc: any) => wc.code === werktypeValue);
+    if (werktypeValue) {
+      // First check if it's in "CODE - Name" format (e.g., "MW01 - Meerwerk")
+      const codeNameMatch = werktypeValue.match(/^([A-Z0-9]+)\s*-\s*(.+)$/i);
+      if (codeNameMatch) {
+        bewakingscode = codeNameMatch[1];
+        bewakingscodeNaam = codeNameMatch[2].trim();
+      } else if (workCodes && workCodes.length > 0) {
+        // Try to find by code first
+        let workCode = workCodes.find((wc: any) => wc.code === werktypeValue);
 
-      // If not found by code, try to find by name
-      if (!workCode) {
-        workCode = workCodes.find((wc: any) => wc.name === werktypeValue);
-      }
+        // If not found by code, try to find by name
+        if (!workCode) {
+          workCode = workCodes.find((wc: any) => wc.name === werktypeValue);
+        }
 
-      if (workCode) {
-        bewakingscode = workCode.code;
-        bewakingscodeNaam = workCode.name;
+        // If still not found, check project-specific codes
+        if (!workCode && projectWorkCodes && projectWorkCodes.length > 0) {
+          const projectCode = projectWorkCodes.find((pwc: any) =>
+            pwc.custom_name === werktypeValue ||
+            pwc.custom_code === werktypeValue ||
+            (pwc.work_codes && pwc.work_codes.name === werktypeValue)
+          );
+          if (projectCode) {
+            if (projectCode.custom_code) {
+              bewakingscode = projectCode.custom_code;
+              bewakingscodeNaam = projectCode.custom_name || '';
+            } else if (projectCode.work_codes) {
+              bewakingscode = projectCode.work_codes.code;
+              bewakingscodeNaam = projectCode.work_codes.name;
+            }
+          }
+        }
+
+        if (workCode) {
+          bewakingscode = workCode.code;
+          bewakingscodeNaam = workCode.name;
+        } else if (!bewakingscode) {
+          // If no match found, use the original value as the name
+          bewakingscodeNaam = werktypeValue;
+        }
       } else {
-        // If no match found, use the original value as the name
+        // No work codes available, just use what we have
         bewakingscodeNaam = werktypeValue;
       }
-    } else {
-      // No work codes available, just use what we have
-      bewakingscodeNaam = werktypeValue;
     }
 
     return {
