@@ -49,11 +49,12 @@ export const exportUrenRegistraties = (registraties: any[], separator: string = 
     let bewakingscodeNaam = '';
 
     if (werktypeValue) {
-      // First check if it's in "CODE - Name" format (e.g., "MW01 - Meerwerk")
-      const codeNameMatch = werktypeValue.match(/^([A-Z0-9]+)\s*-\s*(.+)$/i);
-      if (codeNameMatch) {
-        bewakingscode = codeNameMatch[1];
-        bewakingscodeNaam = codeNameMatch[2].trim();
+      // First check if it's in "CODE - Name" format (e.g., "MW01 - Meerwerk" or "MW 7 - Leveren...")
+      // Split on first occurrence of " - " to separate code from name
+      const separatorIndex = werktypeValue.indexOf(' - ');
+      if (separatorIndex > 0) {
+        bewakingscode = werktypeValue.substring(0, separatorIndex).trim();
+        bewakingscodeNaam = werktypeValue.substring(separatorIndex + 3).trim();
       } else if (workCodes && workCodes.length > 0) {
         // Try to find by code first
         let workCode = workCodes.find((wc: any) => wc.code === werktypeValue);
