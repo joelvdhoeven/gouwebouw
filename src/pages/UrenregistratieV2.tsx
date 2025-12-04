@@ -64,6 +64,7 @@ const UrenregistratieV2: React.FC = () => {
   // State for data
   const [registraties, setRegistraties] = useState<any[]>([]);
   const [projecten, setProjecten] = useState<any[]>([]);
+  const [allProjecten, setAllProjecten] = useState<any[]>([]); // For export (includes archived)
   const [gebruikers, setGebruikers] = useState<any[]>([]);
   const [workCodes, setWorkCodes] = useState<WorkCode[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -147,9 +148,10 @@ const UrenregistratieV2: React.FC = () => {
         query = query.eq('user_id', user.id);
       }
 
-      const [registrationsRes, projectsRes, usersRes, workCodesRes, productsRes] = await Promise.all([
+      const [registrationsRes, projectsRes, allProjectsRes, usersRes, workCodesRes, productsRes] = await Promise.all([
         query,
         supabase.from('projects').select('*').eq('status', 'actief'),
+        supabase.from('projects').select('*'), // All projects for export
         supabase.from('profiles').select('id, naam, email'),
         supabase.from('work_codes').select('*').eq('is_active', true).order('code').order('name'),
         supabase.from('inventory_products').select('id, name, sku, unit')
@@ -157,6 +159,7 @@ const UrenregistratieV2: React.FC = () => {
 
       if (registrationsRes.data) setRegistraties(registrationsRes.data);
       if (projectsRes.data) setProjecten(projectsRes.data);
+      if (allProjectsRes.data) setAllProjecten(allProjectsRes.data);
       if (usersRes.data) setGebruikers(usersRes.data);
       if (workCodesRes.data) setWorkCodes(workCodesRes.data);
       if (productsRes.data) setProducts(productsRes.data);
@@ -676,15 +679,18 @@ const UrenregistratieV2: React.FC = () => {
     }
     const separator = settings?.csv_separator || ';';
 
+    // Use allProjecten to include archived projects for historical data
     const enrichedRegistraties = filteredRegistraties.map(reg => {
       const gebruiker = gebruikers.find((g: any) => g.id === reg.user_id);
+      const project = allProjecten.find((p: any) => p.id === reg.project_id);
       return {
         ...reg,
-        user_naam: gebruiker?.naam || gebruiker?.email || 'Onbekend'
+        user_naam: gebruiker?.naam || gebruiker?.email || 'Onbekend',
+        project_naam: reg.project_naam || project?.naam || ''
       };
     });
 
-    exportUrenRegistraties(enrichedRegistraties, separator);
+    exportUrenRegistraties(enrichedRegistraties, separator, workCodes);
   };
 
   const toggleRowExpansion = (id: string) => {

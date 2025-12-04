@@ -44,6 +44,7 @@ const Urenregistratie: React.FC = () => {
   }, [refetchProjects]);
   const { data: gebruikers = [] } = useSupabaseQuery<any>('profiles', 'id, naam, email');
   const { data: products = [] } = useSupabaseQuery<any>('inventory_products', 'id, name, sku, unit');
+  const { data: workCodes = [] } = useSupabaseQuery<any>('work_codes', '*', { is_active: true }, { order: { column: 'code', ascending: true } });
   const { insert: insertRegistration, update: updateRegistration, remove: deleteRegistration, loading: mutationLoading } = useSupabaseMutation('time_registrations');
   const { insert: insertProject } = useSupabaseMutation('projects');
   const [showModal, setShowModal] = useState(false);
@@ -575,16 +576,19 @@ const Urenregistratie: React.FC = () => {
     }
     const separator = settings.csv_separator || ';';
 
-    // Enrich registrations with user names
+    // Enrich registrations with user names and project names
+    // Use allProjecten to include archived projects for historical data
     const enrichedRegistraties = filteredRegistraties.map(reg => {
       const gebruiker = gebruikers.find((g: any) => g.id === reg.user_id);
+      const project = (allProjecten || []).find((p: any) => p.id === reg.project_id);
       return {
         ...reg,
-        user_naam: gebruiker?.naam || gebruiker?.email || 'Onbekend'
+        user_naam: gebruiker?.naam || gebruiker?.email || 'Onbekend',
+        project_naam: reg.project_naam || project?.naam || ''
       };
     });
 
-    exportUrenRegistraties(enrichedRegistraties, separator);
+    exportUrenRegistraties(enrichedRegistraties, separator, workCodes);
   };
 
   const handleDeleteRegistration = (id: string) => {
