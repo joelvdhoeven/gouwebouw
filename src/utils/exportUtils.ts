@@ -31,7 +31,7 @@ export const exportToCSV = (data: any[], filename: string, headers: string[], se
 };
 
 export const exportUrenRegistraties = (registraties: any[], separator: string = ';', workCodes: any[] = []) => {
-  const headers = ['Datum', 'Gebruiker', 'Project', 'Bewakingscode', 'Uren', 'Omschrijving', 'Kilometers', 'Materiaal (tekst)', 'Materiaal (afgeboekt)'];
+  const headers = ['Datum', 'Gebruiker', 'Project', 'Bewakingscode', 'Bewakingscode Naam', 'Uren', 'Omschrijving', 'Kilometers', 'Materiaal (tekst)', 'Materiaal (afgeboekt)'];
   const data = registraties.map(reg => {
     // Format afgeboekte materialen
     let afgeboektMateriaal = '';
@@ -42,12 +42,13 @@ export const exportUrenRegistraties = (registraties: any[], separator: string = 
       }).join('; ');
     }
 
-    // Format bewakingscode with name
-    let bewakingscodeDisplay = reg.werktype || '';
-    if (workCodes && workCodes.length > 0) {
-      const workCode = workCodes.find((wc: any) => wc.code === reg.werktype);
+    // Get bewakingscode and name separately
+    const bewakingscode = reg.werktype || '';
+    let bewakingscodeNaam = '';
+    if (workCodes && workCodes.length > 0 && bewakingscode) {
+      const workCode = workCodes.find((wc: any) => wc.code === bewakingscode);
       if (workCode) {
-        bewakingscodeDisplay = `${workCode.code} - ${workCode.name}`;
+        bewakingscodeNaam = workCode.name;
       }
     }
 
@@ -55,7 +56,8 @@ export const exportUrenRegistraties = (registraties: any[], separator: string = 
       datum: formatDate(reg.datum),
       gebruiker: reg.user_naam || '',
       project: reg.project_naam || '',
-      bewakingscode: bewakingscodeDisplay,
+      bewakingscode: bewakingscode,
+      bewakingscodenaam: bewakingscodeNaam,
       uren: String(reg.aantal_uren).replace('.', ','),
       omschrijving: reg.werkomschrijving || '',
       kilometers: reg.driven_kilometers ? String(reg.driven_kilometers).replace('.', ',') : '0',
